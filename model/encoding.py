@@ -4,13 +4,12 @@ Encodings for PINNs (pre-layers).
 Examples of encodings:
     1. Polynomial encoding, E(x) = (x, x^2, x^3,..., x^n).-
     2. Fourier encoding, E(x) = (cos(<f, x>), sin(<f, x>)).
-    3. TODO: Add more encodings and sources.
+    3. TODO: Add more encodings with respective sources.
 
 '''
 
 # ======= Imports =======
 
-import math
 import torch
 
 from torch import Tensor

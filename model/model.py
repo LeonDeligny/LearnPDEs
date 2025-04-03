@@ -32,10 +32,9 @@ from torch.nn.init import (
     xavier_uniform_,
 )
 
+from typing import Dict, Tuple
 from torch import Tensor
 from torch.optim import Adam
-
-from typing import Dict
 
 from torch.nn import (
     ReLU,
@@ -46,10 +45,13 @@ from torch.nn import (
     Sequential,
 )
 
+from __init__ import device
+
 # ======= Class =======
 
 
 class PINN(Module):
+    device=device
     zero_tensor = tensor([0.0]).view(-1, 1)
     one_tensor = tensor([1.0]).view(-1, 1)
 
@@ -63,29 +65,29 @@ class PINN(Module):
         super(PINN, self).__init__()
 
         # Input space
-        self.x = input_space.requires_grad_()
+        self.x: Tensor = input_space.requires_grad_().to(self.device) # [n, 1]
 
         # NN parameters
-        self.hidden_dim = nn_params.get('hidden_dim')
-        self.num_hidden_layers = nn_params.get('num_hidden_layers')
+        self.hidden_dim: int = nn_params.get('hidden_dim')
+        self.num_hidden_layers: int = nn_params.get('num_hidden_layers')
 
         # Training parameters
-        learning_rate = training_params.get('learning_rate')
-        self.nb_epochs = training_params.get('nb_epochs')
+        learning_rate: float = training_params.get('learning_rate')
+        self.nb_epochs: int = training_params.get('nb_epochs')
 
         # Loss function
-        self.loss_func_name = loss_func_name
+        self.loss_func_name: str = loss_func_name
 
         # Network parameters
-        self.input_dim = len(input_space)
-        self.network = self.construct_nn()
+        self.input_dim: int = len(input_space)
+        self.network: Sequential = self.construct_nn().to(self.device)
 
         # Training parameters
         self.optimizer = Adam(
             self.parameters(), 
             lr=learning_rate,
         )
-        self.mse_loss = MSELoss()
+        self.mse_loss = MSELoss().to(self.device)
 
         # Gif parameters
         os.makedirs('gifs', exist_ok=True)
@@ -97,16 +99,10 @@ class PINN(Module):
             - fourier: [n, 1] -> [n, m]
             - NN: [n, m] -> [n, 1]
         '''
-        return self.network(input_homeo(x))
+        # return self.network(fourier(input_homeo(x), dim=self.hidden_dim))
+        return self.network(x)
 
-#        return self.network(
-#            fourier(
-#                input_homeo(x),
-#                dim=self.hidden_dim,
-#            ),
-#        )
-
-    def construct_nn(self) -> None:
+    def construct_nn(self) -> Sequential:
         # Define constants
         input_dim = 1
         output_dim = 1
@@ -153,12 +149,13 @@ class PINN(Module):
             
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}, Loss: {loss.item()}')
-                save_plot(epoch, self.x, y)
+                # Back to CPU for plotting
+                save_plot(epoch, self.x.cpu(), y.cpu())
 
         # Crate Gif with saved plots
         create_gif()
 
-    def exponential_loss(self, x: Tensor) -> float:
+    def exponential_loss(self, x: Tensor) -> Tuple[float, Tensor]:
         f = self.forward(x)
         df_dx = grad(
             outputs=f,
@@ -178,7 +175,7 @@ class PINN(Module):
 
         return physics_loss + (boundary_loss * num_inputs(f)), f
 
-    def cosinus_loss(self, x: Tensor) -> float:
+    def cosinus_loss(self, x: Tensor) -> Tuple[float, Tensor]:
         f = self.forward(x)
         df_dx = grad(
             outputs=f,

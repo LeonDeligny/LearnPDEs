@@ -26,11 +26,13 @@ from model.model import PINN
 
 from torch import linspace
 
+from __init__ import device
+
 # ======= Main =======
 
 
 def main(
-    input_space: Tensor = linspace(-100, 100, 1_000).view(-1, 1), # [n, 1]
+    input_space: Tensor = linspace(-4, 4, 10_000).view(-1, 1), # [n, 1]
     nn_params: Dict = {
         'hidden_dim': 400,
         'num_hidden_layers': 6,
