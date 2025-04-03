@@ -16,8 +16,7 @@ import torch
 from torch import Tensor
 from torch.nn import Parameter
 
-from utils.decorators import validate
-
+from utils.utility import num_inputs
 from torch import (
     cat,
     cos,
@@ -41,9 +40,8 @@ def fourier(x: Tensor, dim: int = 10, scale: float = 1.0) -> Tensor:
     f is a learnable parameter.
     In 1D, <f, x> = f * x is in the range [0, 1].
     '''
-    print(x.shape)
-    num_features = x.shape[1]
-    kernel = scale * Parameter(torch.randn(num_features, dim // 2), requires_grad=True)
+
+    kernel = scale * Parameter(torch.randn(num_inputs(x), dim // 2), requires_grad=True)
     x_proj = pi * x @ kernel
 
     return cat([cos(x_proj), sin(x_proj)], dim=1)

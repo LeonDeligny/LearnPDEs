@@ -47,8 +47,11 @@ def save_plot(epoch: int, x: Tensor, y: Tensor) -> None:
     os.makedirs(output_dir, exist_ok=True)
 
     # Convert tensors to numpy arrays
-    x = torch.linspace(-3, 3, 100).view(-1, 1).numpy()
+    x = x.detach().numpy()
     y = y.detach().numpy()
+    mask = x < 10
+    x = x[mask]
+    y = y[mask]
 
     plt.figure()
     plt.plot(x, y, label='NN Prediction')
