@@ -22,7 +22,7 @@ Scenarios:
 
 from typing import Dict
 from torch import Tensor
-from model.model import PINN
+from model.pinn import PINN
 from typing import Callable
 # from functools import partial
 
@@ -49,7 +49,7 @@ def main(
         'learning_rate': 0.001,
         'nb_epochs': 10_000,
     },
-    loss_func_name: str = 'exponential_loss',
+    loss_func_name: str = 'cosinus_loss',
     input_homeo: Callable[[Tensor], Tensor] = identity,
     output_homeo: Callable[[Tensor], Tensor] = identity,
     # partial(fourier, dim=10, scale=1.0),

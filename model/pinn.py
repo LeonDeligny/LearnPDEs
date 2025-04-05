@@ -118,8 +118,8 @@ class PINN(Module):
             - NN: [n, m] -> [n, 1]
             - output_homeo: [n, 1] -> [n, 1]
         '''
-        input = self.input_homeo(x)
-        encoding = self.encoding(input)
+        input_homeo = self.input_homeo(x)
+        encoding = self.encoding(input_homeo)
         network = self.network(encoding)
         output = self.output_homeo(network)
 
