@@ -9,16 +9,17 @@ The goal of this project is to develop a framework using a deep learning model t
 ## **Objectives**
 
 The project progresses through increasingly complex problems:
-1. **Simple ODEs**:
-   - Exponential: \( f' = f, \, f(0) = 1 \) :heavy_check_mark:
-  
-  ![Training Process](./assets/exponential.gif)
+1. **Simple ODEs** :white_check_mark:: 
+   - Exponential: \( f' = f, \, f(0) = 1 \) 
+   [Training Process](./assets/exponential.gif)
 
-1. **Higher-Order ODEs**:
-   - Example: \( f'' = -f, \, f(0) = 1, \, f'(0) = 0 \)
-2. **PDEs**:
+2. **Higher-Order ODEs** :x::
+   - Cosinus: \( f'' = -f, \, f(0) = 1, \, f'(0) = 0 \)
+
+3. **PDEs** :x::
    - Example: \( \nabla f = 0 \)
-3. **Navier-Stokes Equations**:
+
+4. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.
 
 ## **Features**
