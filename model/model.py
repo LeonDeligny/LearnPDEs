@@ -30,13 +30,10 @@ from torch.nn.init import (
     xavier_uniform_,
 )
 
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union, Callable
 from torch import Tensor
 from torch.optim import Adam
-from torch.amp import (
-    autocast,
-    GradScaler,
-)
+from functools import partial
 
 from torch.nn import (
     Tanh,
@@ -69,6 +66,9 @@ class PINN(Module):
         nn_params: Dict,
         training_params: Dict,
         loss_func_name: str,
+        input_homeo: Callable[[Tensor], Tensor],
+        output_homeo: Callable[[Tensor], Tensor],
+        encoding: Union[partial, Callable[[Tensor], Tensor]],
     ) -> None:
         super(PINN, self).__init__()
 
@@ -85,6 +85,16 @@ class PINN(Module):
 
         # Loss function
         self.loss_func_name: str = loss_func_name
+
+        # Homeomorphisms and encoding
+        self.input_homeo = input_homeo
+        self.output_homeo = output_homeo
+        self.encoding = encoding
+        self.encoding_dim: int = (
+            self.encoding.keywords.get('dim', 1)
+            if isinstance(self.encoding, partial)
+            else 1
+        )
 
         # Network parameters
         self.input_dim: int = len(input_space)
@@ -103,20 +113,24 @@ class PINN(Module):
     def forward(self, x: Tensor) -> Tensor:
         '''
         forward = NN o fourier o homeo
-            - homeo: [n, 1] -> [n, 1]
-            - fourier: [n, 1] -> [n, m]
+            - input_homeo: [n, 1] -> [n, 1]
+            - encoding: [n, 1] -> [n, m]
             - NN: [n, m] -> [n, 1]
+            - output_homeo: [n, 1] -> [n, 1]
         '''
-        # return self.network(fourier(input_homeo(x), dim=self.hidden_dim))
-        return self.network(x)
+        input = self.input_homeo(x)
+        encoding = self.encoding(input)
+        network = self.network(encoding)
+        output = self.output_homeo(network)
+
+        return output
 
     def construct_nn(self) -> Sequential:
         # Define constants
-        input_dim = 1
         output_dim = 1
 
         # Construct NN
-        layers = [Linear(input_dim, self.hidden_dim), Tanh()]
+        layers = [Linear(self.encoding_dim, self.hidden_dim), Tanh()]
         for _ in range(self.num_hidden_layers - 1):
             layers.append(Linear(self.hidden_dim, self.hidden_dim))
             layers.append(Tanh())

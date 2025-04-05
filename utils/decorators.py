@@ -4,7 +4,7 @@ Customed decorators.
 
 # ======= Imports =======
 
-import time
+import time as t
 
 from functools import lru_cache
 from pydantic import validate_call
@@ -20,16 +20,19 @@ from typing import Any
 # ======= Functions =======
 
 
-def log_execution_time(func: Callable) -> Callable:
+def time(func: Callable) -> Callable:
     '''
     Decorator to log the execution time of a function.
     '''
     def wrapper(*args: Tuple[Any, ...], **kwargs: Dict[str, Any]) -> Any:
-        start_time = time.time()  # Record start time
-        result = func(*args, **kwargs)  # Execute the function
-        end_time = time.time()  # Record end time
+        start_time = t.time()
+        result = func(*args, **kwargs)
+        end_time = t.time()
         execution_time = end_time - start_time
-        print(f"Function '{func.__name__}' executed in {execution_time:.4f} seconds.")
+        print(
+            f'Function "{func.__name__}"'
+            f'executed in {execution_time:.4f} seconds.'
+        )
         return result
 
     return wrapper
@@ -38,10 +41,10 @@ def log_execution_time(func: Callable) -> Callable:
 def validate(func: Callable) -> Callable:
     '''
     Base decorator for validating function arguments.
-    
+
     Objective:
         Redefines the @validate_call decorator to cache validation results.
-   
+
     Uniqueness:
         Ensures validation is performed only once per unique set of arguments.
     '''

@@ -25,10 +25,6 @@ The project progresses through increasingly complex problems:
 
 ### **Installation**
 
-Follow these steps to set up the project.
-
-**Prerequisites**
-
 Ensure you have the following installed on your system:
 - ✔️ Python 3.8+  
 - ✔️ PyTorch (with MPS support for macOS or CUDA for NVIDIA GPUs)  

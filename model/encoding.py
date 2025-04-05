@@ -28,10 +28,14 @@ from __init__ import device
 # ======= Functions =======
 
 
-def polynomial(x: Tensor, input_dim: int) -> Tensor:
+def identity(x: Tensor) -> Tensor:
+    return x
+
+
+def polynomial(x: Tensor, dim: int) -> Tensor:
     '''encoding(x) = (x, x^2, x^3, ..., x^input_dim)'''
 
-    return cat([x.view(-1, 1)**i for i in range(1, input_dim + 1)], dim=1)
+    return cat([x.view(-1, 1)**i for i in range(1, dim + 1)], dim=1)
 
 
 def fourier(x: Tensor, dim: int = 10, scale: float = 1.0) -> Tensor:
