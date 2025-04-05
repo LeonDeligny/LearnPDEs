@@ -12,7 +12,7 @@ The project progresses through increasingly complex problems:
 1. **Simple ODEs**:
    - Exponential: \( f' = f, \, f(0) = 1 \)
   
-  ![Training Process](./assets/training_process.gif)
+  ![Training Process](./assets/exponential.gif)
 
 1. **Higher-Order ODEs**:
    - Example: \( f'' = -f, \, f(0) = 1, \, f'(0) = 0 \)
