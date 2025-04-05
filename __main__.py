@@ -44,7 +44,7 @@ from __init__ import device
 @time
 def main(
     input_space: Tensor = torch.cat([
-        linspace(-3, 3, 10_000).view(-1, 1), 
+        linspace(-3, 3, 10_000).view(-1, 1),
         torch.tensor([0.0]).view(-1, 1),
     ]).unique(dim=0).sort(dim=0).values,
     nn_params: Dict = {

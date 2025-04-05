@@ -7,7 +7,6 @@ Plot functions.
 import os
 import imageio
 
-import numpy as np
 import matplotlib.pyplot as plt
 
 from torch import Tensor
