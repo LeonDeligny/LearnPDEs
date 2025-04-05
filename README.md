@@ -11,7 +11,7 @@ The goal of this project is to develop a framework using a deep learning model t
 The project progresses through increasingly complex problems:
 1. **Simple ODEs** :white_check_mark:: 
    - Exponential: \( f' = f, \, f(0) = 1 \) 
-   [Training Process](./assets/exponential.gif)
+   ![Training Process](./assets/exponential.gif)
 
 2. **Higher-Order ODEs** :x::
    - Cosinus: \( f'' = -f, \, f(0) = 1, \, f'(0) = 0 \)
