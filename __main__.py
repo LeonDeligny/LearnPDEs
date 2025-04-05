@@ -21,7 +21,7 @@ Scenarios:
 # ======= Imports =======
 
 from typing import Dict
-from torch import Tensor, profiler
+from torch import Tensor
 from model.model import PINN
 
 from torch import linspace
@@ -34,8 +34,8 @@ from __init__ import device
 def main(
     input_space: Tensor = linspace(-4, 4, 10_000).view(-1, 1),  # [n, 1]
     nn_params: Dict = {
-        'hidden_dim': 400,
-        'num_hidden_layers': 6,
+        'hidden_dim': 100,
+        'num_hidden_layers': 4,
     },
     training_params: Dict = {
         'learning_rate': 0.001,
@@ -59,23 +59,7 @@ def main(
     ).to(device)
 
     # 2. Train model
-    with profiler.profile(
-        activities=[
-            profiler.ProfilerActivity.CPU,
-            profiler.ProfilerActivity.MPS,
-        ],
-        on_trace_ready=profiler.tensorboard_trace_handler('./log'),
-        record_shapes=True,
-        with_stack=True
-    ) as prof:
-        model.train()
-
-    print(
-        prof.key_averages().table(
-            sort_by="cuda_time_total"
-            if device == "mps"
-            else "cpu_time_total")
-    )
+    model.train()
 
     # 3. Evaluate model
     # TODO: Evaluate model

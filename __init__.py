@@ -4,19 +4,22 @@ Constants and variables for the project.
 
 # ======= Imports =======
 
-import torch
+from torch.backends.mps import is_available
+
+from torch import device as TorchDevice
 
 # ======= Variables =======
 
 # Detects if Metal Performance Shaders (MPS)
 # is available on your system.
-device = torch.device(
+device_type: str = (
     "mps"
-    if torch.backends.mps.is_available()
+    if is_available()
     else "cpu"
 )
+device = TorchDevice(device_type)
 
-print(f"Using device: {device}.")
+print(f"Using device: {device_type}.")
 
 # ======= Main =======
 

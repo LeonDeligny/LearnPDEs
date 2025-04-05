@@ -46,7 +46,7 @@ from torch.nn import (
     Sequential,
 )
 
-from __init__ import device
+from __init__ import device, device_type
 
 # ======= Class =======
 
@@ -59,6 +59,7 @@ class PINN(Module):
 
     # Constants
     device = device
+    device_type = device_type
     zero_tensor = tensor([0.0]).view(-1, 1).to(device)
     one_tensor = tensor([1.0]).view(-1, 1).to(device)
 
@@ -95,9 +96,6 @@ class PINN(Module):
             lr=learning_rate,
         )
         self.mse_loss = MSELoss().to(self.device)
-
-        # Mixed Precision Training
-        self.scaler = GradScaler()
 
         # Gif parameters
         os.makedirs('gifs', exist_ok=True)
@@ -149,13 +147,10 @@ class PINN(Module):
         for epoch in range(self.nb_epochs):
             self.optimizer.zero_grad()
 
-            # Compute loss
-            with autocast():
-                loss, y = loss_function(self.x)
+            loss, y = loss_function(self.x)
 
-            self.scaler.scale(loss).backward(retain_graph=True)
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
+            loss.backward(retain_graph=True)
+            self.optimizer.step()
 
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}, Loss: {loss.item()}')
