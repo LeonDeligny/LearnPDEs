@@ -63,7 +63,7 @@ def main(
     output_homeo: Callable[[Tensor], Tensor] = identity,
     # partial(fourier, dim=10, scale=1.0),
     encoding: Callable[[Tensor], Tensor] = identity,
-    analytical = np.cos,
+    analytical: Callable[[float], float] = np.cos,
 ) -> None:
     '''
     Description of workflow.

@@ -15,7 +15,6 @@ Unique analytical solution is f = exp.
 
 # ======= Imports =======
 
-from torch import tensor
 from torch.nn.init import (
     zeros_,
     xavier_uniform_,

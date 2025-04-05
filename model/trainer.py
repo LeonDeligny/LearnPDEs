@@ -149,8 +149,6 @@ class Trainer:
 
         return physics_loss + (boundary_loss * num_inputs(f)), f
 
-
-
 # ======= Main =======
 
 
