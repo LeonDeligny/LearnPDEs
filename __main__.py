@@ -23,10 +23,13 @@ Scenarios:
 import torch
 import numpy as np
 
-from typing import Dict
 from torch import Tensor
 from model.pinn import PINN
-from typing import Callable
+from model.trainer import Trainer
+from typing import (
+    Dict,
+    Callable,
+)
 # from functools import partial
 
 from utils.decorators import time
@@ -70,22 +73,29 @@ def main(
     '''
 
     # 1. Construct model
-    model = PINN(
-        input_space=input_space,
+    pinn = PINN(
         nn_params=nn_params,
-        training_params=training_params,
-        loss_func_name=loss_func_name,
         input_homeo=input_homeo,
         output_homeo=output_homeo,
         encoding=encoding,
-        analytical=analytical,
     ).to(device)
 
     # 2. Train model
-    model.train()
+    trainer = Trainer(
+        pinn=pinn,
+        input_space=input_space,
+        training_params=training_params,
+        loss_func_name=loss_func_name,
+        analytical=analytical,
+    )
+
+    trainer.train()
 
     # 3. Evaluate model
     # TODO: Evaluate model
+    # Look at convergence of the loss function
+    # Look at extremas of the analytical solution to create
+    # a "test" set
 
 
 if __name__ == '__main__':
