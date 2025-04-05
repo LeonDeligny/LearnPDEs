@@ -19,11 +19,12 @@ The project progresses through increasingly complex problems:
    - Analytical solution: exponential
    ![Training Process](./assets/exponential.gif)
 
-2. **Higher-Order ODEs** :x::
+2. **Higher-Order ODEs** :white_check_mark::
    - ODE: f'' = f, f(0) = 1, f'(0) = 0
    - Physics Loss: f'' - f = 0
    - Boundary Loss: f(0) = 1, f'(0) = 0
    - Analytical solution: cosinus
+   - ![Training Process](./assets/cosinus.gif)
 
 3. **PDEs** :x::
    - Example: \( \nabla f = 0 \)

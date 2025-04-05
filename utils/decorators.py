@@ -30,7 +30,7 @@ def time(func: Callable) -> Callable:
         end_time = t.time()
         execution_time = end_time - start_time
         print(
-            f'Function "{func.__name__}"'
+            f'Function "{func.__name__}" '
             f'executed in {execution_time:.4f} seconds.'
         )
         return result
