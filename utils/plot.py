@@ -40,7 +40,7 @@ def create_gif(
     imageio.mimsave(output_path, images, duration=duration)
 
 
-def save_plot(epoch: int, x: Tensor, y: Tensor) -> None:
+def save_plot(epoch: int, x: Tensor, y: Tensor, loss: float) -> None:
     # Ensure the directory exists
     output_dir = './gifs/epochs'
     os.makedirs(output_dir, exist_ok=True)
@@ -58,7 +58,7 @@ def save_plot(epoch: int, x: Tensor, y: Tensor) -> None:
     plt.xlabel('x')
     plt.ylabel('f(x)')
     plt.legend()
-    plt.title(f'Epoch {epoch}')
+    plt.title(f'Epoch: {epoch}, loss: {loss:.4f}')
     plt.savefig(f'{output_dir}/epoch_{epoch}.png')
     plt.close()
 

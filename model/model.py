@@ -155,7 +155,7 @@ class PINN(Module):
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}, Loss: {loss.item()}')
                 # Back to CPU for plotting
-                save_plot(epoch, self.x.cpu(), y.cpu())
+                save_plot(epoch, self.x.cpu(), y.cpu(), loss)
 
         # Crate Gif with saved plots
         create_gif()
