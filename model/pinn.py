@@ -69,8 +69,11 @@ class PINN(Module):
         input_homeo: Callable[[Tensor], Tensor],
         output_homeo: Callable[[Tensor], Tensor],
         encoding: Union[partial, Callable[[Tensor], Tensor]],
+        analytical: Callable,
     ) -> None:
         super(PINN, self).__init__()
+
+        self.analytical = analytical
 
         # Input space [n, 1]
         self.x: Tensor = input_space.requires_grad_().to(self.device)
@@ -112,7 +115,7 @@ class PINN(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         '''
-        forward = NN o fourier o homeo
+        forward = homeo o NN o fourier o homeo
             - input_homeo: [n, 1] -> [n, 1]
             - encoding: [n, 1] -> [n, m]
             - NN: [n, m] -> [n, 1]
@@ -123,7 +126,7 @@ class PINN(Module):
         network = self.network(encoding)
         output = self.output_homeo(network)
 
-        return output
+        return output.to(self.device)
 
     def construct_nn(self) -> Sequential:
         # Define constants
@@ -169,7 +172,7 @@ class PINN(Module):
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}, Loss: {loss.item()}')
                 # Back to CPU for plotting
-                save_plot(epoch, self.x.cpu(), y.cpu(), loss)
+                save_plot(epoch, self.x.cpu(), y.cpu(), loss, self.analytical)
 
         # Crate Gif with saved plots
         create_gif()
@@ -181,7 +184,7 @@ class PINN(Module):
             inputs=x,
             grad_outputs=torch.ones_like(f),
             create_graph=True,
-        )[0]
+        )[0].view(-1, 1).to(self.device)
 
         # f' = f
         physics_loss = self.mse_loss(f, df_dx)
@@ -201,25 +204,25 @@ class PINN(Module):
             inputs=x,
             grad_outputs=torch.ones_like(f),
             create_graph=True,
-        )[0]
+        )[0].view(-1, 1).to(self.device)
 
         ddf_dxdx = grad(
             outputs=df_dx,
             inputs=x,
             grad_outputs=torch.ones_like(f),
             create_graph=True,
-        )[0]
+        )[0].view(-1, 1).to(self.device)
 
         # f' = f
         physics_loss = self.mse_loss(f, -ddf_dxdx)
 
-        # f(0) = 1
+        # f(0) = 1, f'(0) = 0
         boundary_loss = self.mse_loss(
             self.forward(self.zero_tensor),
             self.one_tensor
         ) + self.mse_loss(
-            ddf_dxdx(self.zero_tensor),
-            self.one_tensor
+            ddf_dxdx[self.zero_tensor == x].view(-1, 1),
+            self.zero_tensor
         )
 
         return physics_loss + (boundary_loss * num_inputs(f)), f

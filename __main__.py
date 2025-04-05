@@ -20,6 +20,9 @@ Scenarios:
 
 # ======= Imports =======
 
+import torch
+import numpy as np
+
 from typing import Dict
 from torch import Tensor
 from model.pinn import PINN
@@ -40,7 +43,10 @@ from __init__ import device
 
 @time
 def main(
-    input_space: Tensor = linspace(-3, 3, 10_000).view(-1, 1),  # [n, 1]
+    input_space: Tensor = torch.cat([
+        linspace(-3, 3, 10_000).view(-1, 1), 
+        torch.tensor([0.0]).view(-1, 1),
+    ]).unique(dim=0).sort(dim=0).values,
     nn_params: Dict = {
         'hidden_dim': 100,
         'num_hidden_layers': 4,
@@ -54,6 +60,7 @@ def main(
     output_homeo: Callable[[Tensor], Tensor] = identity,
     # partial(fourier, dim=10, scale=1.0),
     encoding: Callable[[Tensor], Tensor] = identity,
+    analytical = np.cos,
 ) -> None:
     '''
     Description of workflow.
@@ -71,6 +78,7 @@ def main(
         input_homeo=input_homeo,
         output_homeo=output_homeo,
         encoding=encoding,
+        analytical=analytical,
     ).to(device)
 
     # 2. Train model

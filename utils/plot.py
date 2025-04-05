@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 from torch import Tensor
 from pathlib import Path
+from typing import Callable
 
 # ======= Functions =======
 
@@ -40,7 +41,7 @@ def create_gif(
     imageio.mimsave(output_path, images, duration=duration)
 
 
-def save_plot(epoch: int, x: Tensor, y: Tensor, loss: float) -> None:
+def save_plot(epoch: int, x: Tensor, y: Tensor, loss: float, f: Callable) -> None:
     # Ensure the directory exists
     output_dir = './gifs/epochs'
     os.makedirs(output_dir, exist_ok=True)
@@ -54,7 +55,7 @@ def save_plot(epoch: int, x: Tensor, y: Tensor, loss: float) -> None:
 
     plt.figure()
     plt.plot(x, y, label='NN Prediction')
-    plt.plot(x, np.exp(x), label='Analytical Solution')
+    plt.plot(x, f(x), label='Analytical Solution')
     plt.xlabel('x')
     plt.ylabel('f(x)')
     plt.legend()
