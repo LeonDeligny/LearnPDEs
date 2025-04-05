@@ -8,8 +8,15 @@ import torch
 
 # ======= Variables =======
 
-# Detects if MPS is available
-device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+# Detects if Metal Performance Shaders (MPS)
+# is available on your system.
+device = torch.device(
+    "mps"
+    if torch.backends.mps.is_available()
+    else "cpu"
+)
+
+print(f"Using device: {device}.")
 
 # ======= Main =======
 

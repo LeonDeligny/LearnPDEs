@@ -5,7 +5,6 @@ Plot functions.
 #  ======= Imports =======
 
 import os
-import torch
 import imageio
 
 import numpy as np

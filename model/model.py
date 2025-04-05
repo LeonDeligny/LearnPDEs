@@ -3,7 +3,7 @@ Physics Informed Neural Network's loss will be an ODE,
 
 Examples:
     1. Exponential ODE, f = exp
-        
+
         f' = f, f(0) = 1.
 
     2. Cosinus ODE, f = cos
@@ -19,25 +19,26 @@ import os
 import torch
 
 from utils.utility import num_inputs
-from utils.homeomorphisms import input_homeo
 from torch.autograd import grad
-from model.encoding import fourier
 from torch import tensor
 from utils.plot import (
     save_plot,
     create_gif,
 )
 from torch.nn.init import (
-    zeros_, 
+    zeros_,
     xavier_uniform_,
 )
 
 from typing import Dict, Tuple
 from torch import Tensor
 from torch.optim import Adam
+from torch.amp import (
+    autocast,
+    GradScaler,
+)
 
 from torch.nn import (
-    ReLU,
     Tanh,
     Linear,
     Module,
@@ -51,9 +52,15 @@ from __init__ import device
 
 
 class PINN(Module):
-    device=device
-    zero_tensor = tensor([0.0]).view(-1, 1)
-    one_tensor = tensor([1.0]).view(-1, 1)
+    """
+    Physics Informed Neural Network (PINN) class.
+    This class implements a PINN for solving ODEs using a neural network.
+    """
+
+    # Constants
+    device = device
+    zero_tensor = tensor([0.0]).view(-1, 1).to(device)
+    one_tensor = tensor([1.0]).view(-1, 1).to(device)
 
     def __init__(
         self: 'PINN',
@@ -64,8 +71,8 @@ class PINN(Module):
     ) -> None:
         super(PINN, self).__init__()
 
-        # Input space
-        self.x: Tensor = input_space.requires_grad_().to(self.device) # [n, 1]
+        # Input space [n, 1]
+        self.x: Tensor = input_space.requires_grad_().to(self.device)
 
         # NN parameters
         self.hidden_dim: int = nn_params.get('hidden_dim')
@@ -84,10 +91,13 @@ class PINN(Module):
 
         # Training parameters
         self.optimizer = Adam(
-            self.parameters(), 
+            self.parameters(),
             lr=learning_rate,
         )
         self.mse_loss = MSELoss().to(self.device)
+
+        # Mixed Precision Training
+        self.scaler = GradScaler()
 
         # Gif parameters
         os.makedirs('gifs', exist_ok=True)
@@ -106,10 +116,10 @@ class PINN(Module):
         # Define constants
         input_dim = 1
         output_dim = 1
-        
+
         # Construct NN
         layers = [Linear(input_dim, self.hidden_dim), Tanh()]
-        for _ in range(self.num_hidden_layers-1):
+        for _ in range(self.num_hidden_layers - 1):
             layers.append(Linear(self.hidden_dim, self.hidden_dim))
             layers.append(Tanh())
         layers.append(Linear(self.hidden_dim, output_dim))
@@ -130,7 +140,6 @@ class PINN(Module):
                 xavier_uniform_(m.weight)
                 if m.bias is not None:
                     zeros_(m.bias)
-    
 
     def train(self) -> None:
         # Dynamically call the specified loss function
@@ -139,14 +148,15 @@ class PINN(Module):
         # Training loop
         for epoch in range(self.nb_epochs):
             self.optimizer.zero_grad()
-            
-            # Compute loss
-            loss, y = loss_function(self.x)
 
-            # Backpropagation
-            loss.backward(retain_graph=True)
-            self.optimizer.step()
-            
+            # Compute loss
+            with autocast():
+                loss, y = loss_function(self.x)
+
+            self.scaler.scale(loss).backward(retain_graph=True)
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+
             if epoch % 100 == 0:
                 print(f'Epoch {epoch}, Loss: {loss.item()}')
                 # Back to CPU for plotting

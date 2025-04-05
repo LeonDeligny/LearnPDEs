@@ -23,6 +23,7 @@ from torch import (
 )
 
 from numpy import pi
+from __init__ import device
 
 # ======= Functions =======
 
@@ -36,11 +37,12 @@ def polynomial(x: Tensor, input_dim: int) -> Tensor:
 def fourier(x: Tensor, dim: int = 10, scale: float = 1.0) -> Tensor:
     '''
     encoding(x) = (cos(2 pi <f, x>), sin(2 pi <f, x>))
-    f is a learnable parameter.
+    f is a learnable parameter, stands for frequency.
     In 1D, <f, x> = f * x is in the range [0, 1].
     '''
 
-    kernel = scale * Parameter(torch.randn(num_inputs(x), dim // 2), requires_grad=True)
+    f = torch.randn(num_inputs(x), dim // 2).to(device)
+    kernel = scale * Parameter(f, requires_grad=True)
     x_proj = pi * x @ kernel
 
     return cat([cos(x_proj), sin(x_proj)], dim=1)
