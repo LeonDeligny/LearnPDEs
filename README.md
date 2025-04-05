@@ -10,7 +10,7 @@ The goal of this project is to develop a framework using a deep learning model t
 
 The project progresses through increasingly complex problems:
 1. **Simple ODEs**:
-   - Exponential: \( f' = f, \, f(0) = 1 \)
+   - Exponential: \( f' = f, \, f(0) = 1 \) :heavy_check_mark:
   
   ![Training Process](./assets/exponential.gif)
 
