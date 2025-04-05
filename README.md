@@ -22,18 +22,27 @@ The project progresses through increasingly complex problems:
 4. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.
 
-## **Features**
 
-- Train neural networks to approximate solutions to ODEs and PDEs.
-- No labeled data required; training is based on physics and boundary conditions.
-- Scalable to more complex equations like Navier-Stokes.
+### **Installation**
 
-## **Getting Started**
+Follow these steps to set up the project.
 
-### **Prerequisites**
+**Prerequisites**
 
-- Python 3.8+
-- PyTorch (with MPS support for macOS)
-- Additional dependencies:
-  ```bash
-  pip install -r requirements.txt
+Ensure you have the following installed on your system:
+- ✔️ Python 3.8+  
+- ✔️ PyTorch (with MPS support for macOS or CUDA for NVIDIA GPUs)  
+- ✔️ Additional Python dependencies (install via `requirements.txt`)
+
+1. **Clone the Repository**:
+
+   Clone this repository to your local machine:
+   ```bash
+   git clone https://github.com/LeonDeligny/LearnPDEs.git
+   cd LearnPDEs
+
+2. **Install dependencies**: 
+
+   Install the dependencies with:
+   ```bash
+   pip install -r requirements.txt
