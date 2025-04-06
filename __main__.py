@@ -68,7 +68,7 @@ def main() -> None:
         ]).unique(dim=0).sort(dim=0).values,
         forward=pinn.forward,
     )
-    
+
     # 3. Train model
     trainer = Trainer(
         model_params=pinn.parameters,

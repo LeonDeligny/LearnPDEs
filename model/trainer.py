@@ -14,8 +14,6 @@ from utils.plot import (
 from torch import Tensor
 from torch.optim import Adam
 from torch.nn import Parameter
-from model.pinn import PINN
-from model.loss import Loss
 from typing import (
     Dict,
     Union,
