@@ -26,8 +26,10 @@ The project progresses through increasingly complex problems:
    - Analytical solution: cosinus
    - ![Training Process](./assets/cosinus.gif)
 
-3. **PDEs** :x::
-   - Example: \( \nabla f = 0 \)
+3. **Laplace Equation** :x::
+   - PDE: >>> \nabla f = 0
+   - Physics
+   - Dirichlet boundary conditions: f(\cdot, 0) = 
 
 4. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.
