@@ -12,26 +12,33 @@ The goal of this project is to develop a framework using a deep learning model t
 
 The project progresses through increasingly complex problems:
 
-1. **Simple ODEs** :white_check_mark:: 
-   - ODE: f' = f, f(0) = 1
-   - Physics Loss: f' - f = 0
-   - Boundary Loss: f(0) = 1
-   - Analytical solution: exponential
+1. **Simple ODEs**:white_check_mark:: 
+   - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
+   - ODE to approximate: $f' = f, f(0) = 1$
+   - Physics Loss: $||f_{\theta}' - f_{\theta}||$
+   - Boundary Loss: $||f_{\theta}(0) - 1||$
+   - Analytical solution: $\exp: \mathbb{R} \rightarrow \mathbb{R}$
+
    ![Training Process](./assets/exponential.gif)
 
 2. **Higher-Order ODEs** :white_check_mark::
-   - ODE: f'' = f, f(0) = 1, f'(0) = 0
-   - Physics Loss: f'' - f = 0
-   - Boundary Loss: f(0) = 1, f'(0) = 0
-   - Analytical solution: cosinus
-   - ![Training Process](./assets/cosinus.gif)
+   - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
+   - ODE to approximate: $f'' = f, f(0) = 1, f'(0) = 0$
+   - Physics Loss: $||f_{\theta}'' - f_{\theta}||$
+   - Boundary Loss: $||f_{\theta}(0) - 1||, ||f'_{\theta}(0)||$
+   - Analytical solution: $\cos: \mathbb{R} \rightarrow \mathbb{R}$
 
-3. **Laplace Equation** :x::
-   - PDE: >>> \nabla f = 0
-   - Physics
-   - Dirichlet boundary conditions: f(\cdot, 0) = 
+   ![Training Process](./assets/cosinus.gif)
 
-4. **Navier-Stokes Equations** :x::
+1. **Laplace Equation** :x::
+   - PINN: $f_{\theta}: [0, 1]^2 \rightarrow \mathbb{R}$
+   - PDE to approximate: $\Delta f = 0$
+   - Dirichlet boundary conditions: $f(\cdot, 0) = 0, f(\cdot, 1) = \sin(\pi x), f(0, \cdot) = 0, f(1, \cdot) = 0$
+   - Physics loss: $||\Delta f_{\theta}||$
+   - Boundary loss: $||f_{\theta}(\cdot, 0)||, ||f_{\theta}(\cdot, 1) - \sin(\pi x)||, ||f_{\theta}(0, \cdot)||, ||f_{\theta}(1, \cdot)||$
+   - Analytical solution: $f(x, y) = \sin(\pi x) \sinh(\pi y)/\sinh(\pi)$
+
+2. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.
 
 ### **Installation**
