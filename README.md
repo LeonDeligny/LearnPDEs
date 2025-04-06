@@ -15,8 +15,8 @@ The project progresses through increasingly complex problems:
 1. **Simple ODEs**:white_check_mark:: 
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
    - ODE to approximate: $f' = f, f(0) = 1$
-   - Physics Loss: $||f_{\theta}' - f_{\theta}||$
-   - Boundary Loss: $||f_{\theta}(0) - 1||$
+   - Physics Loss: $\lVert f_{\theta}' - f_{\theta}\rVert$
+   - Boundary Loss: $\lVert f_{\theta}(0) - 1 \rVert$
    - Analytical solution: $\exp: \mathbb{R} \rightarrow \mathbb{R}$
 
    ![Training Process](./assets/exponential.gif)
@@ -24,8 +24,8 @@ The project progresses through increasingly complex problems:
 2. **Higher-Order ODEs** :white_check_mark::
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
    - ODE to approximate: $f'' = f, f(0) = 1, f'(0) = 0$
-   - Physics Loss: $||f_{\theta}'' - f_{\theta}||$
-   - Boundary Loss: $||f_{\theta}(0) - 1||, ||f'_{\theta}(0)||$
+   - Physics Loss: $\lVert f_{\theta}'' - f_{\theta} \rVert$
+   - Boundary Loss: $\lVert f_{\theta}(0) - 1 \rVert, \lVert f'_{\theta}(0) \rVert$
    - Analytical solution: $\cos: \mathbb{R} \rightarrow \mathbb{R}$
 
    ![Training Process](./assets/cosinus.gif)
@@ -34,8 +34,8 @@ The project progresses through increasingly complex problems:
    - PINN: $f_{\theta}: [0, 1]^2 \rightarrow \mathbb{R}$
    - PDE to approximate: $\Delta f = 0$
    - Dirichlet boundary conditions: $f(\cdot, 0) = 0, f(\cdot, 1) = \sin(\pi x), f(0, \cdot) = 0, f(1, \cdot) = 0$
-   - Physics loss: $||\Delta f_{\theta}||$
-   - Boundary loss: $||f_{\theta}(\cdot, 0)||, ||f_{\theta}(\cdot, 1) - \sin(\pi x)||, ||f_{\theta}(0, \cdot)||, ||f_{\theta}(1, \cdot)||$
+   - Physics loss: $\lVert \Delta f_{\theta} \rVert$
+   - Boundary loss: $\lVert f_{\theta}(\cdot, 0) \rVert, \lVert f_{\theta}(\cdot, 1) - \sin(\pi x) \rVert, \lVert f_{\theta}(0, \cdot) \rVert, \lVert f_{\theta}(1, \cdot) \rVert$
    - Analytical solution: $f(x, y) = \sin(\pi x) \sinh(\pi y)/\sinh(\pi)$
 
 2. **Navier-Stokes Equations** :x::
