@@ -36,9 +36,9 @@ The project progresses through increasingly complex problems:
 
 Ensure you have the following installed on your system:
 
-- ✔️ Python 3.8+  
-- ✔️ PyTorch (with MPS support for macOS or CUDA for NVIDIA GPUs)  
-- ✔️ Additional Python dependencies (install via `requirements.txt`)
+- ✔️ Python 3.8+
+- ✔️ PyTorch (with MPS support for macOS)  
+- ✔️ Additional Python dependencies
 
 1. **Clone the Repository**:
 

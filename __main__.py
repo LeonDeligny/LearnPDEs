@@ -24,6 +24,7 @@ import torch
 import numpy as np
 
 from model.pinn import PINN
+from model.loss import Loss
 from model.trainer import Trainer
 # from functools import partial
 
@@ -59,24 +60,29 @@ def main() -> None:
         encoding=identity,
     ).to(device)
 
-    # 2. Train model
-    trainer = Trainer(
-        pinn=pinn,
-        input_space=torch.cat([
+    # 2. Define loss function
+    loss = Loss(
+        x=torch.cat([
             linspace(-3, 3, 10_000).view(-1, 1),
             torch.tensor([0.0]).view(-1, 1),
         ]).unique(dim=0).sort(dim=0).values,
+        forward=pinn.forward,
+    )
+    
+    # 3. Train model
+    trainer = Trainer(
+        model_params=pinn.parameters,
+        loss=loss.exponential_loss,
         training_params={
             'learning_rate': 0.001,
             'nb_epochs': 10_000,
         },
-        loss_func_name='cosinus_loss',
-        analytical=np.cos,
+        analytical=np.exp,
     )
 
     trainer.train()
 
-    # 3. Evaluate model
+    # 4. Evaluate model
     # TODO: Evaluate model
     # Look at convergence of the loss function
     # Look at extremas of the analytical solution to create
