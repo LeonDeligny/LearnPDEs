@@ -40,10 +40,10 @@ from __init__ import device, device_type
 
 
 class PINN(Module):
-    """
+    '''
     Physics Informed Neural Network (PINN) class.
     This class implements a PINN for solving ODEs using a neural network.
-    """
+    '''
 
     # Constants
     device = device

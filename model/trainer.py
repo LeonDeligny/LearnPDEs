@@ -37,9 +37,9 @@ class Trainer:
         training_params: Dict,
         analytical: Union[Callable, None] = None,
     ) -> None:
-        """
+        '''
         Initialiyation of training process.
-        """
+        '''
 
         # Model parameters
         self.model_params = model_params
@@ -75,7 +75,7 @@ class Trainer:
             self.optimizer.step()
 
             if epoch % 100 == 0:
-                print(f"Epoch {epoch}, Loss: {loss.item()}")
+                print(f'Epoch {epoch}, Loss: {loss}')
 
                 # Back to CPU for plotting
                 save_plot(epoch, x.cpu(), y.cpu(), loss, self.analytical)

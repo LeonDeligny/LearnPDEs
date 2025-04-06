@@ -30,9 +30,13 @@ class Loss:
         x: Tensor,
         forward: Callable[[Tensor], Tensor],
     ) -> None:
+        '''
+        Initialization of the loss.
+        '''
 
         self.forward = forward
         self.x = x.requires_grad_().to(self.device)
+
         self.num_inputs: int = num_inputs(self.x)
 
     def process(
@@ -40,20 +44,26 @@ class Loss:
         physics_loss: float,
         boundary_loss: float
     ) -> float:
-        """
+        '''
         Process the losses to return a single loss value.
         TODO: Implement different methods to process the losses.
-        """
+        '''
         return physics_loss + (boundary_loss * self.num_inputs)
 
-    def exponential_loss(self) -> Tuple[float, Tensor]:
-        f = self.forward(self.x)
-        df_dx = grad(
+    def partial_derivative(self, f: Tensor) -> Tensor:
+        """
+        Compute the first derivative of 1D outputs with respect to the inputs.
+        """
+        return grad(
             outputs=f,
             inputs=self.x,
             grad_outputs=torch.ones_like(f),
             create_graph=True,
         )[0].view(-1, 1).to(self.device)
+
+    def exponential_loss(self) -> Tuple[float, Tensor]:
+        f = self.forward(self.x)
+        df_dx = self.partial_derivative(f)
 
         # f' = f
         physics_loss = self.mse_loss(f, df_dx)
@@ -68,19 +78,8 @@ class Loss:
 
     def cosinus_loss(self) -> Tuple[float, Tensor]:
         f = self.forward(self.x)
-        df_dx = grad(
-            outputs=f,
-            inputs=self.x,
-            grad_outputs=torch.ones_like(f),
-            create_graph=True,
-        )[0].view(-1, 1).to(self.device)
-
-        ddf_dxdx = grad(
-            outputs=df_dx,
-            inputs=self.x,
-            grad_outputs=torch.ones_like(f),
-            create_graph=True,
-        )[0].view(-1, 1).to(self.device)
+        df_dx = self.partial_derivative(f)
+        ddf_dxdx = self.partial_derivative(df_dx)
 
         # f' = f
         physics_loss = self.mse_loss(f, -ddf_dxdx)

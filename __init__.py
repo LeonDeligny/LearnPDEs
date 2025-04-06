@@ -13,13 +13,13 @@ from torch import device as TorchDevice
 # Detects if Metal Performance Shaders (MPS)
 # is available on your system.
 device_type: str = (
-    "mps"
+    'mps'
     if is_available()
-    else "cpu"
+    else 'cpu'
 )
 device = TorchDevice(device_type)
 
-print(f"Using device: {device_type}.")
+print(f'Using device: {device_type}.')
 
 # ======= Main =======
 

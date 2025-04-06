@@ -86,7 +86,7 @@ def main() -> None:
     # TODO: Evaluate model
     # Look at convergence of the loss function
     # Look at extremas of the analytical solution to create
-    # a "test" set
+    # a 'test' set
 
 
 if __name__ == '__main__':
