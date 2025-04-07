@@ -5,14 +5,13 @@
 The goal of this project is to develop a framework using a deep learning model to approximate solutions to Partial Differential Equations (PDEs) without requiring any input data. The Physics-Informed Neural Network (PINN) is trained solely on:
 
 - **Physics Loss**: Derived from the governing equations (e.g., PDE = 0).
-- 
 - **Boundary Conditions (BC) Loss**: Ensuring the solution satisfies the boundary constraints.
 
 ## **Objectives**
 
 The project progresses through increasingly complex problems:
 
-1. **Simple ODEs**:white_check_mark:: 
+1. **Simple ODEs** :white_check_mark:: 
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
    - ODE to approximate: $f' = f, f(0) = 1$
    - Physics Loss: $\lVert f_{\theta}' - f_{\theta}\rVert$
