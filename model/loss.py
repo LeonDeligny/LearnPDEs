@@ -73,13 +73,14 @@ class Loss:
 
         # x = 0
         self.null_mask = (self.x.squeeze() == 0).to(self.device)
-        
+
         # f(x = 0)
         self.forward_null = self.forward(self.x[self.null_mask])
         self.zero_tensor = (
             tensor([0.0]).expand_as(self.forward_null)
             .view(-1, 1).to(device)
         )
+
         self.one_tensor = (
             tensor([1.0]).expand_as(self.forward_null)
             .view(-1, 1).to(device)
