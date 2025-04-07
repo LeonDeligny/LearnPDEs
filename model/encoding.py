@@ -15,7 +15,6 @@ import torch
 from torch import Tensor
 from torch.nn import Parameter
 
-from utils.utility import num_inputs
 from torch import (
     cat,
     cos,
@@ -45,7 +44,7 @@ def fourier(x: Tensor, dim: int = 10, scale: float = 1.0) -> Tensor:
     In 1D, <f, x> = f * x is in the range [0, 1].
     '''
 
-    f = torch.randn(num_inputs(x), dim // 2).to(device)
+    f = torch.randn(x.numel(), dim // 2).to(device)
     kernel = scale * Parameter(f, requires_grad=True)
     x_proj = pi * x @ kernel
 

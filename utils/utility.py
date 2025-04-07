@@ -2,13 +2,9 @@
 Utility functions.
 '''
 
-from torch import Tensor
-
 # ======= Functions =======
 
-
-def num_inputs(x: Tensor) -> int:
-    return x.shape[1] if len(x.shape) > 1 else 1
+# TODO: Add some utility functions here
 
 # ======= Main =======
 

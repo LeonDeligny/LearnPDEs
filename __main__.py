@@ -52,6 +52,7 @@ def main() -> None:
     # 1. Construct model
     pinn = PINN(
         nn_params={
+            'input_dim': 1,
             'hidden_dim': 100,
             'num_hidden_layers': 4,
         },
@@ -62,9 +63,9 @@ def main() -> None:
 
     # 2. Define loss function
     loss = Loss(
-        x=torch.cat([
-            linspace(-3, 3, 10_000).view(-1, 1),
-            torch.tensor([0.0]).view(-1, 1),
+        input_space=torch.cat([
+            linspace(-3, 3, 10_000),
+            torch.tensor([0.0]),
         ]).unique(dim=0).sort(dim=0).values,
         forward=pinn.forward,
     )

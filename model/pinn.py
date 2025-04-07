@@ -59,6 +59,7 @@ class PINN(Module):
         super(PINN, self).__init__()
 
         # NN parameters
+        self.input_dim: int = nn_params.get('input_dim')
         self.hidden_dim: int = nn_params.get('hidden_dim')
         self.num_hidden_layers: int = nn_params.get('num_hidden_layers')
 
@@ -69,7 +70,7 @@ class PINN(Module):
         self.encoding_dim: int = (
             self.encoding.keywords.get('dim', 1)
             if isinstance(self.encoding, partial)
-            else 1
+            else self.input_dim
         )
 
         # Network parameters
