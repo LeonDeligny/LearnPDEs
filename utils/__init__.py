@@ -2,6 +2,7 @@
 Initialization file for the utils module.
 '''
 
+# ======= Constants =======
 
 # Global variables to store training data
 training_data = {

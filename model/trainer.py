@@ -9,6 +9,7 @@ import os
 from utils.plot import (
     save_plot,
     create_gif,
+    save_2d_plot,
 )
 
 from torch import Tensor
@@ -33,7 +34,7 @@ class Trainer:
     def __init__(
         self,
         model_params: Iterator[Parameter],
-        loss: Callable[[], Tuple[float, Tensor, Tensor]],
+        loss: Callable[[], Tuple[Tensor, Tensor, Tensor]],
         training_params: Dict,
         analytical: Union[Callable, None] = None,
     ) -> None:
@@ -69,7 +70,7 @@ class Trainer:
         for epoch in range(self.nb_epochs):
             self.optimizer.zero_grad()
 
-            loss, x, y = self.loss()
+            loss, x, f = self.loss()
 
             loss.backward(retain_graph=True)
             self.optimizer.step()
@@ -78,7 +79,12 @@ class Trainer:
                 print(f'Epoch {epoch}, Loss: {loss}')
 
                 # Back to CPU for plotting
-                save_plot(epoch, x.cpu(), y.cpu(), loss, self.analytical)
+                x_ = x.cpu()
+                f_ = f.cpu()
+                if x.ndimension() == 1:
+                    save_plot(epoch, x_, f_, loss, self.analytical)
+                else:
+                    save_2d_plot(epoch, x_, f_, loss, self.analytical)
 
         # Create GIF with saved plots
         create_gif()

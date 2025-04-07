@@ -13,7 +13,10 @@ from torch import Tensor
 from torch.nn import MSELoss
 from typing import Tuple, Callable
 
-from __init__ import device
+from __init__ import (
+    device,
+    pi_tensor,
+)
 
 # ======= Class =======
 
@@ -21,6 +24,8 @@ from __init__ import device
 class Loss:
     device = device
     mse_loss = MSELoss().to(device)
+    zero = tensor([0.0]).to(device)
+    one = tensor([1.0]).to(device)
 
     def __init__(
         self: 'Loss',
@@ -33,36 +38,41 @@ class Loss:
 
         self.forward = forward
         self.input_space = input_space
+        self.dim = self.input_space.ndimension()
 
         # Transform input space into
         # 1D: (x)
         # 2D: (x, y)
         self.generate_inputs()
 
+        # Generate boundaries of input space
+        # 1D: (x = 0)
+        # 2D: (x = 0, y), (y = 0, x) etc.
+        self.generate_boundaries()
+
     def process(
         self,
-        physics_loss: float,
-        boundary_loss: float
-    ) -> float:
+        physics_loss: Tensor,
+        boundary_loss: Tensor
+    ) -> Tensor:
         '''
         Process the losses to return a single loss value.
         TODO: Implement different methods to process the losses.
         '''
-        return physics_loss + boundary_loss
+        total_loss = physics_loss + boundary_loss
+        return total_loss
 
     def generate_inputs(self) -> None:
         '''
         Generate input points based on the input space.
-        :param input_space: Tensor defining the input domain.
-        :return: Tensor of input points.
         '''
-        if self.input_space.ndimension() == 1:
+        if self.dim == 1:
             self.x = (
                 self.input_space.requires_grad_()
                 .view(-1, 1).to(self.device)
             )
             self.y = None  # No y-dimension for 1D input
-        elif self.input_space.ndimension() == 2:
+        elif self.dim == 2:
             self.x, self.y = self.input_space[:, 0], self.input_space[:, 1]
             self.x = self.x.requires_grad_().view(-1, 1).to(self.device)
             self.y = self.y.requires_grad_().view(-1, 1).to(self.device)
@@ -71,20 +81,64 @@ class Loss:
             # TODO: Implement 3D input space
             raise ValueError("Input space must be 1D or 2D.")
 
-        # x = 0
-        self.null_mask = (self.x.squeeze() == 0).to(self.device)
+    def generate_boundaries(self) -> None:
+        if self.dim == 1:
+            # x = 0
+            self.zero_mask = (self.x.squeeze() == 0).to(self.device)
+            # x = 1
+            self.one_mask = (self.x.squeeze() == 1).to(self.device)
 
-        # f(x = 0)
-        self.forward_null = self.forward(self.x[self.null_mask])
-        self.zero_tensor = (
-            tensor([0.0]).expand_as(self.forward_null)
-            .view(-1, 1).to(device)
-        )
+            # f(x = 0)
+            self.forward_null = self.forward(self.x[self.zero_mask])
 
-        self.one_tensor = (
-            tensor([1.0]).expand_as(self.forward_null)
-            .view(-1, 1).to(device)
-        )
+            self.zero_tensor = (
+                self.zero.expand_as(self.forward_null)
+                .view(-1, 1).to(device)
+            )
+
+            self.one_tensor = (
+                self.one.expand_as(self.forward_null)
+                .view(-1, 1).to(device)
+            )
+
+        if self.input_space.ndimension() == 2:
+            # x = 0
+            self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
+            # y = 0
+            self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
+            # x = 1
+            self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
+            # y = 0
+            self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
+            # f(x = 0, y)
+            self.forward_x_null = self.forward(self.inputs[self.zero_x_mask])
+            # f(x = 1, y)
+            self.forward_x_one = self.forward(self.inputs[self.one_x_mask])
+            # f(x, y = 0)
+            self.forward_y_null = self.forward(self.inputs[self.zero_y_mask])
+
+            self.zero_x_tensor = (
+                self.zero.expand_as(self.forward_x_null)
+                .view(-1, 1).to(device)
+            )
+
+            self.zero_y_tensor = (
+                self.zero.expand_as(self.forward_y_null)
+                .view(-1, 1).to(device)
+            )
+
+            self.one_x_tensor = (
+                self.one.expand_as(self.forward_x_one)
+                .view(-1, 1).to(device)
+            )
+
+            self.sin = torch.sin(
+                pi_tensor * self.x[self.y.squeeze() == 1]
+            ).view(-1, 1)
+
+        elif self.input_space.ndimension() == 3:
+            # TODO: Implement 3D input space
+            raise ValueError("Input space must be 1D or 2D.")
 
     def partial_derivative(self, f: Tensor, x: Tensor) -> Tensor:
         """
@@ -97,7 +151,7 @@ class Loss:
             create_graph=True,
         )[0].view(-1, 1).to(self.device)
 
-    def laplace_loss(self) -> Tuple[float, Tensor, Tensor]:
+    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)
 
         # Compute the second derivatives
@@ -108,34 +162,32 @@ class Loss:
         ddf_dydy = self.partial_derivative(df_dy, self.y)
 
         # Delta f = 0
-        physics_loss = self.mse_loss(ddf_dxdx + ddf_dydy, self.zero_tensor)
+        physics_loss = self.mse_loss(ddf_dxdx, -ddf_dydy)
 
         # Dirichlet boundary conditions
         boundary_loss = (
             self.mse_loss(
                 # f(., 0) = 1
-                f[self.zero_tensor == self.y.squeeze()].view(-1, 1),
-                self.zero_tensor,
+                f[self.zero_y_mask].view(-1, 1),
+                self.zero_y_tensor,
             ) + self.mse_loss(
                 # f(., 1) = sin(pi x)
-                f[self.one_tensor == self.y.squeeze()].view(-1, 1),
-                torch.sin(
-                    torch.pi * self.x[self.y.squeeze() == 1]
-                ).view(-1, 1),
+                f[self.one_y_mask].view(-1, 1),
+                self.sin,
             ) + self.mse_loss(
                 # f(0, .) = 0
-                f[self.zero_tensor == self.x.squeeze()].view(-1, 1),
-                self.zero_tensor,
+                f[self.zero_x_mask].view(-1, 1),
+                self.zero_x_tensor,
             ) + self.mse_loss(
                 # f(1, .) = 0
-                f[self.one_tensor == self.x.squeeze()].view(-1, 1),
-                self.zero_tensor,
+                f[self.one_x_mask].view(-1, 1),
+                self.one_x_tensor,
             )
         )
 
         return self.process(physics_loss, boundary_loss), self.inputs, f
 
-    def exponential_loss(self) -> Tuple[float, Tensor, Tensor]:
+    def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
 
@@ -144,26 +196,26 @@ class Loss:
 
         # f(0) = 1
         boundary_loss = self.mse_loss(
-            f[self.null_mask].view(-1, 1),
+            f[self.zero_mask].view(-1, 1),
             self.one_tensor,
         )
 
         return self.process(physics_loss, boundary_loss), self.x, f
 
-    def cosinus_loss(self) -> Tuple[float, Tensor, Tensor]:
+    def cosinus_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
         ddf_dxdx = self.partial_derivative(df_dx, self.x)
 
-        # f' = f
+        # f'' = -f
         physics_loss = self.mse_loss(f, -ddf_dxdx)
 
         # f(0) = 1, f'(0) = 0
         boundary_loss = self.mse_loss(
-            f[self.null_mask].view(-1, 1),
+            f[self.zero_mask].view(-1, 1),
             self.one_tensor,
         ) + self.mse_loss(
-            ddf_dxdx[self.null_mask].view(-1, 1),
+            ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
 

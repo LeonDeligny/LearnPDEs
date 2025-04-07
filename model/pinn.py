@@ -79,10 +79,10 @@ class PINN(Module):
     def forward(self, x: Tensor) -> Tensor:
         '''
         forward = homeo o NN o fourier o homeo
-            - input_homeo: [n, 1] -> [n, 1]
-            - encoding: [n, 1] -> [n, m]
-            - NN: [n, m] -> [n, 1]
-            - output_homeo: [n, 1] -> [n, 1]
+            - input_homeo: [n, .] -> [n, .]
+            - encoding: [n, .] -> [n, . * m]
+            - NN: [n, . * m] -> [n, .]
+            - output_homeo: [n, .] -> [n, .]
         '''
         input_homeo = self.input_homeo(x)
         encoding = self.encoding(input_homeo)
