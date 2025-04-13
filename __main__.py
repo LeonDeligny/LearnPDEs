@@ -1,10 +1,6 @@
 '''
 This script is the entry point for training a
 Physics-Informed Neural Network (PINN) model.
-
-Author:
-    Leon Deligny
-
 '''
 
 # ======= Imports =======
