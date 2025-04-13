@@ -5,38 +5,17 @@ Physics-Informed Neural Network (PINN) model.
 Author:
     Leon Deligny
 
-Scenarios:
-    1. Exponential ODE, Analytical solution: f = exp
-        f' = f, f(0) = 1.
-
-        We only assume that:
-            - f > 0 on R
-            - f is increasing on R
-            - lim_x->-infty f(x) = 0
-            - lim_x->infty f(x) = infty
-            - f is C^infty on R
-
 '''
 
 # ======= Imports =======
 
-import torch
-# import numpy as np
-
-from torch import Tensor
 from model.pinn import PINN
 from model.loss import Loss
 from model.trainer import Trainer
-# from functools import partial
 
-# from torch import linspace
 from utils.decorators import time
-from utils.utility import laplace_function
-# from utils.homeomorphisms import input_homeo, output_homeo
-from model.encoding import (
-    identity,
-    # fourier,
-)
+from utils.utility import load_scenario
+
 from __init__ import device
 
 # ======= Main =======
@@ -51,35 +30,24 @@ def main() -> None:
         3. Evaluate model ?
     '''
 
-    # Set
-    num_inputs: int = 800
+    (
+        input_space, analytical,
+        input_homeo, output_homeo, encoding
+    ) = load_scenario('exponential', num_inputs=100)
 
-    # 1D Space (mimicking Real space)
-    # x = torch.cat([
-    #         linspace(-3, 3, num_inputs),
-    #         torch.tensor([0.0]),
-    # ])
-
-    # 2D Space [0, 1] x [0, 1]
-    xy = torch.cartesian_prod(
-        torch.linspace(0, 1, num_inputs),
-        torch.linspace(0, 1, num_inputs),
-    )
-
-    # Define the spaces to use
-    input_space: Tensor = xy
-    input_dim: int = input_space.ndimension()
+    # Dimension of input space
+    input_dim = input_space.ndimension()
 
     # 1. Construct model
     pinn = PINN(
         nn_params={
             'input_dim': input_dim,
-            'hidden_dim': 100,
+            'hidden_dim': 200,
             'num_hidden_layers': 4,
         },
-        input_homeo=identity,
-        output_homeo=identity,
-        encoding=identity,
+        input_homeo=input_homeo,
+        output_homeo=output_homeo,
+        encoding=encoding,
     ).to(device)
 
     # 2. Define loss function
@@ -91,12 +59,13 @@ def main() -> None:
     # 3. Train model
     trainer = Trainer(
         model_params=pinn.parameters,
-        loss=loss.laplace_loss,
+        loss=loss.exponential_loss,
         training_params={
             'learning_rate': 0.001,
             'nb_epochs': 10_000,
         },
-        analytical=laplace_function,
+        dim_plot=input_dim,
+        analytical=analytical,
     )
 
     trainer.train()

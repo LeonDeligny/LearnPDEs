@@ -27,13 +27,14 @@ The project progresses through increasingly complex problems:
    - Analytical solution: $\cos: \mathbb{R} \rightarrow \mathbb{R}$
    - ![Training Process](./assets/cosinus.gif)
 
-3. **Laplace Equation** :x::
+3. **Laplace Equation** :white_check_mark::
    - PINN: $f_{\theta}: [0, 1]^2 \rightarrow \mathbb{R}$
    - PDE to approximate: $\Delta f = 0$
    - Dirichlet boundary conditions: $f(\cdot, 0) = 0, f(\cdot, 1) = \sin(\pi x), f(0, \cdot) = 0, f(1, \cdot) = 0$
    - Physics loss: $\lVert \Delta f_{\theta} \rVert$
    - Boundary loss: $\lVert f_{\theta}(\cdot, 0) \rVert, \lVert f_{\theta}(\cdot, 1) - \sin(\pi x) \rVert, \lVert f_{\theta}(0, \cdot) \rVert, \lVert f_{\theta}(1, \cdot) \rVert$
    - Analytical solution: $f(x, y) = \sin(\pi x) \sinh(\pi y)/\sinh(\pi)$
+   - ![Training Process](./assets/laplace.gif)
 
 4. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.

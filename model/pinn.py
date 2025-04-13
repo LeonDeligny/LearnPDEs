@@ -15,6 +15,7 @@ Unique analytical solution is f = exp.
 
 # ======= Imports =======
 
+from model.encoding import complex_projection
 from torch.nn.init import (
     zeros_,
     xavier_uniform_,
@@ -22,6 +23,8 @@ from torch.nn.init import (
 
 from torch import Tensor
 from functools import partial
+from complexPyTorch.complexLayers import ComplexLinear
+
 from typing import (
     Dict,
     Union,
@@ -67,14 +70,20 @@ class PINN(Module):
         self.input_homeo = input_homeo
         self.output_homeo = output_homeo
         self.encoding = encoding
-        self.encoding_dim: int = (
-            self.encoding.keywords.get('dim', 1)
-            if isinstance(self.encoding, partial)
-            else self.input_dim
-        )
+        self.encoding_dim = self.get_encoding_dim()
 
         # Network parameters
-        self.network: Sequential = self.construct_nn().to(self.device)
+        self.network = self.construct_nn().to(self.device)
+
+    def get_encoding_dim(self) -> int:
+        if isinstance(self.encoding, partial):
+            return self.encoding.keywords.get('dim')
+        elif self.input_homeo == complex_projection:
+            print('Using encoding complex_projection')
+            return 2 * self.input_dim
+        else:
+            print('Using no encoding')
+            return self.input_dim
 
     def forward(self, x: Tensor) -> Tensor:
         '''
@@ -101,6 +110,30 @@ class PINN(Module):
             layers.append(Linear(self.hidden_dim, self.hidden_dim))
             layers.append(Tanh())
         layers.append(Linear(self.hidden_dim, output_dim))
+
+        network = Sequential(*layers)
+
+        # Log network structure
+        print(network)
+
+        # Initialize weights
+        self._initialize_weights()
+
+        return network
+
+    def construct_complexnn(self) -> Sequential:
+        # Define constants
+        output_dim = 1
+
+        # Construct NN
+        layers = [ComplexLinear(self.encoding_dim, self.hidden_dim), Tanh()]
+        for _ in range(self.num_hidden_layers - 1):
+            layers.append(ComplexLinear(
+                self.hidden_dim,
+                self.hidden_dim
+            ))
+            layers.append(Tanh())
+        layers.append(ComplexLinear(self.hidden_dim, output_dim))
 
         network = Sequential(*layers)
 

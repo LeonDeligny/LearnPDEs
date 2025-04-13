@@ -36,6 +36,7 @@ class Trainer:
         model_params: Iterator[Parameter],
         loss: Callable[[], Tuple[Tensor, Tensor, Tensor]],
         training_params: Dict,
+        dim_plot: int,
         analytical: Union[Callable, None] = None,
     ) -> None:
         '''
@@ -53,6 +54,7 @@ class Trainer:
         self.nb_epochs: int = training_params.get('nb_epochs')
 
         # Analytical solution if any
+        self.dim_plot = dim_plot
         self.analytical = analytical
 
         # Training parameters
@@ -81,7 +83,7 @@ class Trainer:
                 # Back to CPU for plotting
                 x_ = x.cpu()
                 f_ = f.cpu()
-                if x.ndimension() == 1:
+                if self.dim_plot == 1:
                     save_plot(epoch, x_, f_, loss, self.analytical)
                 else:
                     save_2d_plot(epoch, x_, f_, loss, self.analytical)

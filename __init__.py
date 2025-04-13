@@ -26,6 +26,7 @@ device_type: str = (
     if is_available()
     else 'cpu'
 )
+# device_type: str = 'cpu'
 device = TorchDevice(device_type)
 
 print(f'Using device: {device_type}.')

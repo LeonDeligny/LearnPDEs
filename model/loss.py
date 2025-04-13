@@ -8,6 +8,7 @@ import torch
 
 from torch import tensor
 from torch.autograd import grad
+from utils.utility import laplace_function
 
 from torch import Tensor
 from torch.nn import MSELoss
@@ -77,6 +78,7 @@ class Loss:
             self.x = self.x.requires_grad_().view(-1, 1).to(self.device)
             self.y = self.y.requires_grad_().view(-1, 1).to(self.device)
             self.inputs = torch.cat([self.x, self.y], dim=1).to(self.device)
+            self.laplace = laplace_function(self.x, self.y)
         else:
             # TODO: Implement 3D input space
             raise ValueError("Input space must be 1D or 2D.")
@@ -164,10 +166,15 @@ class Loss:
         # Delta f = 0
         physics_loss = self.mse_loss(ddf_dxdx, -ddf_dydy)
 
+        # physics_loss = self.mse_loss(
+        #     f,
+        #     self.laplace,
+        # )
+
         # Dirichlet boundary conditions
         boundary_loss = (
             self.mse_loss(
-                # f(., 0) = 1
+                # f(., 0) = 0
                 f[self.zero_y_mask].view(-1, 1),
                 self.zero_y_tensor,
             ) + self.mse_loss(
@@ -181,10 +188,9 @@ class Loss:
             ) + self.mse_loss(
                 # f(1, .) = 0
                 f[self.one_x_mask].view(-1, 1),
-                self.one_x_tensor,
+                self.zero_x_tensor,
             )
         )
-
         return self.process(physics_loss, boundary_loss), self.inputs, f
 
     def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor]:

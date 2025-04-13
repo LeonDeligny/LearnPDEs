@@ -31,9 +31,17 @@ def identity(x: Tensor) -> Tensor:
     return x
 
 
+def complex_projection(x: Tensor) -> Tensor:
+    '''encoding(x) = (x, ix)'''
+    return cat([x, 1j * x], dim=1)
+
+
+def real_projection(x: Tensor) -> Tensor:
+    return x.real + x.imag
+
+
 def polynomial(x: Tensor, dim: int) -> Tensor:
     '''encoding(x) = (x, x^2, x^3, ..., x^input_dim)'''
-
     return cat([x.view(-1, 1)**i for i in range(1, dim + 1)], dim=1)
 
 
