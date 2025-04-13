@@ -153,6 +153,14 @@ class Loss:
             create_graph=True,
         )[0].view(-1, 1).to(self.device)
 
+    def get_loss(self, scenario: str) -> Callable:
+        if scenario == 'exponential':
+            return self.exponential_loss
+        elif scenario == 'cosinus':
+            return self.cosinus_loss
+        elif scenario == 'laplace':
+            return self.laplace_loss
+
     def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)
 
@@ -165,11 +173,6 @@ class Loss:
 
         # Delta f = 0
         physics_loss = self.mse_loss(ddf_dxdx, -ddf_dydy)
-
-        # physics_loss = self.mse_loss(
-        #     f,
-        #     self.laplace,
-        # )
 
         # Dirichlet boundary conditions
         boundary_loss = (

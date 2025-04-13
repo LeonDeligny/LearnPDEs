@@ -30,10 +30,16 @@ def main() -> None:
         3. Evaluate model ?
     '''
 
+    # Scenario (for now) can be either:
+    # 'exponential'
+    # 'cosinus'
+    # 'laplace'
+    scenario = 'exponential'
+
     (
         input_space, analytical,
         input_homeo, output_homeo, encoding
-    ) = load_scenario('exponential', num_inputs=100)
+    ) = load_scenario(scenario, num_inputs=100)
 
     # Dimension of input space
     input_dim = input_space.ndimension()
@@ -59,7 +65,7 @@ def main() -> None:
     # 3. Train model
     trainer = Trainer(
         model_params=pinn.parameters,
-        loss=loss.exponential_loss,
+        loss=loss.get_loss(scenario),
         training_params={
             'learning_rate': 0.001,
             'nb_epochs': 10_000,
