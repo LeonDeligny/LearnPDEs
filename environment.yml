@@ -1,0 +1,29 @@
+# You can setup a conda environment by using:
+# conda env create -f environment.yml
+
+name: learnpdes
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - matplotlib
+  - torchvision
+  - torchaudio
+  - pydantic
+  - flask
+  - sympy
+  - requests
+  - plotly
+  - dash
+  - imageio
+  - networkx
+  - fsspec
+  - pillow
+  - typing-extensions
+  - pip:
+      - complexpytorch
+      - flake8
+      - narwhals

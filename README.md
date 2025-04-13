@@ -43,8 +43,8 @@ The project progresses through increasingly complex problems:
 
 Ensure you have the following installed on your system:
 
-- ✔️ Python 3.8+
-- ✔️ PyTorch (with MPS support for macOS)  
+- ✔️ Python 3.12
+- ✔️ MPS support for macOS
 - ✔️ Additional Python dependencies
 
 1. **Clone the Repository**:
@@ -58,4 +58,4 @@ Ensure you have the following installed on your system:
 
    Install the dependencies with:
    ```bash
-   pip install -r requirements.txt
+   conda env create -f environment.yml
