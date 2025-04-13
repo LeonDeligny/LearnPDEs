@@ -51,16 +51,13 @@ def ensure_directory_exists() -> Path:
 
 def save_plot(
     epoch: int,
-    x: Tensor,
-    f: Tensor,
+    x: ndarray,
+    f: ndarray,
     loss: float,
     analytical: Callable
 ) -> None:
     output_dir = ensure_directory_exists()
 
-    # Convert tensors to numpy arrays
-    x = x.detach().numpy()
-    f = f.detach().numpy()
     mask = x < 10
     x = x[mask]
     f = f[mask]
@@ -99,16 +96,12 @@ def create_plot(
 
 def save_2d_plot(
     epoch: int,
-    x: Tensor,
-    f: Tensor,
+    x: ndarray,
+    f: ndarray,
     loss: float,
     analytical: Callable
 ) -> None:
     output_dir = ensure_directory_exists()
-
-    # Convert tensors to numpy arrays
-    x = x.detach().numpy()
-    f = f.detach().numpy()
 
     # Reshape x and f for 2D plotting
     # Reshape x[:, 0] into a grid

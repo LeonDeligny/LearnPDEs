@@ -81,8 +81,8 @@ class Trainer:
                 print(f'Epoch {epoch}, Loss: {loss}')
 
                 # Back to CPU for plotting
-                x_ = x.cpu()
-                f_ = f.cpu()
+                x_ = x.cpu().detach().numpy()
+                f_ = f.cpu().detach().numpy()
                 if self.dim_plot == 1:
                     save_plot(epoch, x_, f_, loss, self.analytical)
                 else:
