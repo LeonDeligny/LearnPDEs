@@ -26,9 +26,7 @@ class TestModel(TestHelper):
         self.assert_equal_function(
             f=partial(polynomial, dim=1),
             input=self.default_input,
-            expected=torch.tensor(
-                [[-10.0], [-1.0], [0.0], [1.0], [10.0]]
-            )
+            expected=self.default_input,
         )
 
         self.assert_equal_function(
@@ -36,7 +34,7 @@ class TestModel(TestHelper):
             input=self.default_input,
             expected=torch.tensor(
                 [
-                    [-10.0, 100.0], 
+                    [-10.0, 100.0],
                     [-1.0, 1.0],
                     [0.0, 0.0],
                     [1.0, 1.0],
@@ -48,9 +46,7 @@ class TestModel(TestHelper):
         self.assert_equal_function(
             f=identity,
             input=self.default_input,
-            expected=torch.tensor(
-                [[-10.0], [-1.0], [0.0], [1.0], [10.0]]
-            )
+            expected=self.default_input,
         )
 
 
