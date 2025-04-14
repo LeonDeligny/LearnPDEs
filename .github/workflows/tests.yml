@@ -29,9 +29,9 @@ jobs:
       - name: Run tests
         run: |
           python -m unittest discover -s . -p "*.py"
-        working-directory: ./LearnPDEs
+        working-directory: /LearnPDEs
 
       - name: Run main script
         run: |
           python __main__.py
-        working-directory: ./LearnPDEs
+        working-directory: /LearnPDEs
