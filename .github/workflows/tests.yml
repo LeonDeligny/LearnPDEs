@@ -28,7 +28,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m unittest discover -s learnpdes/model/tests -p "test_*.py"
+          python -m unittest discover -s learnpdes/model/tests -p "*.py"
 
       - name: Run main script
         run: |
