@@ -6,15 +6,13 @@ Plot functions.
 
 import os
 import imageio
-
 import matplotlib.pyplot as plt
 
-from torch import Tensor
 from pathlib import Path
-from typing import Callable
 from numpy import ndarray
-from matplotlib.figure import Figure
+from typing import Callable
 from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 # ======= Functions =======
 

@@ -5,14 +5,14 @@ Physics-Informed Neural Network (PINN) model.
 
 # ======= Imports =======
 
-from model.pinn import PINN
-from model.loss import Loss
-from model.trainer import Trainer
+from learnpdes.model.pinn import PINN
+from learnpdes.model.loss import Loss
+from learnpdes.model.trainer import Trainer
 
-from utils.decorators import time
-from utils.utility import load_scenario
+from learnpdes.utils.decorators import time
+from learnpdes.utils.utility import load_scenario
 
-from __init__ import device
+from learnpdes import device
 
 # ======= Main =======
 

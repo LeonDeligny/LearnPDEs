@@ -22,7 +22,7 @@ from torch import (
 )
 
 from numpy import pi
-from __init__ import device
+from learnpdes import device
 
 # ======= Functions =======
 

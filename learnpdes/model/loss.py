@@ -8,13 +8,13 @@ import torch
 
 from torch import tensor
 from torch.autograd import grad
-from utils.utility import laplace_function
+from learnpdes.utils.utility import laplace_function
 
 from torch import Tensor
 from torch.nn import MSELoss
 from typing import Tuple, Callable
 
-from __init__ import (
+from learnpdes import (
     device,
     pi_tensor,
 )

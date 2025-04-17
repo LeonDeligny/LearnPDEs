@@ -5,16 +5,16 @@ Test encodings.
 # ======= Imports =======
 
 import torch
-import unittest
 
-from utils.decorators import time
-from model.encoding import (
+from learnpdes.utils.decorators import time
+from learnpdes.model.encoding import (
     identity,
     polynomial,
 )
 
+from unittest import main
 from functools import partial
-from utils.testhelper import TestHelper
+from learnpdes.utils.testhelper import TestHelper
 
 # ======= Functions =======
 
@@ -53,4 +53,4 @@ class TestModel(TestHelper):
 # ======= Main =======
 
 if __name__ == '__main__':
-    unittest.main(verbosity=0)
+    main(verbosity=0)

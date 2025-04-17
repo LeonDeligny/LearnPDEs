@@ -6,7 +6,7 @@ Training configuration of the PINN model.
 
 import os
 
-from utils.plot import (
+from learnpdes.utils.plot import (
     save_plot,
     create_gif,
     save_2d_plot,
@@ -23,7 +23,7 @@ from typing import (
     Iterator,
 )
 
-from __init__ import device
+from learnpdes import device
 
 # ======= Class =======
 

@@ -9,7 +9,7 @@ import numpy as np
 
 from torch import linspace
 from pydantic import validate_call
-from model.encoding import (
+from learnpdes.model.encoding import (
     identity,
     # complex_projection,
     # real_projection,
@@ -23,7 +23,7 @@ from typing import (
     Callable,
 )
 
-from __init__ import pi_tensor
+from learnpdes import pi_tensor
 
 # ======= Functions =======
 

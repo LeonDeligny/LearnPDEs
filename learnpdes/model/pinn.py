@@ -15,7 +15,7 @@ Unique analytical solution is f = exp.
 
 # ======= Imports =======
 
-from model.encoding import complex_projection
+from learnpdes.model.encoding import complex_projection
 from torch.nn.init import (
     zeros_,
     xavier_uniform_,
@@ -37,7 +37,7 @@ from torch.nn import (
     Sequential,
 )
 
-from __init__ import device, device_type
+from learnpdes import device, device_type
 
 # ======= Class =======
 
