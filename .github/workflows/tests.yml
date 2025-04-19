@@ -13,22 +13,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.11.11
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.11.11
 
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
+          miniforge-version: latest
           python-version: 3.12
           environment-file: environment.yml
+          use-mamba: false
           activate-environment: learnpdes
-
-      - name: Update & Configure environment
-        run: conda env update -n learnpdes -f environment.yml
-        if: steps.cache.outputs.cache-hit != 'true'
 
       - name: Run tests
         run: |
@@ -37,3 +40,12 @@ jobs:
       - name: Run main script
         run: |
           python learnpdes/main.py
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
