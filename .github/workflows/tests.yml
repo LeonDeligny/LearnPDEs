@@ -33,16 +33,16 @@ jobs:
           use-mamba: false
           activate-environment: learnpdes
 
-      - name: Install PyTorch
+      - name: Activate environment and run tests
+        shell: bash -l {0}
         run: |
-          pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-
-      - name: Run tests
-        run: |
+          source activate learnpdes
           python -m unittest discover -s learnpdes/model/tests -p "*.py"
 
       - name: Run main script
+        shell: bash -l {0}
         run: |
+          source activate learnpdes
           python learnpdes/main.py
 
       - name: Upload coverage to Codecov

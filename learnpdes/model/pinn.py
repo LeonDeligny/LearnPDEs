@@ -37,7 +37,10 @@ from torch.nn import (
     Sequential,
 )
 
-from learnpdes import device, device_type
+from learnpdes import (
+    device,
+    device_type,
+)
 
 # ======= Class =======
 
