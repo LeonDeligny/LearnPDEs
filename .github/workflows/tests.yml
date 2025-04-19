@@ -18,31 +18,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python 3.11.11
+      - name: Set up Python 3.12
         uses: actions/setup-python@v3
         with:
-          python-version: 3.11.11
+          python-version: 3.12
 
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
+          miniforge-variant: Miniforge3
           auto-update-conda: true
           miniforge-version: latest
-          python-version: 3.12
           environment-file: environment.yml
           use-mamba: false
           activate-environment: learnpdes
 
-      - name: Activate environment and run tests
+      - name: Run tests
         shell: bash -l {0}
         run: |
-          source activate learnpdes
+          source ~/.bashrc
           python -m unittest discover -s learnpdes/model/tests -p "*.py"
 
       - name: Run main script
         shell: bash -l {0}
         run: |
-          source activate learnpdes
+          source ~/.bashrc
           python learnpdes/main.py
 
       - name: Upload coverage to Codecov
