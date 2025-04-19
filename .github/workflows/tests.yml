@@ -26,6 +26,10 @@ jobs:
           environment-file: environment.yml
           activate-environment: learnpdes
 
+      - name: Update & Configure environment
+        run: conda env update -n learnpdes -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+
       - name: Run tests
         run: |
           python -m unittest discover -s learnpdes/model/tests -p "*.py"
