@@ -17,11 +17,8 @@ jobs:
       max-parallel: 5
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.12
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Miniconda
         uses: conda-incubator/setup-miniconda@v3
@@ -33,14 +30,21 @@ jobs:
           use-mamba: false
           activate-environment: learnpdes
 
+      - name: Set PYTHONPATH
+        shell: bash -l {0}
+        run: |
+          export PYTHONPATH=${{ github.workspace }}
+
       - name: Run tests
         shell: bash -l {0}
         run: |
+          export PYTHONPATH=${{ github.workspace }}
           python -m unittest discover -s learnpdes/model/tests -p "*.py"
 
       - name: Run main script
         shell: bash -l {0}
         run: |
+          export PYTHONPATH=${{ github.workspace }}
           python learnpdes/main.py
 
       - name: Upload coverage to Codecov
