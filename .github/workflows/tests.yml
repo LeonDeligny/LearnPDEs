@@ -30,21 +30,18 @@ jobs:
           use-mamba: false
           activate-environment: learnpdes
 
-      - name: Set PYTHONPATH
+      - name: Install learnpdes with pip
         shell: bash -l {0}
-        run: |
-          export PYTHONPATH=${{ github.workspace }}
+        run: pip install -e .
 
       - name: Run tests
         shell: bash -l {0}
         run: |
-          export PYTHONPATH=${{ github.workspace }}
           python -m unittest discover -s learnpdes/model/tests -p "*.py"
 
       - name: Run main script
         shell: bash -l {0}
         run: |
-          export PYTHONPATH=${{ github.workspace }}
           python learnpdes/main.py
 
       - name: Upload coverage to Codecov
