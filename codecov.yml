@@ -6,10 +6,9 @@ coverage:
         threshold: 0%
         base: auto 
         flags: 
-          - unittests
-          - integrationtests
+          - tests
         paths: 
-          - "ceasiompy"
+          - "learnpdes"
         branches: 
           - main
         if_ci_failed: error

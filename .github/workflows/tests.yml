@@ -36,19 +36,18 @@ jobs:
         shell: bash -l {0}
         run: |
           coverage run -m unittest discover -s learnpdes/model/tests -p "*.py"
-          coverage xml
 
       - name: Run test scenarios
         shell: bash -l {0}
         run: |
-          coverage run -m unittest discover -s tests -p "test*.py"
+          coverage run --append -m unittest discover -s tests -p "test*.py"
           coverage xml
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.1.0
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
-          flags: unittests
+          flags: tests
           fail_ci_if_error: true
           verbose: true

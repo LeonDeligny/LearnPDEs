@@ -11,7 +11,10 @@ from torch.autograd import grad
 
 from torch import Tensor
 from torch.nn import MSELoss
-from typing import Tuple, Callable
+from typing import (
+    Tuple,
+    Callable,
+)
 
 from learnpdes import (
     device,
@@ -77,7 +80,7 @@ class Loss:
             if self.y is not None
             else None
         )
-       # self.z = self.setup_space(index=2)
+        # self.z = self.setup_space(index=2)
 
     def setup_space(self, index: int) -> Tensor:
         return (

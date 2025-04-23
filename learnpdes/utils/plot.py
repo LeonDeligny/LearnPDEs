@@ -8,7 +8,6 @@ import os
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
 
-from torch import Tensor
 from pathlib import Path
 from numpy import ndarray
 from typing import Callable
