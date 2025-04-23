@@ -17,26 +17,26 @@ The project progresses through increasingly complex problems:
    - Physics Loss: $\lVert f_{\theta}' - f_{\theta}\rVert$
    - Boundary Loss: $\lVert f_{\theta}(0) - 1 \rVert$
    - Analytical solution: $\exp: \mathbb{R} \rightarrow \mathbb{R}$
-   - ![Training Process](./assets/exponential.gif)
+  ![Training Process](./assets/exponential.gif)
 
-2. **Higher-Order ODEs** :white_check_mark::
+1. **Higher-Order ODEs** :white_check_mark::
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
    - ODE to approximate: $f'' = f, f(0) = 1, f'(0) = 0$
    - Physics Loss: $\lVert f_{\theta}'' - f_{\theta} \rVert$
    - Boundary Loss: $\lVert f_{\theta}(0) - 1 \rVert, \lVert f'_{\theta}(0) \rVert$
    - Analytical solution: $\cos: \mathbb{R} \rightarrow \mathbb{R}$
-   - ![Training Process](./assets/cosinus.gif)
+  ![Training Process](./assets/cosinus.gif)
 
-3. **Laplace Equation** :white_check_mark::
+1. **Laplace Equation** :white_check_mark::
    - PINN: $f_{\theta}: [0, 1]^2 \rightarrow \mathbb{R}$
    - PDE to approximate: $\Delta f = 0$
    - Dirichlet boundary conditions: $f(\cdot, 0) = 0, f(\cdot, 1) = \sin(\pi x), f(0, \cdot) = 0, f(1, \cdot) = 0$
    - Physics loss: $\lVert \Delta f_{\theta} \rVert$
    - Boundary loss: $\lVert f_{\theta}(\cdot, 0) \rVert, \lVert f_{\theta}(\cdot, 1) - \sin(\pi x) \rVert, \lVert f_{\theta}(0, \cdot) \rVert, \lVert f_{\theta}(1, \cdot) \rVert$
    - Analytical solution: $f(x, y) = \sin(\pi x) \sinh(\pi y)/\sinh(\pi)$
-   - ![Training Process](./assets/laplace.gif)
+  ![Training Process](./assets/laplace.gif)
 
-4. **Navier-Stokes Equations** :x::
+1. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.
 
 ### **Installation**

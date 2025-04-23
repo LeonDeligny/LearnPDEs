@@ -23,7 +23,7 @@ from torch.nn.init import (
 
 from torch import Tensor
 from functools import partial
-from complexPyTorch.complexLayers import ComplexLinear
+# from complexPyTorch.complexLayers import ComplexLinear
 
 from typing import (
     Dict,
@@ -31,7 +31,6 @@ from typing import (
     Callable,
 )
 from torch.nn import (
-    Tanh,
     Linear,
     Module,
     Sequential,
@@ -109,35 +108,14 @@ class PINN(Module):
         output_dim = 1
 
         # Construct NN
-        layers = [Linear(self.encoding_dim, self.hidden_dim), self.activation()]
+        layers = [
+            Linear(self.encoding_dim, self.hidden_dim),
+            self.activation(),
+        ]
         for _ in range(self.num_hidden_layers - 1):
             layers.append(Linear(self.hidden_dim, self.hidden_dim))
             layers.append(self.activation())
         layers.append(Linear(self.hidden_dim, output_dim))
-
-        network = Sequential(*layers)
-
-        # Log network structure
-        print(network)
-
-        # Initialize weights
-        self._initialize_weights()
-
-        return network
-
-    def construct_complexnn(self) -> Sequential:
-        # Define constants
-        output_dim = 1
-
-        # Construct NN
-        layers = [ComplexLinear(self.encoding_dim, self.hidden_dim), self.activation()]
-        for _ in range(self.num_hidden_layers - 1):
-            layers.append(ComplexLinear(
-                self.hidden_dim,
-                self.hidden_dim
-            ))
-            layers.append(self.activation())
-        layers.append(ComplexLinear(self.hidden_dim, output_dim))
 
         network = Sequential(*layers)
 

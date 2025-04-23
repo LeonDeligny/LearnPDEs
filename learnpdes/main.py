@@ -17,6 +17,7 @@ from learnpdes import device
 
 # ======= Main =======
 
+
 @time
 def main() -> None:
     '''
