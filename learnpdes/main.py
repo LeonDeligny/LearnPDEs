@@ -30,7 +30,7 @@ def main(
         3. Evaluate model ?
     '''
 
-    # Scenario (for now) can be either:
+    # Scenarios can be either:
     # 'exponential'
     # 'cosinus'
     # 'laplace'
