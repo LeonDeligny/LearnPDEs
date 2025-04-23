@@ -51,7 +51,7 @@ class Trainer:
 
         # Training parameters
         self.learning_rate: float = training_params.get('learning_rate')
-        self.nb_epochs: int = training_params.get('nb_epochs')
+        self.nb_epochs: int = training_params.get('epochs')
 
         # Analytical solution if any
         self.dim_plot = dim_plot

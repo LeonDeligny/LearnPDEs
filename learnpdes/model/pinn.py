@@ -128,6 +128,11 @@ class PINN(Module):
         return network
 
     def _initialize_weights(self):
+        '''
+        Fill the input Tensor with values
+        using a Xavier uniform distribution.
+        Biais initialized to 0.
+        '''
         for m in self.modules():
             if isinstance(m, Linear):
                 xavier_uniform_(m.weight)

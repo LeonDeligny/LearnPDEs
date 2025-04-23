@@ -17,6 +17,7 @@ from learnpdes.model.encoding import (
 )
 
 from torch import Tensor
+from numpy import ndarray
 from torch.nn import Module
 from typing import (
     Tuple,
@@ -24,7 +25,11 @@ from typing import (
     Callable,
 )
 
-from learnpdes import pi_tensor
+from numpy import (
+    pi,
+    sin,
+    sinh,
+)
 
 # ======= Class =======
 
@@ -36,12 +41,11 @@ class Identity(Module):
 # ======= Functions =======
 
 
-def laplace_function(x: Tensor, y: Tensor) -> Tensor:
+def laplace_function(x: ndarray, y: ndarray) -> ndarray:
     '''
     Laplace function.
     '''
-    pi: Tensor = pi_tensor
-    return torch.sin(pi * x) * torch.sinh(pi * y) / torch.sinh(pi)
+    return sin(pi * x) * sinh(pi * y) / sinh(pi)
 
 
 def load_real_space(num_inputs: int) -> Tensor:

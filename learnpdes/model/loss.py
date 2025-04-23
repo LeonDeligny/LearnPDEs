@@ -39,6 +39,7 @@ class Loss:
         self.forward = forward
         self.input_space = input_space
         self.dim = self.input_space.ndimension()
+        print(f'Input space is of dimension {self.dim}.')
 
         # Transform input space into
         # 1D: (x)
@@ -67,17 +68,20 @@ class Loss:
         Generate input points based on the input space.
         '''
         # Always maximum 3d physical space
-        self.inputs = (
-            self.input_space.requires_grad_()
-            .view(-1, 1).to(self.device)
-        )
+        if self.dim == 1:
+            self.input_space = self.input_space.unsqueeze(1)
         self.x = self.setup_space(index=0)
         self.y = self.setup_space(index=1)
-        self.z = self.setup_space(index=2)
+        self.inputs = (
+            torch.cat([self.x, self.y], dim=1)
+            if self.y is not None
+            else None
+        )
+       # self.z = self.setup_space(index=2)
 
     def setup_space(self, index: int) -> Tensor:
         return (
-            self.inputs[:, index].requires_grad_()
+            self.input_space[:, index].requires_grad_()
                 .view(-1, 1).to(self.device)
             if self.dim > index
             else None
@@ -103,7 +107,7 @@ class Loss:
                 .view(-1, 1).to(device)
             )
 
-        if self.input_space.ndimension() == 2:
+        if self.dim == 2:
             # x = 0
             self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
             # y = 0

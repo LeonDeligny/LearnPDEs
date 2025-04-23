@@ -38,10 +38,11 @@ jobs:
           coverage run -m unittest discover -s learnpdes/model/tests -p "*.py"
           coverage xml
 
-      - name: Run main script
+      - name: Run test scenarios
         shell: bash -l {0}
         run: |
-          python learnpdes/main.py
+          coverage run -m unittest discover -s tests -p "test*.py"
+          coverage xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3.1.0

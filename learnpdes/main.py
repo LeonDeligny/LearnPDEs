@@ -19,7 +19,10 @@ from learnpdes import device
 
 
 @time
-def main() -> None:
+def main(
+    scenario: str,
+    epochs: int = 10_000,
+) -> None:
     '''
     Description of workflow.
         1. Construct model.
@@ -31,7 +34,6 @@ def main() -> None:
     # 'exponential'
     # 'cosinus'
     # 'laplace'
-    scenario = 'exponential'
 
     (
         input_space, analytical,
@@ -68,7 +70,7 @@ def main() -> None:
         loss=loss.get_loss(scenario),
         training_params={
             'learning_rate': 0.001,
-            'nb_epochs': 10_000,
+            'epochs': epochs,
         },
         dim_plot=input_dim,
         analytical=analytical,
@@ -84,4 +86,4 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    main(scenario='exponential')
