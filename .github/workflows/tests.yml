@@ -35,12 +35,12 @@ jobs:
       - name: Run tests
         shell: bash -l {0}
         run: |
-          coverage run -m unittest discover -s learnpdes/model/tests -p "*.py"
+          coverage run --source=learnpdes -m unittest discover -s learnpdes/model/tests -p "*.py"
 
       - name: Run test scenarios
         shell: bash -l {0}
         run: |
-          coverage run --append -m unittest discover -s tests -p "test*.py"
+          coverage run --append --source=learnpdes -m unittest discover -s tests -p "test*.py"
           coverage xml
 
       - name: Upload coverage reports to Codecov
