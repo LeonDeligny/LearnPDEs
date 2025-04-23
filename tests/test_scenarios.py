@@ -20,7 +20,8 @@ from unittest import (
 
 
 class TestScenarios(TestCase):
-    def setUp(cls) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         cls.epochs: int = 10
 
     def test_first_scenario(self) -> None:
