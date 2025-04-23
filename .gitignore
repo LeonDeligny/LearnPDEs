@@ -1,4 +1,12 @@
 gifs/
 .DS_Store
+
 __pycache__/
+.pytest_cache/
 *.pyc
+
+.coverage
+.coverage.*
+coverage.xml
+
+learnpdes.egg-info/

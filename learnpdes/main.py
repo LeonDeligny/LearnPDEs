@@ -5,17 +5,17 @@ Physics-Informed Neural Network (PINN) model.
 
 # ======= Imports =======
 
+from learnpdes.utils.decorators import time
+from learnpdes.utils.utility import load_scenario
+
+from torch.nn import Tanh
 from learnpdes.model.pinn import PINN
 from learnpdes.model.loss import Loss
 from learnpdes.model.trainer import Trainer
 
-from learnpdes.utils.decorators import time
-from learnpdes.utils.utility import load_scenario
-
 from learnpdes import device
 
 # ======= Main =======
-
 
 @time
 def main() -> None:
@@ -41,11 +41,14 @@ def main() -> None:
     input_dim = input_space.ndimension()
 
     # 1. Construct model
+    # TODO: Make the model converge without using
+    # an activation function that is a hint for the solution
     pinn = PINN(
         nn_params={
             'input_dim': input_dim,
             'hidden_dim': 200,
             'num_hidden_layers': 4,
+            'activation': Tanh,
         },
         input_homeo=input_homeo,
         output_homeo=output_homeo,

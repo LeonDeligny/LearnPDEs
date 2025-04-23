@@ -8,7 +8,6 @@ import torch
 
 from torch import tensor
 from torch.autograd import grad
-from learnpdes.utils.utility import laplace_function
 
 from torch import Tensor
 from torch.nn import MSELoss
@@ -67,21 +66,22 @@ class Loss:
         '''
         Generate input points based on the input space.
         '''
-        if self.dim == 1:
-            self.x = (
-                self.input_space.requires_grad_()
+        # Always maximum 3d physical space
+        self.inputs = (
+            self.input_space.requires_grad_()
+            .view(-1, 1).to(self.device)
+        )
+        self.x = self.setup_space(index=0)
+        self.y = self.setup_space(index=1)
+        self.z = self.setup_space(index=2)
+
+    def setup_space(self, index: int) -> Tensor:
+        return (
+            self.inputs[:, index].requires_grad_()
                 .view(-1, 1).to(self.device)
-            )
-            self.y = None  # No y-dimension for 1D input
-        elif self.dim == 2:
-            self.x, self.y = self.input_space[:, 0], self.input_space[:, 1]
-            self.x = self.x.requires_grad_().view(-1, 1).to(self.device)
-            self.y = self.y.requires_grad_().view(-1, 1).to(self.device)
-            self.inputs = torch.cat([self.x, self.y], dim=1).to(self.device)
-            self.laplace = laplace_function(self.x, self.y)
-        else:
-            # TODO: Implement 3D input space
-            raise ValueError("Input space must be 1D or 2D.")
+            if self.dim > index
+            else None
+        )
 
     def generate_boundaries(self) -> None:
         if self.dim == 1:
@@ -160,6 +160,8 @@ class Loss:
             return self.cosinus_loss
         elif scenario == 'laplace':
             return self.laplace_loss
+        else:
+            raise ValueError('Scenario not found.')
 
     def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)

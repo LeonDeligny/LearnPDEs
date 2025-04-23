@@ -68,6 +68,7 @@ class PINN(Module):
         self.input_dim: int = nn_params.get('input_dim')
         self.hidden_dim: int = nn_params.get('hidden_dim')
         self.num_hidden_layers: int = nn_params.get('num_hidden_layers')
+        self.activation: Module = nn_params.get('activation')
 
         # Homeomorphisms and encoding
         self.input_homeo = input_homeo
@@ -108,10 +109,10 @@ class PINN(Module):
         output_dim = 1
 
         # Construct NN
-        layers = [Linear(self.encoding_dim, self.hidden_dim), Tanh()]
+        layers = [Linear(self.encoding_dim, self.hidden_dim), self.activation()]
         for _ in range(self.num_hidden_layers - 1):
             layers.append(Linear(self.hidden_dim, self.hidden_dim))
-            layers.append(Tanh())
+            layers.append(self.activation())
         layers.append(Linear(self.hidden_dim, output_dim))
 
         network = Sequential(*layers)
@@ -129,13 +130,13 @@ class PINN(Module):
         output_dim = 1
 
         # Construct NN
-        layers = [ComplexLinear(self.encoding_dim, self.hidden_dim), Tanh()]
+        layers = [ComplexLinear(self.encoding_dim, self.hidden_dim), self.activation()]
         for _ in range(self.num_hidden_layers - 1):
             layers.append(ComplexLinear(
                 self.hidden_dim,
                 self.hidden_dim
             ))
-            layers.append(Tanh())
+            layers.append(self.activation())
         layers.append(ComplexLinear(self.hidden_dim, output_dim))
 
         network = Sequential(*layers)

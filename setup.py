@@ -13,9 +13,8 @@ REQUIRES_PYTHON = ">=3.12.0"
 README = "README.md"
 PACKAGE_DIR = "."
 
-here = Path(__file__).parent
-
-with open(Path(here, README), "r") as fp:
+# Load description from README.md
+with open(Path(Path(__file__).parent, README), "r") as fp:
     long_description = fp.read()
 
 setuptools.setup(
