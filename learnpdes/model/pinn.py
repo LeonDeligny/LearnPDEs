@@ -66,9 +66,9 @@ class PINN(Module):
         # NN parameters
         self.input_dim: int = nn_params.get('input_dim')
         self.hidden_dim: int = nn_params.get('hidden_dim')
+        self.output_dim: int = nn_params.get('output_dim')
         self.num_hidden_layers: int = nn_params.get('num_hidden_layers')
         self.activation: Module = nn_params.get('activation')
-
         # Homeomorphisms and encoding
         self.input_homeo = input_homeo
         self.output_homeo = output_homeo
@@ -104,9 +104,6 @@ class PINN(Module):
         return output.to(self.device)
 
     def construct_nn(self) -> Sequential:
-        # Define constants
-        output_dim = 1
-
         # Construct NN
         layers = [
             Linear(self.encoding_dim, self.hidden_dim),
@@ -115,7 +112,7 @@ class PINN(Module):
         for _ in range(self.num_hidden_layers - 1):
             layers.append(Linear(self.hidden_dim, self.hidden_dim))
             layers.append(self.activation())
-        layers.append(Linear(self.hidden_dim, output_dim))
+        layers.append(Linear(self.hidden_dim, self.output_dim))
 
         network = Sequential(*layers)
 

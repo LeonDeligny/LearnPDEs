@@ -34,6 +34,7 @@ def main(
     # 'exponential'
     # 'cosinus'
     # 'laplace'
+    # 'potential flow'
 
     (
         input_space, analytical,
@@ -50,6 +51,7 @@ def main(
         nn_params={
             'input_dim': input_dim,
             'hidden_dim': 200,
+            'output_dim': 2,
             'num_hidden_layers': 4,
             'activation': Tanh,
         },

@@ -10,6 +10,7 @@ from torch import tensor
 from torch.autograd import grad
 
 from torch import Tensor
+from ambiance import Atmosphere
 from torch.nn import MSELoss
 from typing import (
     Tuple,
@@ -29,6 +30,9 @@ class Loss:
     mse_loss = MSELoss().to(device)
     zero = tensor([0.0]).to(device)
     one = tensor([1.0]).to(device)
+    # Density of water at alt = 0.0
+    atm = Atmosphere(0.0)
+    rho = atm.density
 
     def __init__(
         self: 'Loss',
@@ -51,7 +55,7 @@ class Loss:
 
         # Generate boundaries of input space
         # 1D: (x = 0)
-        # 2D: (x = 0, y), (y = 0, x) etc.
+        # 2D: (x = 0, y), (x = 1, y), (x, y = 0) and (x, y = 1)
         self.generate_boundaries()
 
     def process(
@@ -90,62 +94,66 @@ class Loss:
             else None
         )
 
+    def generate_1d_boundaries(self) -> None:
+        # x = 0
+        self.zero_mask = (self.x.squeeze() == 0).to(self.device)
+
+        # f(x = 0)
+        self.forward_null = self.forward(self.x[self.zero_mask])
+
+        self.zero_tensor = (
+            self.zero.expand_as(self.forward_null)
+            .view(-1, 1).to(device)
+        )
+
+        self.one_tensor = (
+            self.one.expand_as(self.forward_null)
+            .view(-1, 1).to(device)
+        )
+
+    def generate_2d_boundaries(self) -> None:
+        # x = 0
+        self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
+        # y = 0
+        self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
+        # x = 1
+        self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
+        # y = 0
+        self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
+        # f(x = 0, y)
+        self.forward_x_null = self.forward(self.inputs[self.zero_x_mask])
+        # f(x = 1, y)
+        self.forward_x_one = self.forward(self.inputs[self.one_x_mask])
+        # f(x, y = 0)
+        self.forward_y_null = self.forward(self.inputs[self.zero_y_mask])
+
+        self.zero_x_tensor = (
+            self.zero.expand_as(self.forward_x_null)
+            .view(-1, 1).to(device)
+        )
+
+        self.zero_y_tensor = (
+            self.zero.expand_as(self.forward_y_null)
+            .view(-1, 1).to(device)
+        )
+
+        self.one_x_tensor = (
+            self.one.expand_as(self.forward_x_one)
+            .view(-1, 1).to(device)
+        )
+
+        self.sin = torch.sin(
+            pi_tensor * self.x[self.y.squeeze() == 1]
+        ).view(-1, 1)
+
     def generate_boundaries(self) -> None:
         if self.dim == 1:
-            # x = 0
-            self.zero_mask = (self.x.squeeze() == 0).to(self.device)
-            # x = 1
-            self.one_mask = (self.x.squeeze() == 1).to(self.device)
-
-            # f(x = 0)
-            self.forward_null = self.forward(self.x[self.zero_mask])
-
-            self.zero_tensor = (
-                self.zero.expand_as(self.forward_null)
-                .view(-1, 1).to(device)
-            )
-
-            self.one_tensor = (
-                self.one.expand_as(self.forward_null)
-                .view(-1, 1).to(device)
-            )
+            self.generate_1d_boundaries()
 
         if self.dim == 2:
-            # x = 0
-            self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
-            # y = 0
-            self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
-            # x = 1
-            self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
-            # y = 0
-            self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
-            # f(x = 0, y)
-            self.forward_x_null = self.forward(self.inputs[self.zero_x_mask])
-            # f(x = 1, y)
-            self.forward_x_one = self.forward(self.inputs[self.one_x_mask])
-            # f(x, y = 0)
-            self.forward_y_null = self.forward(self.inputs[self.zero_y_mask])
+            self.generate_2d_boundaries()
 
-            self.zero_x_tensor = (
-                self.zero.expand_as(self.forward_x_null)
-                .view(-1, 1).to(device)
-            )
-
-            self.zero_y_tensor = (
-                self.zero.expand_as(self.forward_y_null)
-                .view(-1, 1).to(device)
-            )
-
-            self.one_x_tensor = (
-                self.one.expand_as(self.forward_x_one)
-                .view(-1, 1).to(device)
-            )
-
-            self.sin = torch.sin(
-                pi_tensor * self.x[self.y.squeeze() == 1]
-            ).view(-1, 1)
-
-        elif self.input_space.ndimension() == 3:
+        elif self.dim == 3:
             # TODO: Implement 3D input space
             raise ValueError("Input space must be 1D or 2D.")
 
@@ -167,6 +175,8 @@ class Loss:
             return self.cosinus_loss
         elif scenario == 'laplace':
             return self.laplace_loss
+        elif scenario == 'potential flow':
+            return self.potential_flow_loss
         else:
             raise ValueError('Scenario not found.')
 
@@ -239,9 +249,72 @@ class Loss:
 
         return self.process(physics_loss, boundary_loss), self.x, f
 
+    def potential_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+        '''
+        No mu term as the laplacian of u, v is null.
+        '''
+        u, v, p = self.forward(self.inputs)
+
+        # u_x + v_y = 0 (Incompressibility)
+        ic_loss, _, v_y = self.incompressibility_loss(u, v)
+
+        # u u_x + v u_y + p_x / rho = 0
+        u_y = self.partial_derivative(u, self.y)
+        p_x = self.partial_derivative(p, self.x)
+        flow_x_loss = self.mse_loss(v * u_y - u * v_y, -p_x / self.rho)
+
+        # u v_x + v v_y + p_y / rho = 0
+        v_x = self.partial_derivative(v, self.x)
+        p_y = self.partial_derivative(p, self.y)
+        flow_y_loss = self.mse_loss(u * v_x + v * v_y, -p_y / self.rho)
+
+        physics_loss = flow_x_loss + flow_y_loss + ic_loss
+
+        # u(x = 1, .) = 1 and v(x = 0, .) = 0
+        # Inlet boundary condition
+        inlet_loss = (
+            self.mse_loss(u[self.zero_x_mask], self.one_tensor)
+            + self.mse_loss(v[self.zero_x_mask], self.zero_tensor)
+            + self.mse_loss(p[self.zero_x_mask], self.one_tensor)
+        )
+        # Outlet boundary condition
+        outlet_loss = (
+            self.mse_loss(u[self.one_x_mask], self.one_tensor)
+            + self.mse_loss(v[self.one_x_mask], self.zero_tensor)
+        )
+        # Wall boundary condition
+        wall_loss = (
+            self.mse_loss(u[self.zero_y_mask], self.one_tensor)
+            + self.mse_loss(v[self.zero_y_mask], self.zero_tensor)
+            + self.mse_loss(u[self.one_y_mask], self.one_tensor)
+            + self.mse_loss(v[self.one_y_mask], self.zero_tensor)
+        )
+
+        boundary_loss = inlet_loss + outlet_loss + wall_loss
+
+        return self.process(physics_loss, boundary_loss), self.inputs, (u, v, p)
+
+    def navier_stokes_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+        u, v, p = self.forward(self.inputs)
+
+        # u_x + v_y = 0 (Incompressibility)
+        u_x = self.partial_derivative(u, self.x)
+        v_y = self.partial_derivative(v, self.y)
+
+        # u u_x + v u_y + p_x / rho - mu / rho (u_xx + u_yy) = 0
+        # u v_x + v v_y + p_y / rho - mu / rho (v_xx + v_yy) = 0
+        ...
+    
+    def incompressibility_loss(self, u, v) -> Tuple[float, Tensor, Tensor]:
+        # u_x + v_y = 0 (Incompressibility)
+        u_x = self.partial_derivative(u, self.x)
+        v_y = self.partial_derivative(v, self.y)
+
+        return self.mse_loss(u_x, -v_y), u_x, v_y
 
 # ======= Main =======
 
 
 if __name__ == '__main__':
     print('Nothing to execute.')
+ 

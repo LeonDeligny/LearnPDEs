@@ -6,6 +6,7 @@ Constants and variables for the project.
 
 import torch
 
+from torch import tensor
 from torch.backends.mps import is_available
 
 from torch import Tensor
@@ -15,7 +16,7 @@ from torch import pi
 
 # ======= Constants =======
 
-pi_tensor: Tensor = torch.tensor(pi)
+pi_tensor: Tensor = tensor(pi)
 
 # ======= Variables =======
 

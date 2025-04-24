@@ -27,3 +27,4 @@ dependencies:
       - complexpytorch
       - flake8
       - narwhals
+      - ambiance
