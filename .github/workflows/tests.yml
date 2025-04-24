@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@vdd960bd3c3f080561a1810e32349ac211ecec7d4
         with:
           miniforge-variant: Miniforge3
           auto-update-conda: true
@@ -44,7 +44,7 @@ jobs:
           coverage xml
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@ve9bcffdeb307b9bab862a712513229ad27a9cd79
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
