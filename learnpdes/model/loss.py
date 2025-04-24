@@ -289,22 +289,24 @@ class Loss:
             + self.mse_loss(u[self.one_y_mask], self.one_tensor)
             + self.mse_loss(v[self.one_y_mask], self.zero_tensor)
         )
-
         boundary_loss = inlet_loss + outlet_loss + wall_loss
 
-        return self.process(physics_loss, boundary_loss), self.inputs, (u, v, p)
+        return (
+            self.process(physics_loss, boundary_loss),
+            self.inputs,
+            (u, v, p),
+        )
 
-    def navier_stokes_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
-        u, v, p = self.forward(self.inputs)
+    # def navier_stokes_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    #     u, v, p = self.forward(self.inputs)
 
-        # u_x + v_y = 0 (Incompressibility)
-        u_x = self.partial_derivative(u, self.x)
-        v_y = self.partial_derivative(v, self.y)
+    #     # u_x + v_y = 0 (Incompressibility)
+    #     u_x = self.partial_derivative(u, self.x)
+    #     v_y = self.partial_derivative(v, self.y)
 
-        # u u_x + v u_y + p_x / rho - mu / rho (u_xx + u_yy) = 0
-        # u v_x + v v_y + p_y / rho - mu / rho (v_xx + v_yy) = 0
-        ...
-    
+    #    u u_x + v u_y + p_x / rho - mu / rho (u_xx + u_yy) = 0
+    #    u v_x + v v_y + p_y / rho - mu / rho (v_xx + v_yy) = 0
+
     def incompressibility_loss(self, u, v) -> Tuple[float, Tensor, Tensor]:
         # u_x + v_y = 0 (Incompressibility)
         u_x = self.partial_derivative(u, self.x)
@@ -317,4 +319,3 @@ class Loss:
 
 if __name__ == '__main__':
     print('Nothing to execute.')
- 

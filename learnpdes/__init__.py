@@ -4,8 +4,6 @@ Constants and variables for the project.
 
 # ======= Imports =======
 
-import torch
-
 from torch import tensor
 from torch.backends.mps import is_available
 
