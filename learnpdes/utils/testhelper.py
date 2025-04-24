@@ -6,6 +6,11 @@ Helper class with default values for testing.
 
 import torch
 
+from torch import (
+    tensor,
+    allclose,
+)
+
 from torch import Tensor
 from typing import Callable
 from functools import partial
@@ -17,31 +22,28 @@ from unittest import TestCase
 class TestHelper(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.default_input = torch.tensor([
+        cls.default_input = tensor([
             [-10.0], [-1.0], [0.0], [1.0], [10.0]
         ])
 
     def assert_equal_function(
         self: 'TestHelper',
         f: Callable[[Tensor], Tensor],
-        input: Tensor,
+        inputs: Tensor,
         expected: Tensor,
     ) -> None:
-        actual = f(input)
-        assert torch.allclose(
-            actual,
-            expected
-        ), f'Expected {expected}, but got {actual}'
+        actual = f(inputs)
+        self.assertTrue(
+            allclose(actual, expected),
+            f'Expected {expected}, but got {actual}'
+        )
         if isinstance(f, partial):
-            f_name = f.func.__name__
-            constant_args = f.keywords
             print(
-                f'Partial function test {f_name} '
-                f'passed with constant argument(s): {constant_args}'
+                f'Partial function test {f.func.__name__} '
+                f'passed with constant argument(s): {f.keywords}'
             )
         else:
-            f_name = f.__name__
-            print(f'Function test {f_name} passed.')
+            print(f'Function test {f.__name__} passed.')
 
 # ======= Main =======
 
