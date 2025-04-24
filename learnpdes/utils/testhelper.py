@@ -4,8 +4,6 @@ Helper class with default values for testing.
 
 #  ======= Imports =======
 
-import torch
-
 from torch import (
     tensor,
     allclose,

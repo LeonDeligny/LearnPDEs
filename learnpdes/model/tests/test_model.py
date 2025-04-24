@@ -25,13 +25,13 @@ class TestModel(TestHelper):
     def test_encodings(self):
         self.assert_equal_function(
             f=partial(polynomial, dim=1),
-            input=self.default_input,
+            inputs=self.default_input,
             expected=self.default_input,
         )
 
         self.assert_equal_function(
             f=partial(polynomial, dim=2),
-            input=self.default_input,
+            inputs=self.default_input,
             expected=torch.tensor(
                 [
                     [-10.0, 100.0],
@@ -45,7 +45,7 @@ class TestModel(TestHelper):
 
         self.assert_equal_function(
             f=identity,
-            input=self.default_input,
+            inputs=self.default_input,
             expected=self.default_input,
         )
 
