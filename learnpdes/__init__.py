@@ -4,8 +4,11 @@ Constants and variables for the project.
 
 # ======= Imports =======
 
-from torch import tensor
 from torch.backends.mps import is_available
+from torch import (
+    tensor,
+    manual_seed,
+)
 
 from torch import Tensor
 from torch import device as TorchDevice
@@ -28,3 +31,6 @@ device_type: str = (
 # device_type: str = 'cpu'
 device = TorchDevice(device_type)
 print(f'Using {device_type=}.')
+
+# Fixing seed
+manual_seed(0)

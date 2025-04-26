@@ -15,7 +15,7 @@ Unique analytical solution is f = exp.
 
 # ======= Imports =======
 
-from learnpdes.model.encoding import complex_projection
+from learnpdes.model.encodings import complex_projection
 from torch.nn.init import (
     zeros_,
     xavier_uniform_,

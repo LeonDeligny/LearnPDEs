@@ -8,8 +8,8 @@ import torch
 import numpy as np
 
 from torch import linspace
-from pydantic import validate_call
-from learnpdes.model.encoding import (
+from learnpdes.utils.decorators import validate
+from learnpdes.model.encodings import (
     identity,
     # complex_projection,
     # real_projection,
@@ -107,7 +107,7 @@ def load_laplace(
     return xy, analytical, input_homeo, output_homeo, encoding
 
 
-@validate_call
+@validate
 def load_scenario(
     scenario: Literal['exponential', 'cosinus', 'laplace'],
     num_inputs: int = 100,
