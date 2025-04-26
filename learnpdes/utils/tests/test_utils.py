@@ -25,6 +25,6 @@ class TestUtils(TestHelper):
 
 
 # ======= Main =======
-
+# pragma: no cover
 if __name__ == '__main__':
     main(verbosity=0)
