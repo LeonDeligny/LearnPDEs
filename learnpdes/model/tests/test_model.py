@@ -76,6 +76,6 @@ class TestModel(TestHelper):
 
 
 # ======= Main =======
-# pragma: no cover
+
 if __name__ == '__main__':
-    main(verbosity=0)
+    main(verbosity=0)  # pragma: no cover
