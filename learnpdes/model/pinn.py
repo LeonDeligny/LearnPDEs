@@ -68,7 +68,8 @@ class PINN(Module):
         self.output_dim: int = nn_params.get('output_dim')
         self.num_hidden_layers: int = nn_params.get('num_hidden_layers')
         self.activation: Module = nn_params.get('activation')
-        # Homeomorphisms and encoding
+
+        # Homeomorphisms and encodings
         self.input_homeo = input_homeo
         self.output_homeo = output_homeo
         self.encoding = encoding
