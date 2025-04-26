@@ -87,6 +87,6 @@ def main(
     # a 'test' set
 
 
-# pragma: no cover
 if __name__ == '__main__':
-    main(scenario='exponential')
+    main(scenario='exponential')  # pragma: no cover
+
