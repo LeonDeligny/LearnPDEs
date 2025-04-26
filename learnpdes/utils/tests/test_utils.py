@@ -19,20 +19,19 @@ class TestUtils(TestHelper):
 
     @time
     def test_identity(self):
-        id = Identity()
+        id_class = Identity()
         self.assert_equal_function(
-            f=id.forward,
+            f=id_class.forward,
             inputs=self.default_input,
             expected=self.default_input,
         )
-    
+
     def test_input_homeomorphism(self):
         self.assert_equal_function(
             f=input_homeo,
             inputs=tensor([0.0]),
             expected=tensor([0.5]),
-        )        
-
+        )
 
 
 # ======= Main =======
