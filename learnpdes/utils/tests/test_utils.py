@@ -4,7 +4,9 @@ Test utils module.
 
 # ======= Imports =======
 
+from torch import tensor
 from learnpdes.utils.decorators import time
+from learnpdes.utils.homeomorphisms import input_homeo
 
 from unittest import main
 from learnpdes.utils.utility import Identity
@@ -17,11 +19,20 @@ class TestUtils(TestHelper):
 
     @time
     def test_identity(self):
+        id = Identity()
         self.assert_equal_function(
-            f=Identity().forward,
+            f=id.forward,
             inputs=self.default_input,
             expected=self.default_input,
         )
+    
+    def test_input_homeomorphism(self):
+        self.assert_equal_function(
+            f=input_homeo,
+            inputs=tensor([0.0]),
+            expected=tensor([0.5]),
+        )        
+
 
 
 # ======= Main =======

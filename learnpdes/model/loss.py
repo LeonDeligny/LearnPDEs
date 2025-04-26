@@ -148,12 +148,11 @@ class Loss:
         if self.dim == 1:
             self.generate_1d_boundaries()
 
-        if self.dim == 2:
+        elif self.dim == 2:
             self.generate_2d_boundaries()
 
-        elif self.dim == 3:
-            # TODO: Implement 3D input space
-            raise ValueError("Input space must be 1D or 2D.")
+        else:
+            print(f'Value for {self.dim=} should be either 1 or 2.')
 
     def partial_derivative(self, f: Tensor, x: Tensor) -> Tensor:
         """
@@ -176,7 +175,7 @@ class Loss:
         elif scenario == 'potential flow':
             return self.potential_flow_loss
         else:
-            raise ValueError('Scenario not found.')
+            print('Scenario not found.')
 
     def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)

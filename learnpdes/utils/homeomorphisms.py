@@ -4,7 +4,7 @@ Homeomorphic transformations.
 
 #  ======= Imports =======
 
-import torch
+from torch import sqrt
 
 from torch import Tensor
 
@@ -19,14 +19,4 @@ def input_homeo(x: Tensor) -> Tensor:
         homeo(-infty) = 0
         homeo(infty) = 1
     '''
-    return (1 + x / torch.sqrt(1 + x**2)) / 2.0
-
-
-def output_homeo(x: Tensor) -> Tensor:
-    '''
-    Apply a homeomorphic transformation:
-        homeo: ]-1, 1[ -> ]0, infty[
-        homeo(-1) = 0
-        homeo(1) = infty
-    '''
-    raise NotImplementedError('Output homeomorphism not implemented.')
+    return (1 + x / sqrt(1 + x**2)) / 2.0

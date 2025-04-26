@@ -89,4 +89,3 @@ def main(
 
 if __name__ == '__main__':
     main(scenario='exponential')  # pragma: no cover
-

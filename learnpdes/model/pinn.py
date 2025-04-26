@@ -101,15 +101,19 @@ class PINN(Module):
         return output.to(self.device)
 
     def construct_nn(self) -> Sequential:
+        '''
+        Using standard neural network definition.
+        By default add a biais.
+        '''
         # Construct NN
         layers = [
-            Linear(self.encoding_dim, self.hidden_dim),
+            Linear(self.encoding_dim, self.hidden_dim, bias=True),
             self.activation(),
         ]
         for _ in range(self.num_hidden_layers - 1):
-            layers.append(Linear(self.hidden_dim, self.hidden_dim))
+            layers.append(Linear(self.hidden_dim, self.hidden_dim, bias=True))
             layers.append(self.activation())
-        layers.append(Linear(self.hidden_dim, self.output_dim))
+        layers.append(Linear(self.hidden_dim, self.output_dim, bias=True))
 
         network = Sequential(*layers)
 
@@ -130,5 +134,4 @@ class PINN(Module):
         for m in self.modules():
             if isinstance(m, Linear):
                 xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    zeros_(m.bias)
+                zeros_(m.bias)
