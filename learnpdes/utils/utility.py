@@ -121,10 +121,3 @@ def load_scenario(
         return load_cosinus(num_inputs)
     elif scenario == 'laplace':
         return load_laplace(num_inputs)
-
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

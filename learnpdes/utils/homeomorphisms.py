@@ -30,9 +30,3 @@ def output_homeo(x: Tensor) -> Tensor:
         homeo(1) = infty
     '''
     raise NotImplementedError('Output homeomorphism not implemented.')
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

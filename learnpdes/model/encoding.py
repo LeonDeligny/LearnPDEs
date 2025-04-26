@@ -57,9 +57,3 @@ def fourier(x: Tensor, dim: int = 10, scale: float = 1.0) -> Tensor:
     x_proj = pi * x @ kernel
 
     return cat([cos(x_proj), sin(x_proj)], dim=1)
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

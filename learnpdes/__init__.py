@@ -27,11 +27,4 @@ device_type: str = (
 )
 # device_type: str = 'cpu'
 device = TorchDevice(device_type)
-
-print(f'Using device: {device_type}.')
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')
+print(f'Using {device_type=}.')

@@ -55,9 +55,3 @@ def validate(func: Callable) -> Callable:
         return validated_func(*args, **kwargs)
 
     return wrapper
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

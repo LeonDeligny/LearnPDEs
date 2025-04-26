@@ -42,9 +42,3 @@ class TestHelper(TestCase):
             )
         else:
             print(f'Function test {f.__name__} passed.')
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

@@ -1,5 +1,9 @@
 # Physics-Informed Neural Networks (PINNs)
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1595a49bb6264b8fb196d55f1f544be0)](https://app.codacy.com/gh/LeonDeligny/LearnPDEs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![codecov](https://codecov.io/github/LeonDeligny/LearnPDEs/branch/main/graph/badge.svg?token=E2YSVB0M80)](https://codecov.io/github/LeonDeligny/LearnPDEs)
+[![License](https://img.shields.io/badge/license-GNU-blue.svg)](https://github.com/LeonDeligny/LearnPDEs/blob/main/LICENSE)
+
 ## **Project Goal**
 
 The goal of this project is to develop a framework using a deep learning model to approximate solutions to Partial Differential Equations (PDEs) without requiring any input data. The Physics-Informed Neural Network (PINN) is trained solely on:

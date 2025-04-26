@@ -310,9 +310,3 @@ class Loss:
         v_y = self.partial_derivative(v, self.y)
 
         return self.mse_loss(u_x, -v_y), u_x, v_y
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

@@ -135,7 +135,3 @@ class PINN(Module):
                 xavier_uniform_(m.weight)
                 if m.bias is not None:
                     zeros_(m.bias)
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

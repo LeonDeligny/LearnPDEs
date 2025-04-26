@@ -90,10 +90,3 @@ class Trainer:
 
         # Create GIF with saved plots
         create_gif()
-
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')

@@ -139,10 +139,3 @@ def save_2d_plot(
     plt.tight_layout()
     plt.savefig(f'{output_dir}/epoch_{epoch}.png')
     plt.close()
-
-
-# ======= Main =======
-
-
-if __name__ == '__main__':
-    print('Nothing to execute.')
