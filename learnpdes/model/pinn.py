@@ -15,7 +15,6 @@ Unique analytical solution is f = exp.
 
 # ======= Imports =======
 
-from learnpdes.model.encodings import complex_projection
 from torch.nn.init import (
     zeros_,
     xavier_uniform_,
@@ -81,9 +80,6 @@ class PINN(Module):
     def get_encoding_dim(self) -> int:
         if isinstance(self.encoding, partial):
             return self.encoding.keywords.get('dim')
-        elif self.input_homeo == complex_projection:
-            print('Using encoding complex_projection')
-            return 2 * self.input_dim
         else:
             print('Using no encoding')
             return self.input_dim

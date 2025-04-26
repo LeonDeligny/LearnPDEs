@@ -11,8 +11,6 @@ from torch import linspace
 from learnpdes.utils.decorators import validate
 from learnpdes.model.encodings import (
     identity,
-    # complex_projection,
-    # real_projection,
     # fourier,
 )
 
