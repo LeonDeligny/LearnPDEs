@@ -35,8 +35,8 @@ from numpy import (
 
 
 class Identity(Module):
-    def forward(self, input: Tensor) -> Tensor:
-        return input
+    def forward(self, x: Tensor) -> Tensor:
+        return x
 
 # ======= Functions =======
 
