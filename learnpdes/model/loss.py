@@ -82,7 +82,7 @@ class Loss:
         self.inputs = (
             torch.cat([self.x, self.y], dim=1)
             if self.y is not None
-            else None
+            else self.x
         )
         # self.z = self.setup_space(index=2)
 
@@ -118,7 +118,7 @@ class Loss:
         self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
         # x = 1
         self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
-        # y = 0
+        # y = 1
         self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
         # f(x = 0, y)
         self.forward_x_null = self.forward(self.inputs[self.zero_x_mask])
@@ -142,9 +142,7 @@ class Loss:
             .view(-1, 1).to(device)
         )
 
-        self.sin = torch.sin(
-            pi_tensor * self.x[self.y.squeeze() == 1]
-        ).view(-1, 1)
+        self.sin = torch.sin(pi_tensor * self.x[self.one_y_mask]).view(-1, 1)
 
     def generate_boundaries(self) -> None:
         if self.dim == 1:
@@ -246,7 +244,6 @@ class Loss:
             ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
-
         return self.process(physics_loss, boundary_loss), self.x, f
 
     def potential_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:

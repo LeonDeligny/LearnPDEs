@@ -51,7 +51,7 @@ def main(
         nn_params={
             'input_dim': input_dim,
             'hidden_dim': 200,
-            'output_dim': 2,
+            'output_dim': 1,
             'num_hidden_layers': 4,
             'activation': Tanh,
         },
