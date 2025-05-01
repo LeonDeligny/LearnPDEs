@@ -51,7 +51,7 @@ def main(
         nn_params={
             'input_dim': input_dim,
             'hidden_dim': 200,
-            'output_dim': 1,
+            'output_dim': 2,
             'num_hidden_layers': 4,
             'activation': Tanh,
         },
@@ -63,6 +63,7 @@ def main(
     # 2. Define loss function
     loss = Loss(
         input_space=input_space,
+        input_dim=input_dim,
         forward=pinn.forward,
     )
 
@@ -88,4 +89,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main(scenario='exponential')  # pragma: no cover
+    main(scenario='potential flow')  # pragma: no cover

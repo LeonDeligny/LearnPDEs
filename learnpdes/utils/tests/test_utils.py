@@ -26,6 +26,7 @@ class TestUtils(TestHelper):
             expected=self.default_input,
         )
 
+    @time
     def test_input_homeomorphism(self):
         self.assert_equal_function(
             f=input_homeo,

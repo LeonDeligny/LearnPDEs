@@ -6,8 +6,11 @@ Customed decorators.
 
 import time as t
 
-from functools import lru_cache
 from pydantic import validate_call
+from functools import (
+    wraps,
+    lru_cache,
+)
 
 from typing import (
     Dict,
@@ -24,6 +27,8 @@ def time(func: Callable) -> Callable:
     '''
     Decorator to log the execution time of a function.
     '''
+
+    @wraps(func)
     def wrapper(*args: Tuple[Any, ...], **kwargs: Dict[str, Any]) -> Any:
         start_time = t.time()
         result = func(*args, **kwargs)
@@ -50,6 +55,7 @@ def validate(func: Callable) -> Callable:
     '''
     validated_func = validate_call(func)
 
+    @wraps(func)
     @lru_cache(maxsize=None)
     def wrapper(*args: Tuple[Any, ...], **kwargs: Dict[str, Any]) -> Any:
         return validated_func(*args, **kwargs)

@@ -32,11 +32,12 @@ class Loss:
     one = tensor([1.0]).to(device)
     # Density of water at alt = 0.0
     atm = Atmosphere(0.0)
-    rho = atm.density
+    rho = torch.tensor([atm.density], dtype=torch.float32).to(device)
 
     def __init__(
         self: 'Loss',
         input_space: Tensor,
+        input_dim: int,
         forward: Callable[[Tensor], Tensor],
     ) -> None:
         '''
@@ -45,7 +46,7 @@ class Loss:
 
         self.forward = forward
         self.input_space = input_space
-        self.dim = self.input_space.ndimension()
+        self.dim = input_dim
         print(f'Input space is of dimension {self.dim}.')
 
         # Transform input space into
@@ -121,11 +122,21 @@ class Loss:
         # y = 1
         self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
         # f(x = 0, y)
-        self.forward_x_null = self.forward(self.inputs[self.zero_x_mask])
+        self.forward_x_null = self.forward(
+            self.inputs[self.zero_x_mask]
+        )[:, 0:1]
         # f(x = 1, y)
-        self.forward_x_one = self.forward(self.inputs[self.one_x_mask])
+        self.forward_x_one = self.forward(
+            self.inputs[self.one_x_mask]
+        )[:, 0:1]
         # f(x, y = 0)
-        self.forward_y_null = self.forward(self.inputs[self.zero_y_mask])
+        self.forward_y_null = self.forward(
+            self.inputs[self.zero_y_mask]
+        )[:, 0:1]
+        # f(x, y = 1)
+        self.forward_y_one = self.forward(
+            self.inputs[self.one_y_mask]
+        )[:, 0:1]
 
         self.zero_x_tensor = (
             self.zero.expand_as(self.forward_x_null)
@@ -139,6 +150,11 @@ class Loss:
 
         self.one_x_tensor = (
             self.one.expand_as(self.forward_x_one)
+            .view(-1, 1).to(device)
+        )
+
+        self.one_y_tensor = (
+            self.one.expand_as(self.forward_y_one)
             .view(-1, 1).to(device)
         )
 
@@ -246,10 +262,14 @@ class Loss:
         return self.process(physics_loss, boundary_loss), self.x, f
 
     def potential_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
-        '''
-        No mu term as the laplacian of u, v is null.
-        '''
-        u, v, p = self.forward(self.inputs)
+        """
+        u = nabla phi
+        """
+        outputs = self.forward(self.inputs)
+        phi = outputs[:, 0:1]
+        p = outputs[:, 1:2]
+        u = self.partial_derivative(phi, self.x)
+        v = self.partial_derivative(phi, self.y)
 
         # u_x + v_y = 0 (Incompressibility)
         ic_loss, _, v_y = self.incompressibility_loss(u, v)
@@ -269,21 +289,21 @@ class Loss:
         # u(x = 1, .) = 1 and v(x = 0, .) = 0
         # Inlet boundary condition
         inlet_loss = (
-            self.mse_loss(u[self.zero_x_mask], self.one_tensor)
-            + self.mse_loss(v[self.zero_x_mask], self.zero_tensor)
-            + self.mse_loss(p[self.zero_x_mask], self.one_tensor)
+            self.mse_loss(u[self.zero_x_mask], self.one_x_tensor)
+            + self.mse_loss(v[self.zero_x_mask], self.zero_x_tensor)
+            + self.mse_loss(p[self.zero_x_mask], self.one_x_tensor)
         )
         # Outlet boundary condition
         outlet_loss = (
-            self.mse_loss(u[self.one_x_mask], self.one_tensor)
-            + self.mse_loss(v[self.one_x_mask], self.zero_tensor)
+            self.mse_loss(u[self.one_x_mask], self.one_x_tensor)
+            + self.mse_loss(v[self.one_x_mask], self.zero_x_tensor)
         )
         # Wall boundary condition
         wall_loss = (
-            self.mse_loss(u[self.zero_y_mask], self.one_tensor)
-            + self.mse_loss(v[self.zero_y_mask], self.zero_tensor)
-            + self.mse_loss(u[self.one_y_mask], self.one_tensor)
-            + self.mse_loss(v[self.one_y_mask], self.zero_tensor)
+            self.mse_loss(u[self.zero_y_mask], self.one_y_tensor)
+            + self.mse_loss(v[self.zero_y_mask], self.zero_y_tensor)
+            + self.mse_loss(u[self.one_y_mask], self.one_y_tensor)
+            + self.mse_loss(v[self.one_y_mask], self.zero_y_tensor)
         )
         boundary_loss = inlet_loss + outlet_loss + wall_loss
 
@@ -292,6 +312,54 @@ class Loss:
             self.inputs,
             (u, v, p),
         )
+
+    # def euler_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    #     '''
+    #     No mu term as the laplacian of u, v is null.
+    #     '''
+    #     u, v, p = self.forward(self.inputs)
+
+    #     # u_x + v_y = 0 (Incompressibility)
+    #     ic_loss, _, v_y = self.incompressibility_loss(u, v)
+
+    #     # u u_x + v u_y + p_x / rho = 0
+    #     u_y = self.partial_derivative(u, self.y)
+    #     p_x = self.partial_derivative(p, self.x)
+    #     flow_x_loss = self.mse_loss(v * u_y - u * v_y, -p_x / self.rho)
+
+    #     # u v_x + v v_y + p_y / rho = 0
+    #     v_x = self.partial_derivative(v, self.x)
+    #     p_y = self.partial_derivative(p, self.y)
+    #     flow_y_loss = self.mse_loss(u * v_x + v * v_y, -p_y / self.rho)
+
+    #     physics_loss = flow_x_loss + flow_y_loss + ic_loss
+
+    #     # u(x = 1, .) = 1 and v(x = 0, .) = 0
+    #     # Inlet boundary condition
+    #     inlet_loss = (
+    #         self.mse_loss(u[self.zero_x_mask], self.one_tensor)
+    #         + self.mse_loss(v[self.zero_x_mask], self.zero_tensor)
+    #         + self.mse_loss(p[self.zero_x_mask], self.one_tensor)
+    #     )
+    #     # Outlet boundary condition
+    #     outlet_loss = (
+    #         self.mse_loss(u[self.one_x_mask], self.one_tensor)
+    #         + self.mse_loss(v[self.one_x_mask], self.zero_tensor)
+    #     )
+    #     # Wall boundary condition
+    #     wall_loss = (
+    #         self.mse_loss(u[self.zero_y_mask], self.one_tensor)
+    #         + self.mse_loss(v[self.zero_y_mask], self.zero_tensor)
+    #         + self.mse_loss(u[self.one_y_mask], self.one_tensor)
+    #         + self.mse_loss(v[self.one_y_mask], self.zero_tensor)
+    #     )
+    #     boundary_loss = inlet_loss + outlet_loss + wall_loss
+
+    #     return (
+    #         self.process(physics_loss, boundary_loss),
+    #         self.inputs,
+    #         (u, v, p),
+    #     )
 
     # def navier_stokes_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
     #     u, v, p = self.forward(self.inputs)
