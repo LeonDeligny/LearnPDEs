@@ -10,7 +10,10 @@ import matplotlib.pyplot as plt
 
 from pathlib import Path
 from numpy import ndarray
-from typing import Callable
+from typing import (
+    Union,
+    Callable,
+)
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
@@ -109,30 +112,25 @@ def save_2d_plot(
     x: ndarray,
     f: ndarray,
     loss: float,
-    analytical: Callable
+    analytical: Union[Callable, None],
 ) -> None:
     output_dir = ensure_directory_exists()
-    grid_size = int(x[:, 0].size**0.5)
+    x1, x2 = x[:, 0], x[:, 1]
 
-    # Reshape x and f for 2D plotting
-    # Reshape x[:, 0] into a grid
-    x1 = x[:, 0].reshape(grid_size, grid_size)
-    # Reshape x[:, 1] into a grid
-    x2 = x[:, 1].reshape(grid_size, grid_size)
-
-    # Reshape f into the same grid as x1 and x2
-    f = f.reshape(grid_size, grid_size)
-
-    # Compute the analytical solution
-    analytical_f: ndarray = analytical(x[:, 0], x[:, 1])
-    analytical_f = analytical_f.reshape(grid_size, grid_size)
-    difference = f - analytical_f
-
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-
+    if analytical is None:
+        ncols = 1
+    else:
+        ncols = 3
+    fig, axes = plt.subplots(1, ncols, figsize=(18, 18))
+    if ncols == 1: axes = [axes]
     create_plot(x1, x2, fig, axes[0], f, 'Model Output')
-    create_plot(x1, x2, fig, axes[1], analytical_f, 'Analytical Solution')
-    create_plot(x1, x2, fig, axes[2], difference, 'Difference')
+
+    if analytical is not None:
+        # Compute the analytical solution
+        analytical_f: ndarray = analytical(x[:, 0], x[:, 1])
+        difference = f - analytical_f
+        create_plot(x1, x2, fig, axes[1], analytical_f, 'Analytical Solution')
+        create_plot(x1, x2, fig, axes[2], difference, 'Difference')
 
     # Save the plot
     plt.suptitle(f'Epoch: {epoch}, Loss: {loss:.4f}')

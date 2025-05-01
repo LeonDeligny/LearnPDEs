@@ -6,6 +6,7 @@ Training configuration of the PINN model.
 
 import os
 
+from learnpdes.utils.utility import detach_to_numpy
 from learnpdes.utils.plot import (
     save_plot,
     create_gif,
@@ -81,8 +82,8 @@ class Trainer:
                 print(f'Epoch {epoch}, Loss: {loss}')
 
                 # Back to CPU for plotting
-                x_ = x.cpu().detach().numpy()
-                f_ = f.cpu().detach().numpy()
+                x_ = detach_to_numpy(x)
+                f_ = detach_to_numpy(f)
                 if self.dim_plot == 1:
                     save_plot(epoch, x_, f_, loss, self.analytical)
                 else:
