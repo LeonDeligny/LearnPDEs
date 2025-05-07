@@ -11,6 +11,7 @@ from learnpdes.utils.plot import (
     save_plot,
     create_gif,
     save_2d_plot,
+    ensure_directory_exists,
 )
 
 from torch import Tensor
@@ -68,6 +69,7 @@ class Trainer:
         os.makedirs('gifs', exist_ok=True)
 
     def train(self) -> None:
+        output_dir = ensure_directory_exists()
 
         # Training loop
         for epoch in range(self.nb_epochs):
@@ -85,9 +87,19 @@ class Trainer:
                 x_ = detach_to_numpy(x)
                 f_ = detach_to_numpy(f)
                 if self.dim_plot == 1:
-                    save_plot(epoch, x_, f_, loss, self.analytical)
+                    save_plot(
+                        output_dir,
+                        epoch=epoch,
+                        x=x_,
+                        f=f_,
+                        loss=loss,
+                        analytical=self.analytical
+                    )
                 else:
-                    save_2d_plot(epoch, x_, f_, loss, self.analytical)
+                    save_2d_plot(
+                        output_dir,
+                        epoch, x_, f_, loss, self.analytical
+                    )
 
         # Create GIF with saved plots
         create_gif()

@@ -54,34 +54,32 @@ def ensure_directory_exists() -> Path:
         for file in os.listdir(output_dir):
             if file.endswith('.png'):
                 os.remove(os.path.join(output_dir, file))
+        print('Removing old epochs folder')
     else:
         os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
 
 def save_plot(
+    output_dir: Path,
     epoch: int,
     x: ndarray,
     f: ndarray,
     loss: float,
     analytical: Callable
 ) -> None:
-    output_dir = ensure_directory_exists()
 
     mask = x < 10
     x = x[mask]
     f = f[mask]
 
-    plt.figure(figsize=(6, 4))
+    plt.figure()
     plt.plot(x, f, label='NN Prediction')
     plt.plot(x, analytical(x), label='Analytical Solution')
     plt.xlabel('x')
     plt.ylabel('f(x)')
     plt.legend()
     plt.title(f'Epoch: {epoch}, loss: {loss:.4f}')
-    plt.xlim(-3, 3)
-    plt.ylim(-2, 2)
-    plt.tight_layout()
     plt.savefig(f'{output_dir}/epoch_{epoch}.png')
     plt.close()
 
@@ -108,13 +106,13 @@ def create_plot(
 
 
 def save_2d_plot(
+    output_dir: Path,
     epoch: int,
     x: ndarray,
     f: ndarray,
     loss: float,
     analytical: Union[Callable, None],
 ) -> None:
-    output_dir = ensure_directory_exists()
     x1, x2 = x[:, 0], x[:, 1]
 
     if analytical is None:

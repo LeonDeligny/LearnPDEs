@@ -28,8 +28,14 @@ from typing import (
     Dict,
     Tuple,
     Union,
-    Literal,
     Callable,
+)
+
+from learnpdes import (
+    EXPONENTIAL_SCENARIO,
+    COSINUS_SCENARIO,
+    LAPLACE_SCENARIO,
+    POTENTIAL_FLOW_SCENARIO,
 )
 
 # ======= Functions =======
@@ -194,27 +200,36 @@ def load_potential_flow() -> Tuple[
 
 
 def load_scenario(
-    scenario: Literal[
-        'exponential',
-        'cosinus',
-        'laplace',
-        'potential flow'
-    ],
+    scenario: str,
     num_inputs: int = 100,
 ) -> Tuple[
-    Tensor,
-    Dict[str, Tensor],
-    Union[Callable, None],
+    Tensor, Dict[str, Tensor],
+    int, Union[Callable, None],
     Callable, Callable, Callable,
 ]:
-
+    '''
+    Function that loads the according scenario with:
+        - space data
+        - mesh masks (for boundaries)
+        - output dimension of the PINN
+        - analytical solution (= None) if applicable
+        - input homeomorphism
+        - output homeomorphism
+        - encoding
+    '''
     print(f'Loading scenario: {scenario}')
 
-    if scenario == 'exponential':
+    if scenario == EXPONENTIAL_SCENARIO:
         return load_exponential(num_inputs)
-    elif scenario == 'cosinus':
+    elif scenario == COSINUS_SCENARIO:
         return load_cosinus(num_inputs)
-    elif scenario == 'laplace':
+    elif scenario == LAPLACE_SCENARIO:
         return load_laplace(num_inputs)
-    elif scenario == 'potential flow':
+    elif scenario == POTENTIAL_FLOW_SCENARIO:
         return load_potential_flow()
+    else:
+        raise ValueError(
+            f'{scenario=} is not a valid scenario. '
+            'Please look at the README.md '
+            'for valid scenarios identifiers.'
+        )

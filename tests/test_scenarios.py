@@ -16,6 +16,13 @@ from unittest import (
     TestCase,
 )
 
+from learnpdes import (
+    EXPONENTIAL_SCENARIO,
+    COSINUS_SCENARIO,
+    LAPLACE_SCENARIO,
+    POTENTIAL_FLOW_SCENARIO,
+)
+
 # ======= Tests =======
 
 
@@ -25,13 +32,16 @@ class TestScenarios(TestCase):
         cls.epochs: int = 10
 
     def test_first_scenario(self) -> None:
-        pinn('exponential', self.epochs)
+        pinn(EXPONENTIAL_SCENARIO, self.epochs)
 
     def test_second_scenario(self) -> None:
-        pinn('cosinus', self.epochs)
+        pinn(COSINUS_SCENARIO, self.epochs)
 
     def test_third_scenario(self) -> None:
-        pinn('laplace', self.epochs)
+        pinn(LAPLACE_SCENARIO, self.epochs)
+
+    def test_fourth_scenario(self) -> None:
+        pinn(POTENTIAL_FLOW_SCENARIO, self.epochs)
 
 
 # ======= Main =======

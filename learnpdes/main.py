@@ -15,6 +15,13 @@ from learnpdes.model.trainer import Trainer
 
 from learnpdes import device
 
+from learnpdes import (
+    # EXPONENTIAL_SCENARIO,
+    COSINUS_SCENARIO,
+    # LAPLACE_SCENARIO,
+    # POTENTIAL_FLOW_SCENARIO,
+)
+
 # ======= Main =======
 
 
@@ -38,7 +45,7 @@ def main(
 
     (
         input_space, mesh_masks,
-        analytical, output_dim,
+        output_dim, analytical,
         input_homeo, output_homeo, encoding
     ) = load_scenario(scenario, num_inputs=100)
 
@@ -63,6 +70,7 @@ def main(
 
     # 2. Define loss function
     loss = Loss(
+        scenario=scenario,
         input_space=input_space,
         input_dim=input_dim,
         forward=pinn.forward,
@@ -91,4 +99,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main(scenario='exponential')  # pragma: no cover
+    main(scenario=COSINUS_SCENARIO)  # pragma: no cover

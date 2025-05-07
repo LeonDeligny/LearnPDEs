@@ -6,6 +6,7 @@ Loss functions.
 
 import torch
 
+from numpy import array
 from torch import tensor
 from torch.autograd import grad
 
@@ -23,6 +24,11 @@ from learnpdes import (
     pi_tensor,
 )
 
+from learnpdes import (
+    LAPLACE_SCENARIO,
+    POTENTIAL_FLOW_SCENARIO,
+)
+
 # ======= Class =======
 
 
@@ -33,10 +39,12 @@ class Loss:
     one = tensor([1.0]).to(device)
     # Density of water at alt = 0.0
     atm = Atmosphere(0.0)
-    rho = torch.tensor([atm.density], dtype=torch.float32).to(device)
+    density = array([atm.density])
+    rho = torch.tensor(density, dtype=torch.float32).to(device)
 
     def __init__(
         self: 'Loss',
+        scenario: str,
         input_space: Tensor,
         input_dim: int,
         forward: Callable[[Tensor], Tensor],
@@ -50,6 +58,7 @@ class Loss:
         self.input_space = input_space
         self.dim = input_dim
         self.mesh_masks = mesh_masks
+        self.scenario = scenario
         print(f'Input space is of dimension {self.dim}.')
 
         # Transform input space into
@@ -62,18 +71,10 @@ class Loss:
         # 2D: (x = 0, y), (x = 1, y), (x, y = 0) and (x, y = 1)
         self.generate_boundaries()
 
-    def generate_airfoil_boundaries(self) -> None:
-        for name, mask in self.mesh_masks.items():
-            if name == 'inlet':
-                ...
-            elif name == 'outlet':
-                ...
-            elif name == 'wall':
-                ...
-            elif name == 'airfoil':
-                ...
-            else:
-                raise ValueError(f'{name=} not known as a boundary name.')
+        if self.scenario == LAPLACE_SCENARIO:
+            self.generate_laplace_boundary()
+        elif self.scenario == POTENTIAL_FLOW_SCENARIO:
+            self.generate_potential_flow_boundary()
 
     def process(
         self,
@@ -127,6 +128,53 @@ class Loss:
             self.one.expand_as(self.forward_null)
             .view(-1, 1).to(device)
         )
+
+    def generate_2d_boundaries(self) -> None:
+        for name, mask in self.mesh_masks.items():
+            if name == 'inlet':
+                self.inlet_mask = mask[name].to(self.device)
+                self.forward_inlet = self.forward(
+                    self.inputs[self.inlet_mask]
+                )[:, 0:1]
+                self.inlet_zero_tensor = (
+                    self.zero.expand_as(self.forward_inlet)
+                    .view(-1, 1).to(device)
+                )
+            elif name == 'outlet':
+                self.outlet_mask = mask[name].to(self.device)
+                self.forward_outlet = self.forward(
+                    self.inputs[self.outlet_mask]
+                )[:, 0:1]
+                self.outlet_zero_tensor = (
+                    self.zero.expand_as(self.forward_outlet)
+                    .view(-1, 1).to(device)
+                )
+            elif name == 'wall':
+                self.wall_mask = mask[name].to(self.device)
+                self.forward_wall = self.forward(
+                    self.inputs[self.wall_mask]
+                )[:, 0:1]
+                self.wall_zero_tensor = (
+                    self.zero.expand_as(self.forward_wall)
+                    .view(-1, 1).to(device)
+                )
+            elif name == 'airfoil':
+                self.airfoil_mask = mask[name].to(self.device)
+                self.forward_airfoil = self.forward(
+                    self.inputs[self.airfoil_mask]
+                )[:, 0:1]
+                self.airfoil_zero_tensor = (
+                    self.zero.expand_as(self.forward_airfoil)
+                    .view(-1, 1).to(device)
+                )
+            else:
+                raise ValueError(f'{name=} not known as a boundary name.')
+
+    def generate_laplace_boundary(self) -> None:
+        self.sin = torch.sin(pi_tensor * self.x[self.one_y_mask]).view(-1, 1)
+
+    def generate_potential_flow_boundary(self) -> None:
+        ...
 
     def generate_2d_boundaries(self) -> None:
         # x = 0
