@@ -6,7 +6,7 @@ Physics-Informed Neural Network (PINN) model.
 # ======= Imports =======
 
 from learnpdes.utils.decorators import time
-from learnpdes.utils.utility import load_scenario
+from learnpdes.utils.loadscenarios import load_scenario
 
 from torch.nn import Tanh
 from learnpdes.model.pinn import PINN
@@ -37,7 +37,8 @@ def main(
     # 'potential flow'
 
     (
-        input_space, analytical,
+        input_space, mesh_masks,
+        analytical, output_dim,
         input_homeo, output_homeo, encoding
     ) = load_scenario(scenario, num_inputs=100)
 
@@ -51,7 +52,7 @@ def main(
         nn_params={
             'input_dim': input_dim,
             'hidden_dim': 200,
-            'output_dim': 2,
+            'output_dim': output_dim,
             'num_hidden_layers': 4,
             'activation': Tanh,
         },
@@ -65,6 +66,7 @@ def main(
         input_space=input_space,
         input_dim=input_dim,
         forward=pinn.forward,
+        mesh_masks=mesh_masks,
     )
 
     # 3. Train model
@@ -89,4 +91,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main(scenario='potential flow')  # pragma: no cover
+    main(scenario='exponential')  # pragma: no cover

@@ -13,6 +13,7 @@ from torch import Tensor
 from ambiance import Atmosphere
 from torch.nn import MSELoss
 from typing import (
+    Dict,
     Tuple,
     Callable,
 )
@@ -39,6 +40,7 @@ class Loss:
         input_space: Tensor,
         input_dim: int,
         forward: Callable[[Tensor], Tensor],
+        mesh_masks: Dict[str, Tensor]
     ) -> None:
         '''
         Initialization of the loss.
@@ -47,6 +49,7 @@ class Loss:
         self.forward = forward
         self.input_space = input_space
         self.dim = input_dim
+        self.mesh_masks = mesh_masks
         print(f'Input space is of dimension {self.dim}.')
 
         # Transform input space into
@@ -58,6 +61,19 @@ class Loss:
         # 1D: (x = 0)
         # 2D: (x = 0, y), (x = 1, y), (x, y = 0) and (x, y = 1)
         self.generate_boundaries()
+
+    def generate_airfoil_boundaries(self) -> None:
+        for name, mask in self.mesh_masks.items():
+            if name == 'inlet':
+                ...
+            elif name == 'outlet':
+                ...
+            elif name == 'wall':
+                ...
+            elif name == 'airfoil':
+                ...
+            else:
+                raise ValueError(f'{name=} not known as a boundary name.')
 
     def process(
         self,
@@ -97,7 +113,7 @@ class Loss:
 
     def generate_1d_boundaries(self) -> None:
         # x = 0
-        self.zero_mask = (self.x.squeeze() == 0).to(self.device)
+        self.zero_mask = self.mesh_masks["zero"].to(self.device)
 
         # f(x = 0)
         self.forward_null = self.forward(self.x[self.zero_mask])

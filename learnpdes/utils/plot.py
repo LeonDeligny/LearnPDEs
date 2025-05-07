@@ -122,7 +122,8 @@ def save_2d_plot(
     else:
         ncols = 3
     fig, axes = plt.subplots(1, ncols, figsize=(18, 18))
-    if ncols == 1: axes = [axes]
+    if ncols == 1:
+        axes = [axes]
     create_plot(x1, x2, fig, axes[0], f, 'Model Output')
 
     if analytical is not None:

@@ -4,26 +4,7 @@ Utility functions.
 
 # ======= Imports =======
 
-import gmsh
 import torch
-import numpy as np
-
-from torch import (
-    # load,
-    linspace,
-)
-# from learnpdes.utils.decorators import validate
-from learnpdes.model.encodings import (
-    identity,
-    # fourier,
-)
-from learnpdes.utils.meshing import (
-    generate_mesh,
-    gmsh_to_tensor,
-    tag_surfaces_to_meshes,
-    set_variable_mesh_sizes,
-    add_physical_fuild_marker,
-)
 
 from torch import Tensor
 from numpy import ndarray
@@ -31,8 +12,6 @@ from torch.nn import Module
 from typing import (
     Tuple,
     Union,
-    Literal,
-    Callable,
 )
 
 from numpy import (
@@ -58,132 +37,55 @@ def laplace_function(x: ndarray, y: ndarray) -> ndarray:
     return sin(pi * x) * sinh(pi * y) / sinh(pi)
 
 
-def load_real_space(num_inputs: int) -> Tensor:
-    '''
-    Load real segment around 0, ensuring correct order.
-    '''
-    real_space = torch.cat([
-        linspace(-3, 3, num_inputs),
-        torch.tensor([0.0]),
-    ])
-    sorted_space, _ = torch.sort(real_space)
-    return sorted_space
+def analyze_xy(xy: Tensor) -> None:
+    x = xy[:, 0]
+    y = xy[:, 1]
+
+    x_min, x_max = x.min().item(), x.max().item()
+    y_min, y_max = y.min().item(), y.max().item()
+
+    x_min_count = (x == x_min).sum().item()
+    x_max_count = (x == x_max).sum().item()
+    y_min_count = (y == y_min).sum().item()
+    y_max_count = (y == y_max).sum().item()
+
+    print(f"x min: {x_min} (count: {x_min_count})")
+    print(f"x max: {x_max} (count: {x_max_count})")
+    print(f"y min: {y_min} (count: {y_min_count})")
+    print(f"y max: {y_max} (count: {y_max_count})")
 
 
-def load_exponential(
-    num_inputs: int
-) -> Tuple[Tensor, Callable, Callable, Callable, Callable]:
-    '''
-    Load configuration space (around 0) for exponential PDE
-    '''
-    x = load_real_space(num_inputs)
-    input_homeo = identity
-    output_homeo = identity
-    encoding = identity
-    analytical = np.exp
+def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
+    """
+    Returns a dictionary
+    mapping each MARKER_TAG to a boolean mask over the node array.
+    """
+    with open(filepath, 'r') as f:
+        lines = f.readlines()
 
-    return x, analytical, input_homeo, output_homeo, encoding
-
-
-def load_cosinus(
-    num_inputs: int
-) -> Tuple[Tensor, Callable, Callable, Callable, Callable]:
-    '''
-    Load configuration space (around 0) for exponential PDE
-    '''
-    x = load_real_space(num_inputs)
-    input_homeo = identity
-    output_homeo = identity
-    encoding = identity
-    analytical = np.cos
-
-    return x, analytical, input_homeo, output_homeo, encoding
-
-
-def load_laplace(
-    num_inputs: int
-) -> Tuple[Tensor, Callable, Callable, Callable, Callable]:
-    # 2D Space [0, 1] x [0, 1]
-    xy = torch.cartesian_prod(
-        torch.linspace(0, 1, num_inputs),
-        torch.linspace(0, 1, num_inputs),
-    )
-
-    input_homeo = identity
-    output_homeo = identity
-    encoding = identity
-    analytical = laplace_function
-
-    return xy, analytical, input_homeo, output_homeo, encoding
-
-
-def load_potential_flow(
-) -> Tuple[Tensor, None, Callable, Callable, Callable]:
-    '''
-    Source:
-        https://jsdokken.com/dolfinx-tutorial/chapter2/ns_code2.html
-    '''
-    gmsh.initialize()
-
-    # Define constants
-    L = 1.0
-    H = 1.0
-    CENTER_X = 0.2
-    CENTER_Y = 0.5
-    RADIUS = 0.05
-    GDIM = 2
-    rectangle = gmsh.model.occ.addRectangle(0, 0, 0, L, H, tag=1)
-    obstacle = gmsh.model.occ.addDisk(CENTER_X, CENTER_Y, 0, RADIUS, RADIUS)
-
-    # Do not mesh interior of the disk
-    gmsh.model.occ.cut([(GDIM, rectangle)], [(GDIM, obstacle)])
-    gmsh.model.occ.synchronize()
-
-    volumes = add_physical_fuild_marker(dim=GDIM)
-    tag_surfaces_to_meshes(volumes, length=L, height=H)
-    set_variable_mesh_sizes(obstacle, radius=RADIUS, height=H)
-    generate_mesh(gdim=GDIM)
-    xy = gmsh_to_tensor()
-
-    input_homeo = identity
-    output_homeo = identity
-    encoding = identity
-    analytical = None
-
-    import matplotlib.pyplot as plt
-    plot = False
-    if plot:
-        plt.figure(figsize=(6, 6))
-        plt.scatter(xy[:, 0], xy[:, 1], s=2, alpha=0.7)
-        plt.gca().set_aspect('equal')
-        plt.title("Gmsh-generated mesh nodes")
-        plt.xlabel("x")
-        plt.ylabel("y")
-        plt.show()
-
-    return xy, analytical, input_homeo, output_homeo, encoding
-
-
-def load_scenario(
-    scenario: Literal[
-        'exponential',
-        'cosinus',
-        'laplace',
-        'potential flow'
-    ],
-    num_inputs: int = 100,
-) -> Tuple[Tensor, Union[Callable, None], Callable, Callable, Callable]:
-
-    print(f'Loading scenario: {scenario}')
-
-    if scenario == 'exponential':
-        return load_exponential(num_inputs)
-    elif scenario == 'cosinus':
-        return load_cosinus(num_inputs)
-    elif scenario == 'laplace':
-        return load_laplace(num_inputs)
-    elif scenario == 'potential flow':
-        return load_potential_flow()
+    marker_masks = {}
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("MARKER_TAG="):
+            tag = line.split("=")[1].strip()
+            # Find number of elements for this marker
+            while not lines[i].startswith("MARKER_ELEMS="):
+                i += 1
+            num_elems = int(lines[i].split("=")[1].strip())
+            indices = []
+            for j in range(i + 1, i + 1 + num_elems):
+                parts = lines[j].strip().split()
+                # For line elements, last two numbers are node indices
+                idxs = [int(x) for x in parts[-2:]]
+                indices.extend(idxs)
+            indices = list(set(indices))
+            mask = torch.zeros(num_points, dtype=torch.bool)
+            mask[indices] = True
+            marker_masks[tag] = mask
+            i = i + num_elems
+        i += 1
+    return marker_masks
 
 
 def detach_to_numpy(
