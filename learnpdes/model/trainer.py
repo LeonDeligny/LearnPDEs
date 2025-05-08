@@ -55,8 +55,9 @@ class Trainer:
         self.learning_rate: float = training_params.get('learning_rate')
         self.nb_epochs: int = training_params.get('epochs')
 
-        # Analytical solution if any
         self.dim_plot = dim_plot
+
+        # Analytical solution if any
         self.analytical = analytical
 
         # Training parameters
@@ -75,7 +76,7 @@ class Trainer:
         for epoch in range(self.nb_epochs):
             self.optimizer.zero_grad()
 
-            loss, x, f = self.loss()
+            loss, x, y, f = self.loss()
 
             loss.backward(retain_graph=True)
             self.optimizer.step()
@@ -96,9 +97,15 @@ class Trainer:
                         analytical=self.analytical
                     )
                 else:
+                    y_ = detach_to_numpy(y)
                     save_2d_plot(
                         output_dir,
-                        epoch, x_, f_, loss, self.analytical
+                        epoch=epoch,
+                        x1=x_,
+                        x2=y_,
+                        f=f_,
+                        loss=loss,
+                        analytical=self.analytical
                     )
 
         # Create GIF with saved plots

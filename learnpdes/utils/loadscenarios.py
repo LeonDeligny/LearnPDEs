@@ -124,7 +124,7 @@ def load_laplace(
     Load a square [0, 1] x [0, 1] as input space for laplace PDE.
     '''
     # Define constants
-    output_dim = 2
+    output_dim = 1
     input_homeo = identity
     output_homeo = identity
     encoding = identity
@@ -142,7 +142,8 @@ def load_laplace(
     mesh_masks = {
         "inlet": x == 0,
         "outlet": x == 1,
-        "wall": ((y == 0) or (y == 1)),
+        "bottom": y == 0,
+        "top": y == 1,
     }
 
     return (

@@ -16,10 +16,10 @@ from learnpdes.model.trainer import Trainer
 from learnpdes import device
 
 from learnpdes import (
-    # EXPONENTIAL_SCENARIO,
+    EXPONENTIAL_SCENARIO,
     COSINUS_SCENARIO,
-    # LAPLACE_SCENARIO,
-    # POTENTIAL_FLOW_SCENARIO,
+    LAPLACE_SCENARIO,
+    POTENTIAL_FLOW_SCENARIO,
 )
 
 # ======= Main =======
@@ -99,4 +99,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main(scenario=COSINUS_SCENARIO)  # pragma: no cover
+    main(scenario=POTENTIAL_FLOW_SCENARIO)  # pragma: no cover

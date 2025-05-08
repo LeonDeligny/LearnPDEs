@@ -4,18 +4,18 @@ Plot functions.
 #  ======= Imports =======
 
 import os
-
+import numpy as np
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
 
 from pathlib import Path
 from numpy import ndarray
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from typing import (
     Union,
     Callable,
 )
-from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
 # ======= Functions =======
 
@@ -97,7 +97,7 @@ def create_plot(
         data,
         extent=[x1.min(), x1.max(), x2.min(), x2.max()],
         origin='lower',
-        aspect='auto'
+        aspect='auto',
     )
     ax.set_title(title)
     ax.set_xlabel('x')
@@ -108,30 +108,32 @@ def create_plot(
 def save_2d_plot(
     output_dir: Path,
     epoch: int,
-    x: ndarray,
+    x1: ndarray,
+    x2: ndarray,
     f: ndarray,
     loss: float,
     analytical: Union[Callable, None],
 ) -> None:
-    x1, x2 = x[:, 0], x[:, 1]
+    n = int(np.sqrt(len(x1)))
+    x1_grid = x1.reshape(n, n).T
+    x2_grid = x2.reshape(n, n).T
+    f_grid = f.reshape(n, n).T
 
     if analytical is None:
         ncols = 1
     else:
         ncols = 3
-    fig, axes = plt.subplots(1, ncols, figsize=(18, 18))
+    fig, axes = plt.subplots(1, ncols, figsize=(18, 6))
     if ncols == 1:
         axes = [axes]
-    create_plot(x1, x2, fig, axes[0], f, 'Model Output')
+    create_plot(x1_grid, x2_grid, fig, axes[0], f_grid, 'Model Output')
 
     if analytical is not None:
-        # Compute the analytical solution
-        analytical_f: ndarray = analytical(x[:, 0], x[:, 1])
-        difference = f - analytical_f
-        create_plot(x1, x2, fig, axes[1], analytical_f, 'Analytical Solution')
-        create_plot(x1, x2, fig, axes[2], difference, 'Difference')
+        ana_f: ndarray = analytical(x1_grid, x2_grid).T
+        difference = f_grid - ana_f
+        create_plot(x1_grid, x2_grid, fig, axes[1], ana_f, 'Analytical')
+        create_plot(x1_grid, x2_grid, fig, axes[2], difference, 'Difference')
 
-    # Save the plot
     plt.suptitle(f'Epoch: {epoch}, Loss: {loss:.4f}')
     plt.tight_layout()
     plt.savefig(f'{output_dir}/epoch_{epoch}.png')

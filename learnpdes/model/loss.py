@@ -25,6 +25,8 @@ from learnpdes import (
 )
 
 from learnpdes import (
+    EXPONENTIAL_SCENARIO,
+    COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
 )
@@ -37,8 +39,9 @@ class Loss:
     mse_loss = MSELoss().to(device)
     zero = tensor([0.0]).to(device)
     one = tensor([1.0]).to(device)
-    # Density of water at alt = 0.0
-    atm = Atmosphere(0.0)
+
+    # Density of air at water level
+    atm = Atmosphere(h=0.0)
     density = array([atm.density])
     rho = torch.tensor(density, dtype=torch.float32).to(device)
 
@@ -71,8 +74,10 @@ class Loss:
         # 2D: (x = 0, y), (x = 1, y), (x, y = 0) and (x, y = 1)
         self.generate_boundaries()
 
+        # Generate scenario specific boundaries
         if self.scenario == LAPLACE_SCENARIO:
             self.generate_laplace_boundary()
+
         elif self.scenario == POTENTIAL_FLOW_SCENARIO:
             self.generate_potential_flow_boundary()
 
@@ -132,7 +137,7 @@ class Loss:
     def generate_2d_boundaries(self) -> None:
         for name, mask in self.mesh_masks.items():
             if name == 'inlet':
-                self.inlet_mask = mask[name].to(self.device)
+                self.inlet_mask = mask.to(self.device)
                 self.forward_inlet = self.forward(
                     self.inputs[self.inlet_mask]
                 )[:, 0:1]
@@ -141,7 +146,7 @@ class Loss:
                     .view(-1, 1).to(device)
                 )
             elif name == 'outlet':
-                self.outlet_mask = mask[name].to(self.device)
+                self.outlet_mask = mask.to(self.device)
                 self.forward_outlet = self.forward(
                     self.inputs[self.outlet_mask]
                 )[:, 0:1]
@@ -150,7 +155,7 @@ class Loss:
                     .view(-1, 1).to(device)
                 )
             elif name == 'wall':
-                self.wall_mask = mask[name].to(self.device)
+                self.wall_mask = mask.to(self.device)
                 self.forward_wall = self.forward(
                     self.inputs[self.wall_mask]
                 )[:, 0:1]
@@ -158,8 +163,26 @@ class Loss:
                     self.zero.expand_as(self.forward_wall)
                     .view(-1, 1).to(device)
                 )
+            elif name == 'top':
+                self.top_mask = mask.to(self.device)
+                self.forward_top = self.forward(
+                    self.inputs[self.top_mask]
+                )[:, 0:1]
+                self.top_zero_tensor = (
+                    self.zero.expand_as(self.forward_top)
+                    .view(-1, 1).to(device)
+                )
+            elif name == 'bottom':
+                self.bottom_mask = mask.to(self.device)
+                self.forward_bottom = self.forward(
+                    self.inputs[self.bottom_mask]
+                )[:, 0:1]
+                self.bottom_zero_tensor = (
+                    self.zero.expand_as(self.forward_bottom)
+                    .view(-1, 1).to(device)
+                )
             elif name == 'airfoil':
-                self.airfoil_mask = mask[name].to(self.device)
+                self.airfoil_mask = mask.to(self.device)
                 self.forward_airfoil = self.forward(
                     self.inputs[self.airfoil_mask]
                 )[:, 0:1]
@@ -171,58 +194,10 @@ class Loss:
                 raise ValueError(f'{name=} not known as a boundary name.')
 
     def generate_laplace_boundary(self) -> None:
-        self.sin = torch.sin(pi_tensor * self.x[self.one_y_mask]).view(-1, 1)
+        self.sin = torch.sin(pi_tensor * self.x[self.top_mask]).view(-1, 1)
 
     def generate_potential_flow_boundary(self) -> None:
         ...
-
-    def generate_2d_boundaries(self) -> None:
-        # x = 0
-        self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
-        # y = 0
-        self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
-        # x = 1
-        self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
-        # y = 1
-        self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
-        # f(x = 0, y)
-        self.forward_x_null = self.forward(
-            self.inputs[self.zero_x_mask]
-        )[:, 0:1]
-        # f(x = 1, y)
-        self.forward_x_one = self.forward(
-            self.inputs[self.one_x_mask]
-        )[:, 0:1]
-        # f(x, y = 0)
-        self.forward_y_null = self.forward(
-            self.inputs[self.zero_y_mask]
-        )[:, 0:1]
-        # f(x, y = 1)
-        self.forward_y_one = self.forward(
-            self.inputs[self.one_y_mask]
-        )[:, 0:1]
-
-        self.zero_x_tensor = (
-            self.zero.expand_as(self.forward_x_null)
-            .view(-1, 1).to(device)
-        )
-
-        self.zero_y_tensor = (
-            self.zero.expand_as(self.forward_y_null)
-            .view(-1, 1).to(device)
-        )
-
-        self.one_x_tensor = (
-            self.one.expand_as(self.forward_x_one)
-            .view(-1, 1).to(device)
-        )
-
-        self.one_y_tensor = (
-            self.one.expand_as(self.forward_y_one)
-            .view(-1, 1).to(device)
-        )
-
-        self.sin = torch.sin(pi_tensor * self.x[self.one_y_mask]).view(-1, 1)
 
     def generate_boundaries(self) -> None:
         if self.dim == 1:
@@ -232,7 +207,7 @@ class Loss:
             self.generate_2d_boundaries()
 
         else:
-            print(f'Value for {self.dim=} should be either 1 or 2.')
+            raise ValueError(f'{self.dim=} should be either 1 or 2.')
 
     def partial_derivative(self, f: Tensor, x: Tensor) -> Tensor:
         """
@@ -246,18 +221,18 @@ class Loss:
         )[0].view(-1, 1).to(self.device)
 
     def get_loss(self, scenario: str) -> Callable:
-        if scenario == 'exponential':
+        if scenario == EXPONENTIAL_SCENARIO:
             return self.exponential_loss
-        elif scenario == 'cosinus':
+        elif scenario == COSINUS_SCENARIO:
             return self.cosinus_loss
-        elif scenario == 'laplace':
+        elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
-        elif scenario == 'potential flow':
+        elif scenario == POTENTIAL_FLOW_SCENARIO:
             return self.potential_flow_loss
         else:
-            print('Scenario not found.')
+            raise ValueError(f"{scenario=} is not a valid scenario.")
 
-    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)
 
         # Compute the second derivatives
@@ -273,26 +248,26 @@ class Loss:
         # Dirichlet boundary conditions
         boundary_loss = (
             self.mse_loss(
-                # f(., 0) = 0
-                f[self.zero_y_mask].view(-1, 1),
-                self.zero_y_tensor,
+                # f(bottom) = 0
+                f[self.bottom_mask].view(-1, 1),
+                self.bottom_zero_tensor,
             ) + self.mse_loss(
-                # f(., 1) = sin(pi x)
-                f[self.one_y_mask].view(-1, 1),
+                # f(top) = sin(pi x)
+                f[self.top_mask].view(-1, 1),
                 self.sin,
             ) + self.mse_loss(
-                # f(0, .) = 0
-                f[self.zero_x_mask].view(-1, 1),
-                self.zero_x_tensor,
+                # f(inlet) = 0
+                f[self.inlet_mask].view(-1, 1),
+                self.inlet_zero_tensor,
             ) + self.mse_loss(
-                # f(1, .) = 0
-                f[self.one_x_mask].view(-1, 1),
-                self.zero_x_tensor,
+                # f(outlet) = 0
+                f[self.outlet_mask].view(-1, 1),
+                self.outlet_zero_tensor,
             )
         )
-        return self.process(physics_loss, boundary_loss), self.inputs, f
+        return self.process(physics_loss, boundary_loss), self.x, self.y, f
 
-    def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    def exponential_loss(self) -> Tuple[Tensor, Tensor, None, Tensor]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
 
@@ -305,10 +280,10 @@ class Loss:
             self.one_tensor,
         )
 
-        return self.process(physics_loss, boundary_loss), self.x, f
+        return self.process(physics_loss, boundary_loss), self.x, None, f
 
-    def cosinus_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
-        f = self.forward(self.x)
+    def cosinus_loss(self) -> Tuple[Tensor, Tensor, None, Tensor]:
+        f = self.forward(self.inputs)
         df_dx = self.partial_derivative(f, self.x)
         ddf_dxdx = self.partial_derivative(df_dx, self.x)
 
@@ -323,7 +298,7 @@ class Loss:
             ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
-        return self.process(physics_loss, boundary_loss), self.x, f
+        return self.process(physics_loss, boundary_loss), self.inputs, None, f
 
     def potential_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         """
@@ -441,3 +416,51 @@ class Loss:
         v_y = self.partial_derivative(v, self.y)
 
         return self.mse_loss(u_x, -v_y), u_x, v_y
+
+    # def generate_2d_boundaries(self) -> None:
+    #     # x = 0
+    #     self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
+    #     # y = 0
+    #     self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
+    #     # x = 1
+    #     self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
+    #     # y = 1
+    #     self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
+    #     # f(x = 0, y)
+    #     self.forward_x_null = self.forward(
+    #         self.inputs[self.zero_x_mask]
+    #     )[:, 0:1]
+    #     # f(x = 1, y)
+    #     self.forward_x_one = self.forward(
+    #         self.inputs[self.one_x_mask]
+    #     )[:, 0:1]
+    #     # f(x, y = 0)
+    #     self.forward_y_null = self.forward(
+    #         self.inputs[self.zero_y_mask]
+    #     )[:, 0:1]
+    #     # f(x, y = 1)
+    #     self.forward_y_one = self.forward(
+    #         self.inputs[self.one_y_mask]
+    #     )[:, 0:1]
+
+    #     self.zero_x_tensor = (
+    #         self.zero.expand_as(self.forward_x_null)
+    #         .view(-1, 1).to(device)
+    #     )
+
+    #     self.zero_y_tensor = (
+    #         self.zero.expand_as(self.forward_y_null)
+    #         .view(-1, 1).to(device)
+    #     )
+
+    #     self.one_x_tensor = (
+    #         self.one.expand_as(self.forward_x_one)
+    #         .view(-1, 1).to(device)
+    #     )
+
+    #     self.one_y_tensor = (
+    #         self.one.expand_as(self.forward_y_one)
+    #         .view(-1, 1).to(device)
+    #     )
+
+    #     self.sin = torch.sin(pi_tensor * self.x[self.one_y_mask]).view(-1, 1)
