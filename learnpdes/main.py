@@ -77,6 +77,20 @@ def main(
     )
 
     # 3. Train model
+    pre_trainer = Trainer(
+        model_params=pinn.parameters,
+        loss=loss.get_loss(scenario),
+        training_params={
+            'learning_rate': 0.001,
+            'epochs': epochs,
+        },
+        dim_plot=input_dim,
+        analytical=analytical,
+    )
+
+    # trainer.train()
+
+    # 4. Train model
     trainer = Trainer(
         model_params=pinn.parameters,
         loss=loss.get_loss(scenario),

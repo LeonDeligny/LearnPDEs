@@ -96,6 +96,12 @@ def create_plot(
     data: ndarray,
     title: str,
 ) -> None:
+    # Ensure data size matches x1 and x2
+    if data.size != x1.size:
+        raise ValueError(
+            f"Size mismatch: 'data' has {data.size} elements, but 'x1' and 'x2' have {x1.size} elements."
+        )
+
     mesh = ax.scatter(
         x1, x2, c=data,
         cmap='viridis',
@@ -202,9 +208,10 @@ def save_2d_plot(
     x1, x2 = inputs[:, 0], inputs[:, 1]
 
     # Reshape x1, x2, and f into 2D grids
-    x1_grid = x1
-    x2_grid = x2
-    f_grid = f
+    n = int(len(x1)**0.5)
+    x1_grid = x2.reshape(n, n).T
+    x2_grid = x1.reshape(n, n).T
+    f_grid = f.reshape(n, n).T
 
     ncols = 1 if analytical is None else 3
     fig, axes = plt.subplots(1, ncols, figsize=(18, 6))
