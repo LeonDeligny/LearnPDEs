@@ -335,7 +335,7 @@ class Loss:
         p = -0.5 * self.rho * (u**2 + v**2)
 
         ic_loss, _, _ = self.incompressibility_loss(u, v)
-        energy_loss = self.mse_loss(p.mean(), self.one_tensor)
+        energy_loss = self.mse_loss(p.mean(), self.one.squeeze())
 
         physics_loss = ic_loss + energy_loss
 
