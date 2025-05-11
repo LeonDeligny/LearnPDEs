@@ -99,7 +99,8 @@ def create_plot(
     # Ensure data size matches x1 and x2
     if data.size != x1.size:
         raise ValueError(
-            f"Size mismatch: 'data' has {data.size} elements, but 'x1' and 'x2' have {x1.size} elements."
+            f"Size mismatch: 'data' has {data.size} elements, "
+            f"but 'x1' and 'x2' have {x1.size} elements."
         )
 
     mesh = ax.scatter(

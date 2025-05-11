@@ -8,15 +8,8 @@ import re
 import torch
 import numpy as np
 
-from torch import (
-    # load,
-    linspace,
-)
-# from learnpdes.utils.decorators import validate
-from learnpdes.model.encodings import (
-    identity,
-    # fourier,
-)
+from torch import linspace
+from learnpdes.model.encodings import identity
 from learnpdes.utils.utility import (
     analyze_xy,
     laplace_function,
@@ -191,7 +184,10 @@ def load_potential_flow() -> Tuple[
 
     xy = torch.tensor(coords, dtype=torch.float32)
     analyze_xy(xy)
-    mesh_masks = get_marker_masks(filepath, xy.shape[0])
+    num_points = xy.shape[0]
+    mesh_masks = get_marker_masks(filepath, num_points)
+
+    print(f"Total number of vertices: {num_points}")
 
     return (
         xy, mesh_masks,

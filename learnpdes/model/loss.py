@@ -208,9 +208,6 @@ class Loss:
     def generate_laplace_boundary(self) -> None:
         self.sin = torch.sin(pi_tensor * self.x[self.top_mask]).view(-1, 1)
 
-    def generate_potential_flow_boundary(self) -> None:
-        ...
-
     def generate_boundaries(self) -> None:
         if self.dim == 1:
             self.generate_1d_boundaries()
@@ -233,6 +230,7 @@ class Loss:
         )[0].view(-1, 1).to(self.device)
 
     def get_loss(self, scenario: str) -> Callable:
+        print("\n ----- Started training -----\n")
         if scenario == EXPONENTIAL_SCENARIO:
             return self.exponential_loss
         elif scenario == COSINUS_SCENARIO:
@@ -243,9 +241,16 @@ class Loss:
             return self.potential_flow_loss
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
-        
+
     def get_pre_loss(self, scenario: str) -> Callable:
-        if scenario == POTENTIAL_FLOW_SCENARIO:
+        print("\n ----- Started pre-training -----\n")
+        if scenario == EXPONENTIAL_SCENARIO:
+            return self.exponential_loss
+        elif scenario == COSINUS_SCENARIO:
+            return self.cosinus_loss
+        elif scenario == LAPLACE_SCENARIO:
+            return self.laplace_loss
+        elif scenario == POTENTIAL_FLOW_SCENARIO:
             return self.potential_flow_pre_loss
         else:
             raise ValueError(
@@ -333,9 +338,9 @@ class Loss:
         p = -0.5 * self.rho * (u**2 + v**2)
 
         ic_loss, _, _ = self.incompressibility_loss(u, v)
-        k_loss, _, _ = self.kurapika_loss(u, v)
+        energy_loss = self.mse_loss(p.mean(), self.one_tensor)
 
-        physics_loss = k_loss + ic_loss
+        physics_loss = ic_loss + energy_loss
 
         # Inlet boundary condition
         # u(inlet) = 1 and v(inlet) = 0
@@ -376,9 +381,8 @@ class Loss:
         p = -0.5 * self.rho * (u**2 + v**2)
 
         ic_loss, _, _ = self.incompressibility_loss(u, v)
-        k_loss, _, _ = self.kurapika_loss(u, v)
 
-        physics_loss = k_loss + ic_loss
+        physics_loss = ic_loss
 
         # Inlet boundary condition
         # u(inlet) = 1 and v(inlet) = 0
@@ -419,10 +423,3 @@ class Loss:
         v_y = self.partial_derivative(v, self.y)
 
         return self.mse_loss(u_x, -v_y), u_x, v_y
-
-    def kurapika_loss(self, u, v) -> Tuple[float, Tensor, Tensor]:
-        # u_y + v_x = 0 (K)
-        u_y = self.partial_derivative(u, self.y)
-        v_x = self.partial_derivative(v, self.x)
-
-        return self.mse_loss(u_y, v_x), u_y, v_x

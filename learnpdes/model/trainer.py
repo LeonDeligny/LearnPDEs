@@ -71,51 +71,52 @@ class Trainer:
         os.makedirs('gifs', exist_ok=True)
 
     def train(self) -> None:
-        output_dir = ensure_directory_exists()
+        # Train if there is at least one epoch
+        if self.nb_epochs != 0:
+            output_dir = ensure_directory_exists()
 
-        # Training loop
-        for epoch in range(self.nb_epochs):
-            self.optimizer.zero_grad()
+            # Training loop
+            for epoch in range(0, self.nb_epochs):
+                self.optimizer.zero_grad()
 
-            loss, inputs, f, airfoil_mask = self.loss()
+                loss, inputs, f, airfoil_mask = self.loss()
 
-            loss.backward(retain_graph=True)
-            self.optimizer.step()
+                loss.backward(retain_graph=True)
+                self.optimizer.step()
 
-            if epoch % 100 == 0:
-                print(f'Epoch {epoch}, Loss: {loss}')
+                if epoch % 100 == 0:
+                    print(f'Epoch {epoch}, Loss: {loss}')
 
-                # Back to CPU for plotting
-                x_ = detach_to_numpy(inputs)
-                f_ = detach_to_numpy(f)
-                if self.dim_plot == 1:
-                    save_plot(
-                        output_dir,
-                        epoch=epoch,
-                        x=x_,
-                        f=f_,
-                        loss=loss,
-                        analytical=self.analytical
-                    )
-                elif airfoil_mask is not None:
-                    airfoil_mask_ = detach_to_numpy(airfoil_mask)
-                    save_airfoil_plot(
-                        output_dir,
-                        epoch=epoch,
-                        inputs=x_,
-                        f=f_,
-                        loss=loss,
-                        airfoil_mask=airfoil_mask_
-                    )
-                else:
-                    save_2d_plot(
-                        output_dir,
-                        epoch=epoch,
-                        inputs=x_,
-                        f=f_,
-                        loss=loss,
-                        analytical=self.analytical
-                    )
+                    # Back to CPU for plotting
+                    x_ = detach_to_numpy(inputs)
+                    f_ = detach_to_numpy(f)
+                    if self.dim_plot == 1:
+                        save_plot(
+                            output_dir,
+                            epoch=epoch,
+                            x=x_,
+                            f=f_,
+                            loss=loss,
+                            analytical=self.analytical
+                        )
+                    elif airfoil_mask is not None:
+                        airfoil_mask_ = detach_to_numpy(airfoil_mask)
+                        save_airfoil_plot(
+                            output_dir,
+                            epoch=epoch,
+                            inputs=x_,
+                            f=f_,
+                            loss=loss,
+                            airfoil_mask=airfoil_mask_
+                        )
+                    else:
+                        save_2d_plot(
+                            output_dir,
+                            epoch=epoch,
+                            inputs=x_,
+                            f=f_,
+                            loss=loss,
+                            analytical=self.analytical
+                        )
 
-        # Create GIF with saved plots
-        create_gif()
+                create_gif()

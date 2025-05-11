@@ -28,7 +28,7 @@ from learnpdes import (
 def main(
     scenario: str,
     epochs: int = 100_000,
-    pre_epochs: int = 2_000,
+    pre_epochs: int = 10_000,
 ) -> None:
     '''
     Description of workflow.
@@ -77,8 +77,8 @@ def main(
         mesh_masks=mesh_masks,
     )
 
-    # 3. Train model
-    pre_trainer = Trainer(
+    # 3. Pre-train model
+    pre_traier = Trainer(
         model_params=pinn.parameters,
         loss=loss.get_pre_loss(scenario),
         training_params={
@@ -88,8 +88,7 @@ def main(
         dim_plot=input_dim,
         analytical=analytical,
     )
-
-    pre_trainer.train()
+    pre_traier.train()
 
     # 4. Train model
     trainer = Trainer(
@@ -97,12 +96,11 @@ def main(
         loss=loss.get_loss(scenario),
         training_params={
             'learning_rate': 0.001,
-            'epochs': epochs,
+            'epochs': epochs + pre_epochs,
         },
         dim_plot=input_dim,
         analytical=analytical,
     )
-
     trainer.train()
 
     # 4. Evaluate model

@@ -63,7 +63,7 @@ def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
     with open(filepath, 'r') as f:
         lines = f.readlines()
 
-    marker_masks = {}
+    marker_masks: dict[str, Tensor] = {}
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -86,7 +86,6 @@ def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
             i = i + num_elems
         i += 1
 
-    # Print the name and number of elements for each mask
     for tag, mask in marker_masks.items():
         print(f"Marker: {tag}, Number of elements: {mask.sum().item()}")
 
