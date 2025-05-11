@@ -28,7 +28,7 @@ from learnpdes import (
 @time
 def main(
     scenario: str,
-    epochs: int = 10_000,
+    epochs: int = 100_000,
 ) -> None:
     '''
     Description of workflow.
@@ -58,7 +58,7 @@ def main(
     pinn = PINN(
         nn_params={
             'input_dim': input_dim,
-            'hidden_dim': 200,
+            'hidden_dim': 300,
             'output_dim': output_dim,
             'num_hidden_layers': 4,
             'activation': Tanh,

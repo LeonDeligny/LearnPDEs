@@ -145,6 +145,10 @@ class Loss:
                     self.zero.expand_as(self.forward_inlet)
                     .view(-1, 1).to(device)
                 )
+                self.inlet_one_tensor = (
+                    self.one.expand_as(self.forward_inlet)
+                    .view(-1, 1).to(device)
+                )
             elif name == 'outlet':
                 self.outlet_mask = mask.to(self.device)
                 self.forward_outlet = self.forward(
@@ -154,6 +158,10 @@ class Loss:
                     self.zero.expand_as(self.forward_outlet)
                     .view(-1, 1).to(device)
                 )
+                self.outlet_one_tensor = (
+                    self.one.expand_as(self.forward_outlet)
+                    .view(-1, 1).to(device)
+                )
             elif name == 'wall':
                 self.wall_mask = mask.to(self.device)
                 self.forward_wall = self.forward(
@@ -161,6 +169,10 @@ class Loss:
                 )[:, 0:1]
                 self.wall_zero_tensor = (
                     self.zero.expand_as(self.forward_wall)
+                    .view(-1, 1).to(device)
+                )
+                self.wall_one_tensor = (
+                    self.one.expand_as(self.forward_wall)
                     .view(-1, 1).to(device)
                 )
             elif name == 'top':
@@ -232,7 +244,7 @@ class Loss:
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
 
-    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)
 
         # Compute the second derivatives
@@ -265,9 +277,9 @@ class Loss:
                 self.outlet_zero_tensor,
             )
         )
-        return self.process(physics_loss, boundary_loss), self.x, self.y, f
+        return self.process(physics_loss, boundary_loss), self.inputs, f
 
-    def exponential_loss(self) -> Tuple[Tensor, Tensor, None, Tensor]:
+    def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
 
@@ -280,9 +292,9 @@ class Loss:
             self.one_tensor,
         )
 
-        return self.process(physics_loss, boundary_loss), self.x, None, f
+        return self.process(physics_loss, boundary_loss), self.inputs, f
 
-    def cosinus_loss(self) -> Tuple[Tensor, Tensor, None, Tensor]:
+    def cosinus_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
         f = self.forward(self.inputs)
         df_dx = self.partial_derivative(f, self.x)
         ddf_dxdx = self.partial_derivative(df_dx, self.x)
@@ -298,117 +310,57 @@ class Loss:
             ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
-        return self.process(physics_loss, boundary_loss), self.inputs, None, f
+        return self.process(physics_loss, boundary_loss), self.inputs, f
 
-    def potential_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    def potential_flow_loss(
+            self
+        ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]]:
         """
         u = nabla phi
         """
         outputs = self.forward(self.inputs)
         phi = outputs[:, 0:1]
-        p = outputs[:, 1:2]
         u = self.partial_derivative(phi, self.x)
         v = self.partial_derivative(phi, self.y)
+        p = -0.5 * self.rho * (u**2 + v**2)
 
-        # u_x + v_y = 0 (Incompressibility)
-        ic_loss, _, v_y = self.incompressibility_loss(u, v)
+        ic_loss, _, _ = self.incompressibility_loss(u, v)
+        k_loss, _, _ = self.kurapika_loss(u, v)
 
-        # u u_x + v u_y + p_x / rho = 0
-        u_y = self.partial_derivative(u, self.y)
-        p_x = self.partial_derivative(p, self.x)
-        flow_x_loss = self.mse_loss(v * u_y - u * v_y, -p_x / self.rho)
+        physics_loss = k_loss + ic_loss
 
-        # u v_x + v v_y + p_y / rho = 0
-        v_x = self.partial_derivative(v, self.x)
-        p_y = self.partial_derivative(p, self.y)
-        flow_y_loss = self.mse_loss(u * v_x + v * v_y, -p_y / self.rho)
-
-        physics_loss = flow_x_loss + flow_y_loss + ic_loss
-
-        # u(x = 1, .) = 1 and v(x = 0, .) = 0
         # Inlet boundary condition
+        # u(inlet) = 1 and v(inlet) = 0
         inlet_loss = (
-            self.mse_loss(u[self.zero_x_mask], self.one_x_tensor)
-            + self.mse_loss(v[self.zero_x_mask], self.zero_x_tensor)
-            + self.mse_loss(p[self.zero_x_mask], self.one_x_tensor)
+            self.mse_loss(u[self.inlet_mask], self.inlet_one_tensor)
+            + self.mse_loss(v[self.inlet_mask], self.inlet_zero_tensor)
         )
         # Outlet boundary condition
+        # u(outlet) = 1 and v(outlet) = 0
         outlet_loss = (
-            self.mse_loss(u[self.one_x_mask], self.one_x_tensor)
-            + self.mse_loss(v[self.one_x_mask], self.zero_x_tensor)
+            self.mse_loss(u[self.outlet_mask], self.outlet_one_tensor)
+            + self.mse_loss(v[self.outlet_mask], self.outlet_zero_tensor)
         )
         # Wall boundary condition
+        # u(wall) = 1 and v(wall) = 0
         wall_loss = (
-            self.mse_loss(u[self.zero_y_mask], self.one_y_tensor)
-            + self.mse_loss(v[self.zero_y_mask], self.zero_y_tensor)
-            + self.mse_loss(u[self.one_y_mask], self.one_y_tensor)
-            + self.mse_loss(v[self.one_y_mask], self.zero_y_tensor)
+            self.mse_loss(u[self.wall_mask], self.wall_one_tensor)
+            + self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
         )
-        boundary_loss = inlet_loss + outlet_loss + wall_loss
+        # Surface boundary condition
+        # u(airfoil) = v(airfoil) = 0
+        airfoil_loss = (
+            self.mse_loss(u[self.airfoil_mask], self.airfoil_zero_tensor)
+            + self.mse_loss(v[self.airfoil_mask], self.airfoil_zero_tensor)
+        )
+        boundary_loss = inlet_loss + outlet_loss + wall_loss + airfoil_loss
 
         return (
             self.process(physics_loss, boundary_loss),
             self.inputs,
             (u, v, p),
+            self.airfoil_mask
         )
-
-    # def euler_flow_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
-    #     '''
-    #     No mu term as the laplacian of u, v is null.
-    #     '''
-    #     u, v, p = self.forward(self.inputs)
-
-    #     # u_x + v_y = 0 (Incompressibility)
-    #     ic_loss, _, v_y = self.incompressibility_loss(u, v)
-
-    #     # u u_x + v u_y + p_x / rho = 0
-    #     u_y = self.partial_derivative(u, self.y)
-    #     p_x = self.partial_derivative(p, self.x)
-    #     flow_x_loss = self.mse_loss(v * u_y - u * v_y, -p_x / self.rho)
-
-    #     # u v_x + v v_y + p_y / rho = 0
-    #     v_x = self.partial_derivative(v, self.x)
-    #     p_y = self.partial_derivative(p, self.y)
-    #     flow_y_loss = self.mse_loss(u * v_x + v * v_y, -p_y / self.rho)
-
-    #     physics_loss = flow_x_loss + flow_y_loss + ic_loss
-
-    #     # u(x = 1, .) = 1 and v(x = 0, .) = 0
-    #     # Inlet boundary condition
-    #     inlet_loss = (
-    #         self.mse_loss(u[self.zero_x_mask], self.one_tensor)
-    #         + self.mse_loss(v[self.zero_x_mask], self.zero_tensor)
-    #         + self.mse_loss(p[self.zero_x_mask], self.one_tensor)
-    #     )
-    #     # Outlet boundary condition
-    #     outlet_loss = (
-    #         self.mse_loss(u[self.one_x_mask], self.one_tensor)
-    #         + self.mse_loss(v[self.one_x_mask], self.zero_tensor)
-    #     )
-    #     # Wall boundary condition
-    #     wall_loss = (
-    #         self.mse_loss(u[self.zero_y_mask], self.one_tensor)
-    #         + self.mse_loss(v[self.zero_y_mask], self.zero_tensor)
-    #         + self.mse_loss(u[self.one_y_mask], self.one_tensor)
-    #         + self.mse_loss(v[self.one_y_mask], self.zero_tensor)
-    #     )
-    #     boundary_loss = inlet_loss + outlet_loss + wall_loss
-
-    #     return (
-    #         self.process(physics_loss, boundary_loss),
-    #         self.inputs,
-    #         (u, v, p),
-    #     )
-
-    # def navier_stokes_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
-    #     u, v, p = self.forward(self.inputs)
-
-    #     # u_x + v_y = 0 (Incompressibility)
-    #     u_x = self.partial_derivative(u, self.x)
-    #     v_y = self.partial_derivative(v, self.y)
-
-    #    u u_x + v u_y + p_x / rho - mu / rho (u_xx + u_yy) = 0
-    #    u v_x + v v_y + p_y / rho - mu / rho (v_xx + v_yy) = 0
 
     def incompressibility_loss(self, u, v) -> Tuple[float, Tensor, Tensor]:
         # u_x + v_y = 0 (Incompressibility)
@@ -417,50 +369,9 @@ class Loss:
 
         return self.mse_loss(u_x, -v_y), u_x, v_y
 
-    # def generate_2d_boundaries(self) -> None:
-    #     # x = 0
-    #     self.zero_x_mask = (self.x.squeeze() == 0).to(self.device)
-    #     # y = 0
-    #     self.zero_y_mask = (self.y.squeeze() == 0).to(self.device)
-    #     # x = 1
-    #     self.one_x_mask = (self.x.squeeze() == 1).to(self.device)
-    #     # y = 1
-    #     self.one_y_mask = (self.y.squeeze() == 1).to(self.device)
-    #     # f(x = 0, y)
-    #     self.forward_x_null = self.forward(
-    #         self.inputs[self.zero_x_mask]
-    #     )[:, 0:1]
-    #     # f(x = 1, y)
-    #     self.forward_x_one = self.forward(
-    #         self.inputs[self.one_x_mask]
-    #     )[:, 0:1]
-    #     # f(x, y = 0)
-    #     self.forward_y_null = self.forward(
-    #         self.inputs[self.zero_y_mask]
-    #     )[:, 0:1]
-    #     # f(x, y = 1)
-    #     self.forward_y_one = self.forward(
-    #         self.inputs[self.one_y_mask]
-    #     )[:, 0:1]
+    def kurapika_loss(self, u, v) -> Tuple[float, Tensor, Tensor]:
+        # u_y + v_x = 0 (K)
+        u_y = self.partial_derivative(u, self.y)
+        v_x = self.partial_derivative(v, self.x)
 
-    #     self.zero_x_tensor = (
-    #         self.zero.expand_as(self.forward_x_null)
-    #         .view(-1, 1).to(device)
-    #     )
-
-    #     self.zero_y_tensor = (
-    #         self.zero.expand_as(self.forward_y_null)
-    #         .view(-1, 1).to(device)
-    #     )
-
-    #     self.one_x_tensor = (
-    #         self.one.expand_as(self.forward_x_one)
-    #         .view(-1, 1).to(device)
-    #     )
-
-    #     self.one_y_tensor = (
-    #         self.one.expand_as(self.forward_y_one)
-    #         .view(-1, 1).to(device)
-    #     )
-
-    #     self.sin = torch.sin(pi_tensor * self.x[self.one_y_mask]).view(-1, 1)
+        return self.mse_loss(u_y, v_x), u_y, v_x

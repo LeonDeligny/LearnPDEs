@@ -11,6 +11,8 @@ from learnpdes.utils.plot import (
     save_plot,
     create_gif,
     save_2d_plot,
+    save_airfoil_plot,
+    save_htlm_airfoil_plot,
     ensure_directory_exists,
 )
 
@@ -76,7 +78,7 @@ class Trainer:
         for epoch in range(self.nb_epochs):
             self.optimizer.zero_grad()
 
-            loss, x, y, f = self.loss()
+            loss, inputs, f, airfoil_mask = self.loss()
 
             loss.backward(retain_graph=True)
             self.optimizer.step()
@@ -85,7 +87,7 @@ class Trainer:
                 print(f'Epoch {epoch}, Loss: {loss}')
 
                 # Back to CPU for plotting
-                x_ = detach_to_numpy(x)
+                x_ = detach_to_numpy(inputs)
                 f_ = detach_to_numpy(f)
                 if self.dim_plot == 1:
                     save_plot(
@@ -97,15 +99,14 @@ class Trainer:
                         analytical=self.analytical
                     )
                 else:
-                    y_ = detach_to_numpy(y)
-                    save_2d_plot(
+                    airfoil_mask_ = detach_to_numpy(airfoil_mask)
+                    save_airfoil_plot(
                         output_dir,
                         epoch=epoch,
-                        x1=x_,
-                        x2=y_,
+                        inputs=x_,
                         f=f_,
                         loss=loss,
-                        analytical=self.analytical
+                        airfoil_mask=airfoil_mask_
                     )
 
         # Create GIF with saved plots
