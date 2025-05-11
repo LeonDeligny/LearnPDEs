@@ -32,16 +32,16 @@ class TestScenarios(TestCase):
         cls.epochs: int = 10
 
     def test_first_scenario(self) -> None:
-        pinn(EXPONENTIAL_SCENARIO, self.epochs)
+        pinn(EXPONENTIAL_SCENARIO, self.epochs, pre_epochs=0)
 
     def test_second_scenario(self) -> None:
-        pinn(COSINUS_SCENARIO, self.epochs)
+        pinn(COSINUS_SCENARIO, self.epochs, pre_epochs=0)
 
     def test_third_scenario(self) -> None:
-        pinn(LAPLACE_SCENARIO, self.epochs)
+        pinn(LAPLACE_SCENARIO, self.epochs, pre_epochs=0)
 
     def test_fourth_scenario(self) -> None:
-        pinn(POTENTIAL_FLOW_SCENARIO, self.epochs)
+        pinn(POTENTIAL_FLOW_SCENARIO, self.epochs, pre_epochs=0)
 
 
 # ======= Main =======

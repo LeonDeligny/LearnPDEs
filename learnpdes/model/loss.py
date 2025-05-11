@@ -243,6 +243,14 @@ class Loss:
             return self.potential_flow_loss
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
+        
+    def get_pre_loss(self, scenario: str) -> Callable:
+        if scenario == POTENTIAL_FLOW_SCENARIO:
+            return self.potential_flow_pre_loss
+        else:
+            raise ValueError(
+                f"{scenario=} is not a valid scenario for a pre-training."
+            )
 
     def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
@@ -311,6 +319,49 @@ class Loss:
             self.zero_tensor
         )
         return self.process(physics_loss, boundary_loss), self.inputs, f, None
+
+    def potential_flow_pre_loss(
+            self
+    ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]]:
+        """
+        u = nabla phi
+        """
+        outputs = self.forward(self.inputs)
+        phi = outputs[:, 0:1]
+        u = self.partial_derivative(phi, self.x)
+        v = self.partial_derivative(phi, self.y)
+        p = -0.5 * self.rho * (u**2 + v**2)
+
+        ic_loss, _, _ = self.incompressibility_loss(u, v)
+        k_loss, _, _ = self.kurapika_loss(u, v)
+
+        physics_loss = k_loss + ic_loss
+
+        # Inlet boundary condition
+        # u(inlet) = 1 and v(inlet) = 0
+        inlet_loss = (
+            self.mse_loss(u[self.inlet_mask], self.inlet_one_tensor)
+            + self.mse_loss(v[self.inlet_mask], self.inlet_zero_tensor)
+        )
+        # Outlet boundary condition
+        # u(outlet) = 1 and v(outlet) = 0
+        outlet_loss = (
+            self.mse_loss(u[self.outlet_mask], self.outlet_one_tensor)
+            + self.mse_loss(v[self.outlet_mask], self.outlet_zero_tensor)
+        )
+        # Wall boundary condition
+        # v(wall) = 0
+        wall_loss = (
+            self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
+        )
+        boundary_loss = inlet_loss + outlet_loss + wall_loss
+
+        return (
+            self.process(physics_loss, boundary_loss),
+            self.inputs,
+            (u, v, p),
+            self.airfoil_mask
+        )
 
     def potential_flow_loss(
             self
