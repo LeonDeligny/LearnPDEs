@@ -13,12 +13,11 @@ from learnpdes.model.pinn import PINN
 from learnpdes.model.loss import Loss
 from learnpdes.model.trainer import Trainer
 
-from learnpdes import device
-
 from learnpdes import (
-    EXPONENTIAL_SCENARIO,
-    COSINUS_SCENARIO,
-    LAPLACE_SCENARIO,
+    device,
+    # EXPONENTIAL_SCENARIO,
+    # COSINUS_SCENARIO,
+    # LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
 )
 

@@ -244,7 +244,7 @@ class Loss:
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
 
-    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
 
         # Compute the second derivatives
@@ -277,9 +277,9 @@ class Loss:
                 self.outlet_zero_tensor,
             )
         )
-        return self.process(physics_loss, boundary_loss), self.inputs, f
+        return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
-    def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
 
@@ -292,9 +292,9 @@ class Loss:
             self.one_tensor,
         )
 
-        return self.process(physics_loss, boundary_loss), self.inputs, f
+        return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
-    def cosinus_loss(self) -> Tuple[Tensor, Tensor, Tensor]:
+    def cosinus_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
         df_dx = self.partial_derivative(f, self.x)
         ddf_dxdx = self.partial_derivative(df_dx, self.x)
@@ -310,11 +310,11 @@ class Loss:
             ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
-        return self.process(physics_loss, boundary_loss), self.inputs, f
+        return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
     def potential_flow_loss(
             self
-        ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]]:
+    ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]]:
         """
         u = nabla phi
         """

@@ -12,7 +12,6 @@ from learnpdes.utils.plot import (
     create_gif,
     save_2d_plot,
     save_airfoil_plot,
-    save_htlm_airfoil_plot,
     ensure_directory_exists,
 )
 
@@ -98,7 +97,7 @@ class Trainer:
                         loss=loss,
                         analytical=self.analytical
                     )
-                else:
+                elif airfoil_mask is not None:
                     airfoil_mask_ = detach_to_numpy(airfoil_mask)
                     save_airfoil_plot(
                         output_dir,
@@ -107,6 +106,15 @@ class Trainer:
                         f=f_,
                         loss=loss,
                         airfoil_mask=airfoil_mask_
+                    )
+                else:
+                    save_2d_plot(
+                        output_dir,
+                        epoch=epoch,
+                        inputs=x_,
+                        f=f_,
+                        loss=loss,
+                        analytical=self.analytical
                     )
 
         # Create GIF with saved plots
