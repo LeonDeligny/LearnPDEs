@@ -78,9 +78,6 @@ class Loss:
         if self.scenario == LAPLACE_SCENARIO:
             self.generate_laplace_boundary()
 
-        elif self.scenario == POTENTIAL_FLOW_SCENARIO:
-            self.generate_potential_flow_boundary()
-
     def process(
         self,
         physics_loss: Tensor,
