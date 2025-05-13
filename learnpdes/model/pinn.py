@@ -25,7 +25,6 @@ from functools import partial
 # from complexPyTorch.complexLayers import ComplexLinear
 
 from typing import (
-    Dict,
     Union,
     Callable,
 )
@@ -55,7 +54,7 @@ class PINN(Module):
 
     def __init__(
         self: 'PINN',
-        nn_params: Dict,
+        nn_params: dict,
         input_homeo: Callable[[Tensor], Tensor],
         output_homeo: Callable[[Tensor], Tensor],
         encoding: Union[partial, Callable[[Tensor], Tensor]],

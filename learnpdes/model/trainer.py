@@ -19,7 +19,6 @@ from torch import Tensor
 from torch.optim import Adam
 from torch.nn import Parameter
 from typing import (
-    Dict,
     Union,
     Tuple,
     Callable,
@@ -38,7 +37,7 @@ class Trainer:
         self,
         model_params: Iterator[Parameter],
         loss: Callable[[], Tuple[Tensor, Tensor, Tensor]],
-        training_params: Dict,
+        training_params: dict,
         dim_plot: int,
         analytical: Union[Callable, None] = None,
     ) -> None:

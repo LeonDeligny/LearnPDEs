@@ -14,7 +14,6 @@ from torch import Tensor
 from ambiance import Atmosphere
 from torch.nn import MSELoss
 from typing import (
-    Dict,
     Tuple,
     Callable,
 )
@@ -43,6 +42,7 @@ class Loss:
     # Density of air at water level
     atm = Atmosphere(h=0.0)
     density = array([atm.density])
+    print(f'Density of fluid {atm.density[0]}')
     rho = torch.tensor(density, dtype=torch.float32).to(device)
 
     def __init__(
@@ -51,7 +51,7 @@ class Loss:
         input_space: Tensor,
         input_dim: int,
         forward: Callable[[Tensor], Tensor],
-        mesh_masks: Dict[str, Tensor]
+        mesh_masks: dict[str, Tensor]
     ) -> None:
         '''
         Initialization of the loss.
@@ -330,14 +330,14 @@ class Loss:
         """
         outputs = self.forward(self.inputs)
         phi = outputs[:, 0:1]
-        u = self.partial_derivative(phi, self.x)
+        u = self.partial_derivative(phi, self.x) # + torch.ones_like(phi)
         v = self.partial_derivative(phi, self.y)
-        p = -0.5 * self.rho * (u**2 + v**2)
+        ke = (u**2 + v**2)
+        p = -0.5 * self.rho * ke
 
-        ic_loss, _, _ = self.incompressibility_loss(u, v)
-        energy_loss = self.mse_loss(p.mean(), self.one.squeeze())
-
-        physics_loss = ic_loss + energy_loss
+        ic_loss, u_x, _ = self.incompressibility_loss(u, v)
+        energy_loss = self.mse_loss(ke.mean(), self.one.squeeze())
+        physics_loss = ic_loss + energy_loss + self.mse_loss(u_x, torch.zeros_like(u))
 
         # Inlet boundary condition
         # u(inlet) = 1 and v(inlet) = 0
@@ -373,13 +373,15 @@ class Loss:
         """
         outputs = self.forward(self.inputs)
         phi = outputs[:, 0:1]
-        u = self.partial_derivative(phi, self.x)
+        u = self.partial_derivative(phi, self.x) + torch.ones_like(phi)
         v = self.partial_derivative(phi, self.y)
-        p = -0.5 * self.rho * (u**2 + v**2)
+        ke = (u**2 + v**2)
+        p = -0.5 * self.rho * ke
 
         ic_loss, _, _ = self.incompressibility_loss(u, v)
+        energy_loss = self.mse_loss(ke.mean(), self.one.squeeze())
 
-        physics_loss = ic_loss
+        physics_loss = ic_loss + energy_loss
 
         # Inlet boundary condition
         # u(inlet) = 1 and v(inlet) = 0

@@ -4,6 +4,7 @@ Plot functions.
 #  ======= Imports =======
 
 import os
+import itertools
 import numpy as np
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
@@ -247,4 +248,25 @@ def plot_xy(xy: Tensor) -> None:
     plt.ylabel('y')
     plt.title('Mesh Node Coordinates')
     plt.axis('equal')
+    plt.show()
+
+
+def plot_mesh(xy: Tensor, mesh_masks: dict[str, Tensor]) -> None:
+    plt.figure(figsize=(8, 6))
+    plt.scatter(xy[:, 0], xy[:, 1], s=2, label="All points", color="gray", alpha=0.5)
+    colors = itertools.cycle(['blue', 'red', 'green', 'orange', 'purple', 'brown', 'black', 'magenta', 'cyan'])
+    for name, mesh in mesh_masks.items():
+        plt.scatter(
+            xy[mesh, 0],
+            xy[mesh, 1],
+            s=10,
+            label=name,
+            color=next(colors),
+            alpha=0.8
+        )
+    plt.legend()
+    plt.axis("equal")
+    plt.title("Mesh with Cross-Sections")
+    plt.xlabel("x")
+    plt.ylabel("y")
     plt.show()

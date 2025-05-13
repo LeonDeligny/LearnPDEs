@@ -9,6 +9,7 @@ import torch
 import numpy as np
 
 from torch import linspace
+from learnpdes.utils.plot import plot_mesh
 from learnpdes.model.encodings import identity
 from learnpdes.utils.utility import (
     analyze_xy,
@@ -18,7 +19,6 @@ from learnpdes.utils.utility import (
 
 from torch import Tensor
 from typing import (
-    Dict,
     Tuple,
     Union,
     Callable,
@@ -36,7 +36,7 @@ from learnpdes import (
 
 def load_real_space(
     num_inputs: int
-) -> Tuple[Tensor, Dict[str, Tensor]]:
+) -> Tuple[Tensor, dict[str, Tensor]]:
     '''
     Load real segment around 0, ensuring correct order.
     '''
@@ -54,7 +54,7 @@ def load_exponential(
     num_inputs: int
 ) -> Tuple[
     Tensor,
-    Dict[str, Tensor],
+    dict[str, Tensor],
     int, Callable,
     Callable, Callable, Callable
 ]:
@@ -82,7 +82,7 @@ def load_cosinus(
     num_inputs: int
 ) -> Tuple[
     Tensor,
-    Dict[str, Tensor],
+    dict[str, Tensor],
     int, Callable,
     Callable, Callable, Callable
 ]:
@@ -109,7 +109,7 @@ def load_cosinus(
 def load_laplace(
     num_inputs: int
 ) -> Tuple[
-    Tensor, Dict[str, Tensor],
+    Tensor, dict[str, Tensor],
     int, Callable,
     Callable, Callable, Callable
 ]:
@@ -146,8 +146,8 @@ def load_laplace(
     )
 
 
-def load_potential_flow() -> Tuple[
-    Tensor, Dict[str, Tensor],
+def load_potential_flow(plot: bool = True) -> Tuple[
+    Tensor, dict[str, Tensor],
     int, None,
     Callable, Callable, Callable
 ]:
@@ -156,11 +156,8 @@ def load_potential_flow() -> Tuple[
     Returns as a tensor of shape [N, 2].
     '''
     # Define constants
-    output_dim = 3
-    input_homeo = identity
-    output_homeo = identity
-    encoding = identity
-    analytical = None
+    output_dim = 1  # potential (u = dphi_dx, v = dphi_dy)
+    input_homeo, output_homeo, encoding = identity, identity, identity
 
     filepath = "./meshes/mesh_airfoil_ch10sm.su2"
     with open(filepath, 'r') as f:
@@ -187,11 +184,13 @@ def load_potential_flow() -> Tuple[
     num_points = xy.shape[0]
     mesh_masks = get_marker_masks(filepath, num_points)
 
-    print(f"Total number of vertices: {num_points}")
+    print(f"Total number of vertices: {xy.shape[0]}")
+    if plot:
+        plot_mesh(xy, mesh_masks)
 
     return (
         xy, mesh_masks,
-        output_dim, analytical,
+        output_dim, None,
         input_homeo, output_homeo, encoding,
     )
 
@@ -200,7 +199,7 @@ def load_scenario(
     scenario: str,
     num_inputs: int = 100,
 ) -> Tuple[
-    Tensor, Dict[str, Tensor],
+    Tensor, dict[str, Tensor],
     int, Union[Callable, None],
     Callable, Callable, Callable,
 ]:
