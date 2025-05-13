@@ -330,14 +330,18 @@ class Loss:
         """
         outputs = self.forward(self.inputs)
         phi = outputs[:, 0:1]
-        u = self.partial_derivative(phi, self.x) # + torch.ones_like(phi)
+        u = self.partial_derivative(phi, self.x)  # + torch.ones_like(phi)
         v = self.partial_derivative(phi, self.y)
         ke = (u**2 + v**2)
         p = -0.5 * self.rho * ke
 
         ic_loss, u_x, _ = self.incompressibility_loss(u, v)
         energy_loss = self.mse_loss(ke.mean(), self.one.squeeze())
-        physics_loss = ic_loss + energy_loss + self.mse_loss(u_x, torch.zeros_like(u))
+        physics_loss = (
+            ic_loss
+            + energy_loss
+            + self.mse_loss(u_x, torch.zeros_like(u))
+        )
 
         # Inlet boundary condition
         # u(inlet) = 1 and v(inlet) = 0

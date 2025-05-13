@@ -146,7 +146,7 @@ def load_laplace(
     )
 
 
-def load_potential_flow(plot: bool = True) -> Tuple[
+def load_potential_flow(plot: bool = False) -> Tuple[
     Tensor, dict[str, Tensor],
     int, None,
     Callable, Callable, Callable

@@ -253,8 +253,13 @@ def plot_xy(xy: Tensor) -> None:
 
 def plot_mesh(xy: Tensor, mesh_masks: dict[str, Tensor]) -> None:
     plt.figure(figsize=(8, 6))
-    plt.scatter(xy[:, 0], xy[:, 1], s=2, label="All points", color="gray", alpha=0.5)
-    colors = itertools.cycle(['blue', 'red', 'green', 'orange', 'purple', 'brown', 'black', 'magenta', 'cyan'])
+    # plt.scatter(
+    #     xy[:, 0],
+    #     xy[:, 1],
+    #     s=2,
+    #     label="All points",
+    #     color="gray", alpha=0.5)
+    colors = itertools.cycle(['blue', 'red', 'green', 'orange', 'purple'])
     for name, mesh in mesh_masks.items():
         plt.scatter(
             xy[mesh, 0],
