@@ -78,28 +78,12 @@ def main(
 
     # 3. Pre-train model
     # Pre-training is always without the geometry
-    pre_traier = Trainer(
-        model_params=pinn.parameters,
-        loss=loss.get_pre_loss(scenario),
-        training_params={
-            'learning_rate': 0.001,
-            'epochs': pre_epochs,
-        },
-        plot={
-            'dim_plot': input_dim,
-            'plot_func': get_plot_func(scenario),
-        },
-        analytical=analytical,
-    )
-    pre_traier.train()
-
-    # 4. Train model
-    # trainer = Trainer(
+    # pre_traier = Trainer(
     #     model_params=pinn.parameters,
-    #     loss=loss.get_loss(scenario),
+    #     loss=loss.get_pre_loss(scenario),
     #     training_params={
     #         'learning_rate': 0.001,
-    #         'epochs': epochs,
+    #         'epochs': pre_epochs,
     #     },
     #     plot={
     #         'dim_plot': input_dim,
@@ -107,7 +91,23 @@ def main(
     #     },
     #     analytical=analytical,
     # )
-    # trainer.train()
+    # pre_traier.train()
+
+    # 4. Train model
+    trainer = Trainer(
+        model_params=pinn.parameters,
+        loss=loss.get_loss(scenario),
+        training_params={
+            'learning_rate': 0.001,
+            'epochs': epochs,
+        },
+        plot={
+            'dim_plot': input_dim,
+            'plot_func': get_plot_func(scenario),
+        },
+        analytical=analytical,
+    )
+    trainer.train()
 
     # 4. Evaluate model
     # TODO: Evaluate model

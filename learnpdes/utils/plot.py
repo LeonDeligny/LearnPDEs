@@ -136,7 +136,7 @@ def save_airfoil_plot(
     inputs: ndarray,
     f: tuple[ndarray, ndarray, ndarray],
     loss: float,
-    geometry_mask: ndarray,
+    geometry_mask: Union[ndarray, None],
     analytical: None = None,
 ) -> None:
     """
@@ -155,6 +155,8 @@ def save_airfoil_plot(
     triang = Triangulation(x1, x2)
     triangles = triang.triangles
     if geometry_mask is not None:
+        if hasattr(geometry_mask, "cpu"):
+            geometry_mask = geometry_mask.cpu().numpy()
         triangle_mask = np.any(geometry_mask[triangles], axis=1)
         triang.set_mask(triangle_mask)
 
