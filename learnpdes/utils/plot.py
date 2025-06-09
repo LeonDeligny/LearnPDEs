@@ -83,19 +83,19 @@ def ensure_directory_exists() -> Path:
 def save_plot(
     output_dir: Path,
     epoch: int,
-    x: ndarray,
+    inputs: ndarray,
     f: ndarray,
     loss: float,
     geometry_mask: ndarray,
     analytical: Callable
 ) -> None:
 
-    x = x[geometry_mask]
+    inputs = inputs[geometry_mask]
     f = f[geometry_mask]
 
     plt.figure()
-    plt.plot(x, f, label='NN Prediction')
-    plt.plot(x, analytical(x), label='Analytical Solution')
+    plt.plot(inputs, f, label='NN Prediction')
+    plt.plot(inputs, analytical(inputs), label='Analytical Solution')
     plt.xlabel('x')
     plt.ylabel('f(x)')
     plt.legend()
@@ -143,7 +143,9 @@ def save_airfoil_plot(
     Save a 2D plot of the model output (u, v, p) using triangulation.
     """
     if analytical is not None:
-        raise NotImplementedError("No analytical solution for flow around airfoil.")
+        raise NotImplementedError(
+            "No analytical solution for flow around airfoil."
+        )
 
     # Extract x1 and x2 from inputs
     x1, x2 = inputs[:, 0], inputs[:, 1]
@@ -224,8 +226,13 @@ def save_2d_plot(
     inputs: ndarray,
     f: ndarray,
     loss: float,
+    geometry_mask: None,
     analytical: Union[Callable, None],
 ) -> None:
+    if geometry_mask is not None:
+        raise ValueError(
+            "geometry_mask is not None for grid plot"
+        )
 
     # Extract x1 and x2 from inputs
     x1, x2 = inputs[:, 0], inputs[:, 1]

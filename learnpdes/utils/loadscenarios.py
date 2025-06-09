@@ -28,7 +28,6 @@ from learnpdes import (
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
-    WIND_TUNNEL_SCENARIO,
 )
 
 # ======= Functions =======
@@ -283,8 +282,6 @@ def load_scenario(
         return load_laplace(num_inputs)
     elif scenario == POTENTIAL_FLOW_SCENARIO:
         return load_potential_flow(num_inputs)
-    elif scenario == WIND_TUNNEL_SCENARIO:
-        return load_wind_tunnel(num_inputs)
     else:
         raise ValueError(
             f'{scenario=} is not a valid scenario. '

@@ -8,10 +8,7 @@ import os
 
 from learnpdes.utils.utility import detach_to_numpy
 from learnpdes.utils.plot import (
-    save_plot,
     create_gif,
-    save_2d_plot,
-    save_airfoil_plot,
     ensure_directory_exists,
 )
 
@@ -90,7 +87,7 @@ class Trainer:
                     # Back to CPU for plotting
                     x_ = detach_to_numpy(inputs)
                     f_ = detach_to_numpy(f)
-                    
+
                     self.plot_func(
                         output_dir,
                         epoch=epoch,

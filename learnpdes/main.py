@@ -19,8 +19,7 @@ from learnpdes import (
     # EXPONENTIAL_SCENARIO,
     # COSINUS_SCENARIO,
     # LAPLACE_SCENARIO,
-    # POTENTIAL_FLOW_SCENARIO,
-    WIND_TUNNEL_SCENARIO,
+    POTENTIAL_FLOW_SCENARIO,
 )
 
 # ======= Main =======
@@ -77,29 +76,14 @@ def main(
         mesh_masks=mesh_masks,
     )
 
-    # # 3. Pre-train model
-    # pre_traier = Trainer(
-    #     model_params=pinn.parameters,
-    #     loss=loss.get_pre_loss(scenario),
-    #     training_params={
-    #         'learning_rate': 0.001,
-    #         'epochs': pre_epochs,
-    #     },
-    #     plot={
-    #         'dim_plot': input_dim,
-    #         'plot_func': get_plot_func(scenario),
-    #     },
-    #     analytical=analytical,
-    # )
-    # pre_traier.train()
-
-    # 4. Train model
-    trainer = Trainer(
+    # 3. Pre-train model
+    # Pre-training is always without the geometry
+    pre_traier = Trainer(
         model_params=pinn.parameters,
-        loss=loss.get_loss(scenario),
+        loss=loss.get_pre_loss(scenario),
         training_params={
             'learning_rate': 0.001,
-            'epochs': epochs,
+            'epochs': pre_epochs,
         },
         plot={
             'dim_plot': input_dim,
@@ -107,7 +91,23 @@ def main(
         },
         analytical=analytical,
     )
-    trainer.train()
+    pre_traier.train()
+
+    # 4. Train model
+    # trainer = Trainer(
+    #     model_params=pinn.parameters,
+    #     loss=loss.get_loss(scenario),
+    #     training_params={
+    #         'learning_rate': 0.001,
+    #         'epochs': epochs,
+    #     },
+    #     plot={
+    #         'dim_plot': input_dim,
+    #         'plot_func': get_plot_func(scenario),
+    #     },
+    #     analytical=analytical,
+    # )
+    # trainer.train()
 
     # 4. Evaluate model
     # TODO: Evaluate model
@@ -117,4 +117,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main(scenario=WIND_TUNNEL_SCENARIO)  # pragma: no cover
+    main(scenario=POTENTIAL_FLOW_SCENARIO)  # pragma: no cover

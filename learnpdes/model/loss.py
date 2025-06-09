@@ -28,7 +28,6 @@ from learnpdes import (
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
-    WIND_TUNNEL_SCENARIO,
 )
 
 # ======= Class =======
@@ -212,7 +211,10 @@ class Loss:
             else:
                 raise ValueError(f'{name=} not known as a boundary name.')
 
-    def get_nearest_neighbors(self: 'Loss', xy: Tensor) -> list[tuple[int, int]]:
+    def get_nearest_neighbors(
+        self: 'Loss',
+        xy: Tensor,
+    ) -> list[tuple[int, int]]:
         xy_np = xy.cpu().numpy() if hasattr(xy, 'cpu') else xy
         nbrs = NearestNeighbors(n_neighbors=2, algorithm='auto').fit(xy_np)
         _, indices = nbrs.kneighbors(xy_np)
@@ -256,7 +258,7 @@ class Loss:
             return self.cosinus_loss
         elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
-        elif scenario == POTENTIAL_FLOW_SCENARIO:
+        elif scenario in POTENTIAL_FLOW_SCENARIO:
             return self.potential_irrotational_flow_loss
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
@@ -269,11 +271,9 @@ class Loss:
             return self.cosinus_loss
         elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
-        elif (
-            scenario in [POTENTIAL_FLOW_SCENARIO, WIND_TUNNEL_SCENARIO]
-        ):
+        elif scenario == POTENTIAL_FLOW_SCENARIO:
             return partial(
-                func=self.potential_irrotational_flow_loss,
+                self.potential_irrotational_flow_loss,
                 pre=True,
             )
         else:
@@ -329,7 +329,7 @@ class Loss:
             self.one_tensor,
         )
 
-        return self.process(physics_loss, boundary_loss), self.inputs, f, None
+        return self.process(physics_loss, boundary_loss), self.inputs, f, self.inputs < 10
 
     def cosinus_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
@@ -347,7 +347,7 @@ class Loss:
             ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
-        return self.process(physics_loss, boundary_loss), self.inputs, f, None
+        return self.process(physics_loss, boundary_loss), self.inputs, f, self.inputs < 10
 
     def potential_irrotational_flow_loss(
         self: 'Loss',
