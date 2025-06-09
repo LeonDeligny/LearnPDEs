@@ -30,3 +30,4 @@ dependencies:
       - ambiance
       - torch-geometric
       - gmsh
+      - scikit-learn
