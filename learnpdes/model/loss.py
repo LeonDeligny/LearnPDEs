@@ -113,6 +113,7 @@ class Loss:
             if self.y is not None
             else self.x
         )
+        self.inputs_mask = (self.inputs < 10) & (self.inputs > -1)
         # self.z = self.setup_space(index=2)
 
     def setup_space(self: 'Loss', index: int) -> Tensor:
@@ -329,7 +330,12 @@ class Loss:
             self.one_tensor,
         )
 
-        return self.process(physics_loss, boundary_loss), self.inputs, f, self.inputs < 10
+        return (
+            self.process(physics_loss, boundary_loss),
+            self.inputs,
+            f,
+            self.inputs_mask,
+        )
 
     def cosinus_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
@@ -347,7 +353,12 @@ class Loss:
             ddf_dxdx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
-        return self.process(physics_loss, boundary_loss), self.inputs, f, self.inputs < 10
+        return (
+            self.process(physics_loss, boundary_loss),
+            self.inputs,
+            f,
+            self.inputs_mask,
+        )
 
     def potential_irrotational_flow_loss(
         self: 'Loss',
