@@ -13,11 +13,9 @@ from functools import (
 )
 
 from typing import (
-    Tuple,
+    Any,
     Callable,
 )
-
-from typing import Any
 
 # ======= Functions =======
 
@@ -28,7 +26,7 @@ def time(func: Callable) -> Callable:
     '''
 
     @wraps(func)
-    def wrapper(*args: Tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+    def wrapper(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
         start_time = t.time()
         result = func(*args, **kwargs)
         end_time = t.time()
@@ -56,7 +54,7 @@ def validate(func: Callable) -> Callable:
 
     @wraps(func)
     @lru_cache(maxsize=None)
-    def wrapper(*args: Tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+    def wrapper(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
         return validated_func(*args, **kwargs)
 
     return wrapper

@@ -19,7 +19,6 @@ from learnpdes.utils.utility import (
 
 from torch import Tensor
 from typing import (
-    Tuple,
     Union,
     Callable,
 )
@@ -29,6 +28,7 @@ from learnpdes import (
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
+    WIND_TUNNEL_SCENARIO,
 )
 
 # ======= Functions =======
@@ -36,7 +36,7 @@ from learnpdes import (
 
 def load_real_space(
     num_inputs: int
-) -> Tuple[Tensor, dict[str, Tensor]]:
+) -> tuple[Tensor, dict[str, Tensor]]:
     '''
     Load real segment around 0, ensuring correct order.
     '''
@@ -52,7 +52,7 @@ def load_real_space(
 
 def load_exponential(
     num_inputs: int
-) -> Tuple[
+) -> tuple[
     Tensor,
     dict[str, Tensor],
     int, Callable,
@@ -80,7 +80,7 @@ def load_exponential(
 
 def load_cosinus(
     num_inputs: int
-) -> Tuple[
+) -> tuple[
     Tensor,
     dict[str, Tensor],
     int, Callable,
@@ -108,7 +108,7 @@ def load_cosinus(
 
 def load_laplace(
     num_inputs: int
-) -> Tuple[
+) -> tuple[
     Tensor, dict[str, Tensor],
     int, Callable,
     Callable, Callable, Callable
@@ -146,7 +146,49 @@ def load_laplace(
     )
 
 
-def load_potential_flow(plot: bool = False) -> Tuple[
+def load_wind_tunnel(
+    num_inputs: int
+) -> tuple[
+    Tensor, dict[str, Tensor],
+    int, Callable,
+    Callable, Callable, Callable
+]:
+    '''
+    Load a square [0, 4] x [0, 1] as input space.
+    '''
+    # Define constants
+    output_dim = 1
+    input_homeo = identity
+    output_homeo = identity
+    encoding = identity
+
+    # Load space
+    xy = torch.cartesian_prod(
+        torch.linspace(0, 4, num_inputs),
+        torch.linspace(0, 1, num_inputs),
+    )
+
+    # Create masks for each boundary
+    x = xy[:, 0]
+    y = xy[:, 1]
+    mesh_masks = {
+        "inlet": x == 0,
+        "outlet": x == 4,
+        "wall": ((y == 0) | (y == 1)),
+    }
+
+    return (
+        xy, mesh_masks,
+        output_dim, None,
+        input_homeo, output_homeo, encoding,
+    )
+
+
+def load_potential_flow(
+    num_inputs: int,
+    plot: bool = False,
+    augmented_grid: int = True,
+) -> tuple[
     Tensor, dict[str, Tensor],
     int, None,
     Callable, Callable, Callable
@@ -180,6 +222,24 @@ def load_potential_flow(plot: bool = False) -> Tuple[
         coords.append([x, y])
 
     xy = torch.tensor(coords, dtype=torch.float32)
+
+    if augmented_grid:
+        # Compute min/max for each axis
+        xy_min = xy.min(dim=0).values
+        xy_max = xy.max(dim=0).values
+
+        # Option 1: Full bounding box
+        x0, x1 = 1.0, xy_max[0].item()
+        y0, y1 = xy_min[1].item(), xy_max[1].item()
+
+        # Create the grid points
+        xg = torch.linspace(x0, x1, num_inputs)
+        yg = torch.linspace(y0, y1, num_inputs)
+        grid_points = torch.cartesian_prod(xg, yg)
+
+        # Concatenate to the existing mesh
+        xy = torch.cat([xy, grid_points], dim=0)
+
     analyze_xy(xy)
     num_points = xy.shape[0]
     mesh_masks = get_marker_masks(filepath, num_points)
@@ -198,7 +258,7 @@ def load_potential_flow(plot: bool = False) -> Tuple[
 def load_scenario(
     scenario: str,
     num_inputs: int = 100,
-) -> Tuple[
+) -> tuple[
     Tensor, dict[str, Tensor],
     int, Union[Callable, None],
     Callable, Callable, Callable,
@@ -222,7 +282,9 @@ def load_scenario(
     elif scenario == LAPLACE_SCENARIO:
         return load_laplace(num_inputs)
     elif scenario == POTENTIAL_FLOW_SCENARIO:
-        return load_potential_flow()
+        return load_potential_flow(num_inputs)
+    elif scenario == WIND_TUNNEL_SCENARIO:
+        return load_wind_tunnel(num_inputs)
     else:
         raise ValueError(
             f'{scenario=} is not a valid scenario. '

@@ -9,10 +9,7 @@ import torch
 from torch import Tensor
 from numpy import ndarray
 from torch.nn import Module
-from typing import (
-    Tuple,
-    Union,
-)
+from typing import Union
 
 from numpy import (
     pi,
@@ -55,7 +52,10 @@ def analyze_xy(xy: Tensor) -> None:
     print(f"y max: {y_max} (count: {y_max_count})")
 
 
-def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
+def get_marker_masks(
+    filepath: str,
+    num_points: int
+) -> dict[str, Tensor]:
     """
     Returns a dictionary
     mapping each MARKER_TAG to a boolean mask over the node array.
@@ -92,9 +92,39 @@ def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
     return marker_masks
 
 
+def compute_normals(
+    xy: Tensor,
+    airfoil_mask: Tensor
+) -> tuple[Tensor, Tensor]:
+    """
+    Compute outward normals for the airfoil boundary.
+    """
+    # Extract airfoil boundary points
+    airfoil_pts = xy[airfoil_mask]  # shape [M, 2]
+
+    # Compute tangents using finite differences (circular for closed airfoil)
+    tangents = airfoil_pts.roll(-1, 0) - airfoil_pts.roll(1, 0)  # shape [M, 2]
+    tangents = tangents / (torch.norm(tangents, dim=1, keepdim=True) + 1e-12)
+
+    # Rotate tangent by 90 degrees to get normal (outward direction: (dy, -dx))
+    normals = torch.stack(
+        [tangents[:, 1], -tangents[:, 0]],
+        dim=1,
+    )  # shape [M, 2]
+    normals = normals / (torch.norm(normals, dim=1, keepdim=True) + 1e-12)
+
+    # Place normals back into full mesh shape (zeros elsewhere)
+    normals_x = torch.zeros(xy.shape[0], dtype=xy.dtype, device=xy.device)
+    normals_y = torch.zeros(xy.shape[0], dtype=xy.dtype, device=xy.device)
+    normals_x[airfoil_mask] = normals[:, 0]
+    normals_y[airfoil_mask] = normals[:, 1]
+
+    return -normals_x, -normals_y
+
+
 def detach_to_numpy(
-    f: Union[Tuple[Tensor, ...], Tensor]
-) -> Union[Tuple[ndarray, ...], ndarray]:
+    f: Union[tuple[Tensor, ...], Tensor]
+) -> Union[tuple[ndarray, ...], ndarray]:
     """
     Essentially sends to cpu, detach, and converts to ndarray.
     Applies .cpu().detach().numpy() on object.

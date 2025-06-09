@@ -9,6 +9,8 @@ import numpy as np
 import imageio.v2 as imageio
 import matplotlib.pyplot as plt
 
+from learnpdes.utils.utility import compute_normals
+
 from torch import Tensor
 from pathlib import Path
 from numpy import ndarray
@@ -16,12 +18,26 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
 from typing import (
-    Tuple,
     Union,
     Callable,
 )
 
+from learnpdes import (
+    EXPONENTIAL_SCENARIO,
+    COSINUS_SCENARIO,
+    LAPLACE_SCENARIO,
+)
+
 # ======= Functions =======
+
+
+def get_plot_func(scenario: str) -> Callable:
+    if scenario in [EXPONENTIAL_SCENARIO, COSINUS_SCENARIO]:
+        return save_plot
+    elif scenario == LAPLACE_SCENARIO:
+        return save_2d_plot
+    else:
+        return save_airfoil_plot
 
 
 def create_gif(
@@ -70,12 +86,12 @@ def save_plot(
     x: ndarray,
     f: ndarray,
     loss: float,
+    geometry_mask: ndarray,
     analytical: Callable
 ) -> None:
 
-    mask = x < 10
-    x = x[mask]
-    f = f[mask]
+    x = x[geometry_mask]
+    f = f[geometry_mask]
 
     plt.figure()
     plt.plot(x, f, label='NN Prediction')
@@ -118,13 +134,17 @@ def save_airfoil_plot(
     output_dir: Path,
     epoch: int,
     inputs: ndarray,
-    f: Tuple[ndarray, ndarray, ndarray],
+    f: tuple[ndarray, ndarray, ndarray],
     loss: float,
-    airfoil_mask: ndarray,
+    geometry_mask: ndarray,
+    analytical: None = None,
 ) -> None:
     """
     Save a 2D plot of the model output (u, v, p) using triangulation.
     """
+    if analytical is not None:
+        raise NotImplementedError("No analytical solution for flow around airfoil.")
+
     # Extract x1 and x2 from inputs
     x1, x2 = inputs[:, 0], inputs[:, 1]
     u, v, p = (np.asarray(component).flatten() for component in f)
@@ -132,8 +152,9 @@ def save_airfoil_plot(
     # Create a triangulation
     triang = Triangulation(x1, x2)
     triangles = triang.triangles
-    triangle_mask = np.any(airfoil_mask[triangles], axis=1)
-    triang.set_mask(triangle_mask)
+    if geometry_mask is not None:
+        triangle_mask = np.any(geometry_mask[triangles], axis=1)
+        triang.set_mask(triangle_mask)
 
     # Set up the colormap and normalization
     cmap = plt.cm.RdBu_r
@@ -158,7 +179,7 @@ def save_airfoil_plot(
     axes[0].set_title('u Component', fontsize=15)
     axes[0].set_xlabel('x', fontsize=12)
     axes[0].set_ylabel('y', fontsize=12)
-    axes[0].triplot(triang, color='grey', lw=0.5)
+    axes[0].triplot(triang, color='grey', lw=0.0)
 
     # Plot v
     contour_v = axes[1].tricontourf(
@@ -173,7 +194,7 @@ def save_airfoil_plot(
     axes[1].set_title('v Component', fontsize=15)
     axes[1].set_xlabel('x', fontsize=12)
     axes[1].set_ylabel('y', fontsize=12)
-    axes[1].triplot(triang, color='grey', lw=0.5)
+    axes[1].triplot(triang, color='grey', lw=0.0)
 
     # Plot p
     contour_p = axes[2].tricontourf(
@@ -188,7 +209,7 @@ def save_airfoil_plot(
     axes[2].set_title('p Component', fontsize=15)
     axes[2].set_xlabel('x', fontsize=12)
     axes[2].set_ylabel('y', fontsize=12)
-    axes[2].triplot(triang, color='grey', lw=0.5)
+    axes[2].triplot(triang, color='grey', lw=0.0)
 
     # Add title and save the plot
     plt.suptitle(f'Epoch: {epoch}, Loss: {loss:.4f}', fontsize=18)
@@ -252,13 +273,9 @@ def plot_xy(xy: Tensor) -> None:
 
 
 def plot_mesh(xy: Tensor, mesh_masks: dict[str, Tensor]) -> None:
+    geometry_mask = mesh_masks['airfoil']
+    n_x, n_y = compute_normals(xy, geometry_mask)
     plt.figure(figsize=(8, 6))
-    # plt.scatter(
-    #     xy[:, 0],
-    #     xy[:, 1],
-    #     s=2,
-    #     label="All points",
-    #     color="gray", alpha=0.5)
     colors = itertools.cycle(['blue', 'red', 'green', 'orange', 'purple'])
     for name, mesh in mesh_masks.items():
         plt.scatter(
@@ -269,6 +286,11 @@ def plot_mesh(xy: Tensor, mesh_masks: dict[str, Tensor]) -> None:
             color=next(colors),
             alpha=0.8
         )
+    plt.quiver(
+        xy[geometry_mask, 0], xy[geometry_mask, 1],
+        n_x[geometry_mask], n_y[geometry_mask],
+        color="blue", scale=100, width=0.003, label="Normals"
+    )
     plt.legend()
     plt.axis("equal")
     plt.title("Mesh with Cross-Sections")

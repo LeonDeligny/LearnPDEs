@@ -6,6 +6,7 @@ Physics-Informed Neural Network (PINN) model.
 # ======= Imports =======
 
 from learnpdes.utils.decorators import time
+from learnpdes.utils.plot import get_plot_func
 from learnpdes.utils.loadscenarios import load_scenario
 
 from torch.nn import Tanh
@@ -18,7 +19,8 @@ from learnpdes import (
     # EXPONENTIAL_SCENARIO,
     # COSINUS_SCENARIO,
     # LAPLACE_SCENARIO,
-    POTENTIAL_FLOW_SCENARIO,
+    # POTENTIAL_FLOW_SCENARIO,
+    WIND_TUNNEL_SCENARIO,
 )
 
 # ======= Main =======
@@ -28,7 +30,7 @@ from learnpdes import (
 def main(
     scenario: str,
     epochs: int = 100_000,
-    pre_epochs: int = 10_000,
+    pre_epochs: int = 1_000,
 ) -> None:
     '''
     Description of workflow.
@@ -53,8 +55,6 @@ def main(
     input_dim = input_space.ndimension()
 
     # 1. Construct model
-    # TODO: Make the model converge without using
-    # an activation function that is a hint for the solution
     pinn = PINN(
         nn_params={
             'input_dim': input_dim,
@@ -77,18 +77,21 @@ def main(
         mesh_masks=mesh_masks,
     )
 
-    # 3. Pre-train model
-    pre_traier = Trainer(
-        model_params=pinn.parameters,
-        loss=loss.get_pre_loss(scenario),
-        training_params={
-            'learning_rate': 0.01,
-            'epochs': pre_epochs,
-        },
-        dim_plot=input_dim,
-        analytical=analytical,
-    )
-    pre_traier.train()
+    # # 3. Pre-train model
+    # pre_traier = Trainer(
+    #     model_params=pinn.parameters,
+    #     loss=loss.get_pre_loss(scenario),
+    #     training_params={
+    #         'learning_rate': 0.001,
+    #         'epochs': pre_epochs,
+    #     },
+    #     plot={
+    #         'dim_plot': input_dim,
+    #         'plot_func': get_plot_func(scenario),
+    #     },
+    #     analytical=analytical,
+    # )
+    # pre_traier.train()
 
     # 4. Train model
     trainer = Trainer(
@@ -96,9 +99,12 @@ def main(
         loss=loss.get_loss(scenario),
         training_params={
             'learning_rate': 0.001,
-            'epochs': epochs + pre_epochs,
+            'epochs': epochs,
         },
-        dim_plot=input_dim,
+        plot={
+            'dim_plot': input_dim,
+            'plot_func': get_plot_func(scenario),
+        },
         analytical=analytical,
     )
     trainer.train()
@@ -106,9 +112,9 @@ def main(
     # 4. Evaluate model
     # TODO: Evaluate model
     # Look at convergence of the loss function
-    # Look at extremas of the analytical solution to create
-    # a 'test' set
+    # Look at extremas of the analytical solution
+    # so as to 'test' the solution on extremas.
 
 
 if __name__ == '__main__':
-    main(scenario=POTENTIAL_FLOW_SCENARIO)  # pragma: no cover
+    main(scenario=WIND_TUNNEL_SCENARIO)  # pragma: no cover

@@ -20,7 +20,6 @@ from torch.optim import Adam
 from torch.nn import Parameter
 from typing import (
     Union,
-    Tuple,
     Callable,
     Iterator,
 )
@@ -36,9 +35,9 @@ class Trainer:
     def __init__(
         self,
         model_params: Iterator[Parameter],
-        loss: Callable[[], Tuple[Tensor, Tensor, Tensor]],
+        loss: Callable[[], tuple[Tensor, Tensor, Tensor]],
         training_params: dict,
-        dim_plot: int,
+        plot: dict,
         analytical: Union[Callable, None] = None,
     ) -> None:
         '''
@@ -55,7 +54,9 @@ class Trainer:
         self.learning_rate: float = training_params.get('learning_rate')
         self.nb_epochs: int = training_params.get('epochs')
 
-        self.dim_plot = dim_plot
+        # Plotting parameters
+        self.dim_plot = plot.get('input_dim')
+        self.plot_func = plot.get('plot_func')
 
         # Analytical solution if any
         self.analytical = analytical
@@ -78,7 +79,7 @@ class Trainer:
             for epoch in range(0, self.nb_epochs):
                 self.optimizer.zero_grad()
 
-                loss, inputs, f, airfoil_mask = self.loss()
+                loss, inputs, f, geometry_mask = self.loss()
 
                 loss.backward(retain_graph=True)
                 self.optimizer.step()
@@ -89,33 +90,15 @@ class Trainer:
                     # Back to CPU for plotting
                     x_ = detach_to_numpy(inputs)
                     f_ = detach_to_numpy(f)
-                    if self.dim_plot == 1:
-                        save_plot(
-                            output_dir,
-                            epoch=epoch,
-                            x=x_,
-                            f=f_,
-                            loss=loss,
-                            analytical=self.analytical
-                        )
-                    elif airfoil_mask is not None:
-                        airfoil_mask_ = detach_to_numpy(airfoil_mask)
-                        save_airfoil_plot(
-                            output_dir,
-                            epoch=epoch,
-                            inputs=x_,
-                            f=f_,
-                            loss=loss,
-                            airfoil_mask=airfoil_mask_
-                        )
-                    else:
-                        save_2d_plot(
-                            output_dir,
-                            epoch=epoch,
-                            inputs=x_,
-                            f=f_,
-                            loss=loss,
-                            analytical=self.analytical
-                        )
+                    
+                    self.plot_func(
+                        output_dir,
+                        epoch=epoch,
+                        inputs=x_,
+                        f=f_,
+                        loss=loss,
+                        geometry_mask=geometry_mask,
+                        analytical=self.analytical,
+                    )
 
                 create_gif()

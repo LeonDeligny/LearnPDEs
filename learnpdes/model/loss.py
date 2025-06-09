@@ -9,14 +9,14 @@ import torch
 from numpy import array
 from torch import tensor
 from torch.autograd import grad
+from learnpdes.utils.utility import compute_normals
 
 from torch import Tensor
-from ambiance import Atmosphere
+from typing import Callable
 from torch.nn import MSELoss
-from typing import (
-    Tuple,
-    Callable,
-)
+from functools import partial
+from ambiance import Atmosphere
+from sklearn.neighbors import NearestNeighbors
 
 from learnpdes import (
     device,
@@ -28,6 +28,7 @@ from learnpdes import (
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
+    WIND_TUNNEL_SCENARIO,
 )
 
 # ======= Class =======
@@ -77,9 +78,18 @@ class Loss:
         # Generate scenario specific boundaries
         if self.scenario == LAPLACE_SCENARIO:
             self.generate_laplace_boundary()
+        elif self.scenario == POTENTIAL_FLOW_SCENARIO:
+            n_x, n_y = compute_normals(
+                xy=input_space,
+                airfoil_mask=mesh_masks['airfoil'],
+            )
+            self.n_x, self.n_y = n_x.to(self.device), n_y.to(self.device)
+            self.nearest_neighbors = (
+                self.get_nearest_neighbors(xy=input_space)
+            )
 
     def process(
-        self,
+        self: 'Loss',
         physics_loss: Tensor,
         boundary_loss: Tensor
     ) -> Tensor:
@@ -90,7 +100,7 @@ class Loss:
         total_loss = physics_loss + boundary_loss
         return total_loss
 
-    def generate_inputs(self) -> None:
+    def generate_inputs(self: 'Loss') -> None:
         '''
         Generate input points based on the input space.
         '''
@@ -106,7 +116,7 @@ class Loss:
         )
         # self.z = self.setup_space(index=2)
 
-    def setup_space(self, index: int) -> Tensor:
+    def setup_space(self: 'Loss', index: int) -> Tensor:
         return (
             self.input_space[:, index].requires_grad_()
                 .view(-1, 1).to(self.device)
@@ -114,7 +124,7 @@ class Loss:
             else None
         )
 
-    def generate_1d_boundaries(self) -> None:
+    def generate_1d_boundaries(self: 'Loss') -> None:
         # x = 0
         self.zero_mask = self.mesh_masks["zero"].to(self.device)
 
@@ -131,7 +141,7 @@ class Loss:
             .view(-1, 1).to(device)
         )
 
-    def generate_2d_boundaries(self) -> None:
+    def generate_2d_boundaries(self: 'Loss') -> None:
         for name, mask in self.mesh_masks.items():
             if name == 'inlet':
                 self.inlet_mask = mask.to(self.device)
@@ -202,10 +212,22 @@ class Loss:
             else:
                 raise ValueError(f'{name=} not known as a boundary name.')
 
-    def generate_laplace_boundary(self) -> None:
+    def get_nearest_neighbors(self: 'Loss', xy: Tensor) -> list[tuple[int, int]]:
+        xy_np = xy.cpu().numpy() if hasattr(xy, 'cpu') else xy
+        nbrs = NearestNeighbors(n_neighbors=2, algorithm='auto').fit(xy_np)
+        _, indices = nbrs.kneighbors(xy_np)
+
+        neighbor_indices = []
+        for i in range(xy_np.shape[0]):
+            for j in indices[i][1:]:  # skip itself
+                neighbor_indices.append((i, j))
+
+        return neighbor_indices
+
+    def generate_laplace_boundary(self: 'Loss') -> None:
         self.sin = torch.sin(pi_tensor * self.x[self.top_mask]).view(-1, 1)
 
-    def generate_boundaries(self) -> None:
+    def generate_boundaries(self: 'Loss') -> None:
         if self.dim == 1:
             self.generate_1d_boundaries()
 
@@ -215,7 +237,7 @@ class Loss:
         else:
             raise ValueError(f'{self.dim=} should be either 1 or 2.')
 
-    def partial_derivative(self, f: Tensor, x: Tensor) -> Tensor:
+    def partial_derivative(self: 'Loss', f: Tensor, x: Tensor) -> Tensor:
         """
         Compute the first derivative of 1D outputs with respect to the inputs.
         """
@@ -226,7 +248,7 @@ class Loss:
             create_graph=True,
         )[0].view(-1, 1).to(self.device)
 
-    def get_loss(self, scenario: str) -> Callable:
+    def get_loss(self: 'Loss', scenario: str) -> Callable:
         print("\n ----- Started training -----\n")
         if scenario == EXPONENTIAL_SCENARIO:
             return self.exponential_loss
@@ -235,11 +257,11 @@ class Loss:
         elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
         elif scenario == POTENTIAL_FLOW_SCENARIO:
-            return self.potential_flow_loss
+            return self.potential_irrotational_flow_loss
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
 
-    def get_pre_loss(self, scenario: str) -> Callable:
+    def get_pre_loss(self: 'Loss', scenario: str) -> Callable:
         print("\n ----- Started pre-training -----\n")
         if scenario == EXPONENTIAL_SCENARIO:
             return self.exponential_loss
@@ -247,14 +269,19 @@ class Loss:
             return self.cosinus_loss
         elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
-        elif scenario == POTENTIAL_FLOW_SCENARIO:
-            return self.potential_flow_pre_loss
+        elif (
+            scenario in [POTENTIAL_FLOW_SCENARIO, WIND_TUNNEL_SCENARIO]
+        ):
+            return partial(
+                func=self.potential_irrotational_flow_loss,
+                pre=True,
+            )
         else:
             raise ValueError(
                 f"{scenario=} is not a valid scenario for a pre-training."
             )
 
-    def laplace_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
+    def laplace_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
 
         # Compute the second derivatives
@@ -289,7 +316,7 @@ class Loss:
         )
         return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
-    def exponential_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
+    def exponential_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
 
@@ -304,7 +331,7 @@ class Loss:
 
         return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
-    def cosinus_loss(self) -> Tuple[Tensor, Tensor, Tensor, None]:
+    def cosinus_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
         df_dx = self.partial_derivative(f, self.x)
         ddf_dxdx = self.partial_derivative(df_dx, self.x)
@@ -322,18 +349,25 @@ class Loss:
         )
         return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
-    def potential_flow_pre_loss(
-            self
-    ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]]:
+    def potential_irrotational_flow_loss(
+        self: 'Loss',
+        pre: bool = False,
+    ) -> tuple[Tensor, Tensor, tuple[Tensor, Tensor, Tensor]]:
         """
-        u = nabla phi
+        (u, v) = nabla phi = (phi_x, phi_y)
+        Observe: u_y = phi_xy = phi_yx = v_x
+
+        Potential flow:
+            u u_x + v u_y = u u_x + v v_x = p_x / rho
+            therefore,
+            1 / 2 u^2 + v^2 = p / rho
         """
         outputs = self.forward(self.inputs)
         phi = outputs[:, 0:1]
         u = self.partial_derivative(phi, self.x)  # + torch.ones_like(phi)
         v = self.partial_derivative(phi, self.y)
         ke = (u**2 + v**2)
-        p = -0.5 * self.rho * ke
+        p = -2 * self.rho * ke
 
         ic_loss, u_x, _ = self.incompressibility_loss(u, v)
         energy_loss = self.mse_loss(ke.mean(), self.one.squeeze())
@@ -360,67 +394,34 @@ class Loss:
         wall_loss = (
             self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
         )
+
         boundary_loss = inlet_loss + outlet_loss + wall_loss
 
-        return (
-            self.process(physics_loss, boundary_loss),
-            self.inputs,
-            (u, v, p),
-            self.airfoil_mask
-        )
+        if not pre:
+            # Surface boundary condition
+            # (u(airfoil), v(airfoil)) n_airfoil = 0
+            airfoil_loss = (
+                self.mse_loss(
+                    u[self.airfoil_mask] * self.n_x,
+                    -v[self.airfoil_mask] * self.n_y,
+                )
+            )
+            boundary_loss += 3 * airfoil_loss
 
-    def potential_flow_loss(
-            self
-    ) -> Tuple[Tensor, Tensor, Tuple[Tensor, Tensor, Tensor]]:
-        """
-        u = nabla phi
-        """
-        outputs = self.forward(self.inputs)
-        phi = outputs[:, 0:1]
-        u = self.partial_derivative(phi, self.x) + torch.ones_like(phi)
-        v = self.partial_derivative(phi, self.y)
-        ke = (u**2 + v**2)
-        p = -0.5 * self.rho * ke
-
-        ic_loss, _, _ = self.incompressibility_loss(u, v)
-        energy_loss = self.mse_loss(ke.mean(), self.one.squeeze())
-
-        physics_loss = ic_loss + energy_loss
-
-        # Inlet boundary condition
-        # u(inlet) = 1 and v(inlet) = 0
-        inlet_loss = (
-            self.mse_loss(u[self.inlet_mask], self.inlet_one_tensor)
-            + self.mse_loss(v[self.inlet_mask], self.inlet_zero_tensor)
-        )
-        # Outlet boundary condition
-        # u(outlet) = 1 and v(outlet) = 0
-        outlet_loss = (
-            self.mse_loss(u[self.outlet_mask], self.outlet_one_tensor)
-            + self.mse_loss(v[self.outlet_mask], self.outlet_zero_tensor)
-        )
-        # Wall boundary condition
-        # u(wall) = 1 and v(wall) = 0
-        wall_loss = (
-            self.mse_loss(u[self.wall_mask], self.wall_one_tensor)
-            + self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
-        )
-        # Surface boundary condition
-        # u(airfoil) = v(airfoil) = 0
-        airfoil_loss = (
-            self.mse_loss(u[self.airfoil_mask], self.airfoil_zero_tensor)
-            + self.mse_loss(v[self.airfoil_mask], self.airfoil_zero_tensor)
-        )
-        boundary_loss = inlet_loss + outlet_loss + wall_loss + airfoil_loss
+        airfoil_mask = self.airfoil_mask if not pre else None
 
         return (
             self.process(physics_loss, boundary_loss),
             self.inputs,
             (u, v, p),
-            self.airfoil_mask
+            airfoil_mask,
         )
 
-    def incompressibility_loss(self, u, v) -> Tuple[float, Tensor, Tensor]:
+    def incompressibility_loss(
+        self: 'Loss',
+        u: Tensor,
+        v: Tensor,
+    ) -> tuple[float, Tensor, Tensor]:
         # u_x + v_y = 0 (Incompressibility)
         u_x = self.partial_derivative(u, self.x)
         v_y = self.partial_derivative(v, self.y)

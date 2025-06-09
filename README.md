@@ -40,7 +40,14 @@ The project progresses through increasingly complex problems:
    - Analytical solution: $f(x, y) = \sin(\pi x) \sinh(\pi y)/\sinh(\pi)$
   ![Training Process](./assets/laplace.gif)
 
-1. **Navier-Stokes Equations** :x::
+1. **Euler Equations (potential, irrotational flow)** :white_check_mark::
+   - Wind tunnel scenario with no geometry
+   - PINN: $\phi_{\theta}: [0, 4] \times [0, 1] \rightarrow \mathbb{R}$
+   - PDE to approximate: None
+   - Dirichlet boundary conditions: $(u, v)(\partial([0, 4] \times [0, 1])) = (1, 0)$
+   ![Training Process](./assets/wind_tunnel_no_geometry.gif)
+
+2. **Navier-Stokes Equations** :x::
    - Solve fluid dynamics problems governed by the Navier-Stokes equations.
 
 ### **Installation**
