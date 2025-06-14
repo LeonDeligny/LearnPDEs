@@ -162,9 +162,13 @@ def save_airfoil_plot(
 
     # Set up the colormap and normalization
     cmap = plt.cm.RdBu_r
-    norm_u = plt.Normalize(vmin=0, vmax=1)
-    norm_v = plt.Normalize(vmin=0, vmax=1)
-    norm_p = plt.Normalize(vmin=-max(abs(p)), vmax=max(abs(p)))
+    # Use a fixed or symmetric range for better contrast:
+    # For u
+    norm_u = plt.Normalize(vmin=u.min(), vmax=u.max())
+    # For v
+    norm_v = plt.Normalize(vmin=v.min(), vmax=v.max())
+    # For p
+    norm_p = plt.Normalize(vmin=p.min(), vmax=p.max())
 
     # Create a vertical layout for the plots
     # 3 rows, 1 column
