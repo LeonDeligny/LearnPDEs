@@ -168,8 +168,12 @@ def save_airfoil_plot(
     # Set up the colormap and normalization
     cmap = plt.cm.RdBu_r
     # Use a fixed or symmetric range for better contrast:
-    norm_u = Normalize(vmin=0.0, vmax=u.max())
-    norm_v = TwoSlopeNorm(vmin=v.min(), vcenter=0.0, vmax=v.max())
+    if u.min() < 0.0:
+        norm_u = TwoSlopeNorm(vmin=u.min(), vcenter=0.0, vmax=u.max())
+    else:
+        norm_u = Normalize(vmin=u.min(), vmax=u.max())
+    v_abs_max = np.nanmax(np.abs(v))
+    norm_v = TwoSlopeNorm(vmin=-v_abs_max, vcenter=0.0, vmax=v_abs_max)
     norm_p = Normalize(vmin=-1.0, vmax=1.0)
 
     # Create a vertical layout for the plots

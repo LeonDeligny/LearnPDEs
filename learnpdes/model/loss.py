@@ -433,8 +433,7 @@ class Loss:
             u u_x + v u_y = p_x / rho
             u v_x - v u_x = p_y / rho
         """
-        outputs = self.forward(self.inputs)
-        phi = outputs[:, 0:1]
+        phi = self.forward(self.inputs)[:, 0:1]
         u = self.partial_derivative(phi, self.y)
         v = self.partial_derivative(-phi, self.x)
         p = torch.zeros_like(u)
@@ -487,7 +486,6 @@ class Loss:
                     -v[self.airfoil_mask] * self.n_y,
                 )
             )
-
             boundary_loss += 3 * airfoil_loss
 
         airfoil_mask = self.airfoil_mask if not pre else None
