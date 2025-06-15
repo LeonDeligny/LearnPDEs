@@ -17,6 +17,10 @@ from numpy import ndarray
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.tri import Triangulation
+from matplotlib.colors import (
+    Normalize,
+    TwoSlopeNorm,
+)
 from typing import (
     Union,
     Callable,
@@ -64,17 +68,18 @@ def create_gif(
     imageio.mimsave(output_path, images, duration=duration)
 
 
-def ensure_directory_exists() -> Path:
+def ensure_directory_exists(
+    output_dir: str = './gifs/epochs',
+) -> Path:
     '''
     Ensure directory exists and
     that the directory is cleaned before each run.
     '''
-    output_dir = './gifs/epochs'
     if os.path.exists(output_dir):
         for file in os.listdir(output_dir):
             if file.endswith('.png'):
                 os.remove(os.path.join(output_dir, file))
-        print('Removing old epochs folder')
+        print(f'Removing folder {output_dir=}')
     else:
         os.makedirs(output_dir, exist_ok=True)
     return output_dir
@@ -163,12 +168,9 @@ def save_airfoil_plot(
     # Set up the colormap and normalization
     cmap = plt.cm.RdBu_r
     # Use a fixed or symmetric range for better contrast:
-    # For u
-    norm_u = plt.Normalize(vmin=u.min(), vmax=u.max())
-    # For v
-    norm_v = plt.Normalize(vmin=v.min(), vmax=v.max())
-    # For p
-    norm_p = plt.Normalize(vmin=p.min(), vmax=p.max())
+    norm_u = Normalize(vmin=0.0, vmax=u.max())
+    norm_v = TwoSlopeNorm(vmin=v.min(), vcenter=0.0, vmax=v.max())
+    norm_p = Normalize(vmin=-1.0, vmax=1.0)
 
     # Create a vertical layout for the plots
     # 3 rows, 1 column

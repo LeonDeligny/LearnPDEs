@@ -19,7 +19,8 @@ from learnpdes import (
     # EXPONENTIAL_SCENARIO,
     # COSINUS_SCENARIO,
     # LAPLACE_SCENARIO,
-    POTENTIAL_FLOW_SCENARIO,
+    # POTENTIAL_FLOW_SCENARIO,
+    SOLENOIDAL_FLOW_SCENARIO,
 )
 
 # ======= Main =======
@@ -57,7 +58,7 @@ def main(
     pinn = PINN(
         nn_params={
             'input_dim': input_dim,
-            'hidden_dim': 300,
+            'hidden_dim': 20,
             'output_dim': output_dim,
             'num_hidden_layers': 4,
             'activation': Tanh,
@@ -117,4 +118,4 @@ def main(
 
 
 if __name__ == '__main__':
-    main(scenario=POTENTIAL_FLOW_SCENARIO)  # pragma: no cover
+    main(scenario=SOLENOIDAL_FLOW_SCENARIO)  # pragma: no cover

@@ -92,6 +92,20 @@ def get_marker_masks(
     return marker_masks
 
 
+def order_airfoil_points(xy: Tensor) -> Tensor:
+    # xy: [N, 2] airfoil points (unordered)
+    ordered = [0]
+    used = set(ordered)
+    for _ in range(1, len(xy)):
+        last = ordered[-1]
+        dists = torch.norm(xy - xy[last], dim=1)
+        dists[list(used)] = float('inf')
+        next_idx = torch.argmin(dists).item()
+        ordered.append(next_idx)
+        used.add(next_idx)
+    return xy[ordered]
+
+
 def compute_normals(
     xy: Tensor,
     airfoil_mask: Tensor

@@ -16,7 +16,6 @@ from typing import Callable
 from torch.nn import MSELoss
 from functools import partial
 from ambiance import Atmosphere
-from sklearn.neighbors import NearestNeighbors
 
 from learnpdes import (
     device,
@@ -28,6 +27,7 @@ from learnpdes import (
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
+    SOLENOIDAL_FLOW_SCENARIO,
 )
 
 # ======= Class =======
@@ -77,15 +77,15 @@ class Loss:
         # Generate scenario specific boundaries
         if self.scenario == LAPLACE_SCENARIO:
             self.generate_laplace_boundary()
-        elif self.scenario == POTENTIAL_FLOW_SCENARIO:
+        elif self.scenario in [
+            POTENTIAL_FLOW_SCENARIO,
+            SOLENOIDAL_FLOW_SCENARIO
+        ]:
             n_x, n_y = compute_normals(
                 xy=input_space,
                 airfoil_mask=mesh_masks['airfoil'],
             )
             self.n_x, self.n_y = n_x.to(self.device), n_y.to(self.device)
-            self.nearest_neighbors = (
-                self.get_nearest_neighbors(xy=input_space)
-            )
 
     def process(
         self: 'Loss',
@@ -96,7 +96,7 @@ class Loss:
         Process the losses to return a single loss value.
         TODO: Implement different methods to process the losses.
         '''
-        total_loss = physics_loss + boundary_loss
+        total_loss = 3 * physics_loss + boundary_loss
         return total_loss
 
     def generate_inputs(self: 'Loss') -> None:
@@ -212,21 +212,6 @@ class Loss:
             else:
                 raise ValueError(f'{name=} not known as a boundary name.')
 
-    def get_nearest_neighbors(
-        self: 'Loss',
-        xy: Tensor,
-    ) -> list[tuple[int, int]]:
-        xy_np = xy.cpu().numpy() if hasattr(xy, 'cpu') else xy
-        nbrs = NearestNeighbors(n_neighbors=2, algorithm='auto').fit(xy_np)
-        _, indices = nbrs.kneighbors(xy_np)
-
-        neighbor_indices = []
-        for i in range(xy_np.shape[0]):
-            for j in indices[i][1:]:  # skip itself
-                neighbor_indices.append((i, j))
-
-        return neighbor_indices
-
     def generate_laplace_boundary(self: 'Loss') -> None:
         self.sin = torch.sin(pi_tensor * self.x[self.top_mask]).view(-1, 1)
 
@@ -261,6 +246,8 @@ class Loss:
             return self.laplace_loss
         elif scenario in POTENTIAL_FLOW_SCENARIO:
             return self.potential_irrotational_flow_loss
+        elif scenario in SOLENOIDAL_FLOW_SCENARIO:
+            return self.solenoidal_flow_loss
         else:
             raise ValueError(f"{scenario=} is not a valid scenario.")
 
@@ -275,6 +262,11 @@ class Loss:
         elif scenario == POTENTIAL_FLOW_SCENARIO:
             return partial(
                 self.potential_irrotational_flow_loss,
+                pre=True,
+            )
+        elif scenario == SOLENOIDAL_FLOW_SCENARIO:
+            return partial(
+                self.solenoidal_flow_loss,
                 pre=True,
             )
         else:
@@ -370,22 +362,92 @@ class Loss:
 
         Potential flow:
             u u_x + v u_y = u u_x + v v_x = p_x / rho
+            u v_x + v v_y = u u_y + v v_y = p_y / rho
             therefore,
             1 / 2 u^2 + v^2 = p / rho
         """
         outputs = self.forward(self.inputs)
         phi = outputs[:, 0:1]
-        u = self.partial_derivative(phi, self.x)  # + torch.ones_like(phi)
+        u = self.partial_derivative(phi, self.x)
         v = self.partial_derivative(phi, self.y)
         ke = (u**2 + v**2)
-        p = -2 * self.rho * ke
+        p = self.rho * ke / 2.0
 
-        ic_loss, u_x, _ = self.incompressibility_loss(u, v)
-        energy_loss = self.mse_loss(ke.mean(), self.one.squeeze())
-        physics_loss = (
-            ic_loss
-            + energy_loss
-            + self.mse_loss(u_x, torch.zeros_like(u))
+        ic_loss, _, _ = self.incompressibility_loss(u, v)
+        physics_loss = ic_loss
+
+        # Inlet boundary condition
+        # u(inlet) = 1 and v(inlet) = 0
+        inlet_loss = (
+            self.mse_loss(u[self.inlet_mask], self.inlet_one_tensor)
+            + self.mse_loss(v[self.inlet_mask], self.inlet_zero_tensor)
+        )
+        # Outlet boundary condition
+        # u(outlet) = 1 and v(outlet) = 0
+        outlet_loss = (
+            self.mse_loss(u[self.outlet_mask], self.outlet_one_tensor)
+            + self.mse_loss(v[self.outlet_mask], self.outlet_zero_tensor)
+        )
+        # Wall boundary condition
+        # v(wall) = 0
+        wall_loss = (
+            self.mse_loss(u[self.wall_mask], self.wall_one_tensor)
+            + self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
+        )
+
+        boundary_loss = inlet_loss + outlet_loss + wall_loss
+
+        if not pre:
+            # Surface boundary condition
+            # (u(airfoil), v(airfoil)) n_airfoil = 0
+            airfoil_loss = (
+                self.mse_loss(
+                    u[self.airfoil_mask] * self.n_x,
+                    -v[self.airfoil_mask] * self.n_y,
+                )
+            )
+            boundary_loss += 3 * airfoil_loss
+
+        airfoil_mask = self.airfoil_mask if not pre else None
+
+        return (
+            self.process(physics_loss, boundary_loss),
+            self.inputs,
+            (u, v, p),
+            airfoil_mask,
+        )
+
+    def solenoidal_flow_loss(
+        self: 'Loss',
+        pre: bool = False,
+    ) -> tuple[Tensor, Tensor, tuple[Tensor, Tensor, Tensor]]:
+        """
+        (u, v) = nabla^{perp} phi = (phi_y, -phi_x)
+        Observe:
+            u_x + v_y = phi_xy - phi_yx = 0 (if phi is C^2)
+
+        NS PDE for pressure:
+            u u_x + v u_y + nu (u_xx + u_yy) = p_x / rho
+            u v_x + v v_y + nu (v_xx + v_yy) = p_y / rho
+        Assuming nu = 0:
+            u u_x + v u_y = p_x / rho
+            u v_x - v u_x = p_y / rho
+        """
+        outputs = self.forward(self.inputs)
+        phi = outputs[:, 0:1]
+        u = self.partial_derivative(phi, self.y)
+        v = self.partial_derivative(-phi, self.x)
+        p = torch.zeros_like(u)
+
+        u_y = self.partial_derivative(u, self.y)
+        v_x = self.partial_derivative(-v, self.x)
+
+        lap_phi = u_y + v_x
+        lap_phi_x = self.partial_derivative(lap_phi, self.x)
+        lap_phi_y = self.partial_derivative(lap_phi, self.x)
+
+        physics_loss = self.mse_loss(
+            u * lap_phi_x, - v * lap_phi_y
         )
 
         # Inlet boundary condition
@@ -403,20 +465,29 @@ class Loss:
         # Wall boundary condition
         # v(wall) = 0
         wall_loss = (
-            self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
+            self.mse_loss(u[self.wall_mask], self.wall_one_tensor)
+            + self.mse_loss(v[self.wall_mask], self.wall_zero_tensor)
         )
 
         boundary_loss = inlet_loss + outlet_loss + wall_loss
 
         if not pre:
             # Surface boundary condition
-            # (u(airfoil), v(airfoil)) n_airfoil = 0
+            # u(airfoil) = v(airfoil) = 0
+            # airfoil_loss = (
+            #     self.mse_loss(u[self.airfoil_mask], self.airfoil_zero_tensor)
+            #     + self.mse_loss(
+            # v[self.airfoil_mask],
+            # self.airfoil_zero_tensor
+            # )
+            # )
             airfoil_loss = (
                 self.mse_loss(
                     u[self.airfoil_mask] * self.n_x,
                     -v[self.airfoil_mask] * self.n_y,
                 )
             )
+
             boundary_loss += 3 * airfoil_loss
 
         airfoil_mask = self.airfoil_mask if not pre else None

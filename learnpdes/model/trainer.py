@@ -71,6 +71,7 @@ class Trainer:
         # Train if there is at least one epoch
         if self.nb_epochs != 0:
             output_dir = ensure_directory_exists()
+            # res_dir = ensure_directory_exists('./gifs/residuals')
 
             # Training loop
             for epoch in range(0, self.nb_epochs):
@@ -87,6 +88,7 @@ class Trainer:
                     # Back to CPU for plotting
                     x_ = detach_to_numpy(inputs)
                     f_ = detach_to_numpy(f)
+                    # res_ = detach_to_numpy(res)
 
                     self.plot_func(
                         output_dir,
@@ -97,5 +99,15 @@ class Trainer:
                         geometry_mask=geometry_mask,
                         analytical=self.analytical,
                     )
+
+                    # self.plot_func(
+                    #     res_dir,
+                    #     epoch=epoch,
+                    #     inputs=x_,
+                    #     f=res_,
+                    #     loss=loss,
+                    #     geometry_mask=geometry_mask,
+                    #     analytical=self.analytical,
+                    # )
 
                 create_gif()

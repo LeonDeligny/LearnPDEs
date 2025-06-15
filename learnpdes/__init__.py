@@ -11,6 +11,7 @@ from torch import (
 )
 
 from torch import Tensor
+from typing import Final
 from torch import device as TorchDevice
 
 from torch import pi
@@ -29,7 +30,7 @@ device_type: str = (
     else 'cpu'
 )
 # device_type: str = 'cpu'
-device = TorchDevice(device_type)
+device: Final[TorchDevice] = TorchDevice(device_type)
 print(f'Using {device_type=}.')
 
 # Fixing seed
@@ -37,7 +38,8 @@ manual_seed(0)
 
 # ======= Scenarios =======
 
-EXPONENTIAL_SCENARIO = 'exponential'
-COSINUS_SCENARIO = 'cosinus'
-LAPLACE_SCENARIO = 'laplace'
-POTENTIAL_FLOW_SCENARIO = 'potential flow'
+EXPONENTIAL_SCENARIO: Final[str] = 'exponential'
+COSINUS_SCENARIO: Final[str] = 'cosinus'
+LAPLACE_SCENARIO: Final[str] = 'laplace'
+POTENTIAL_FLOW_SCENARIO: Final[str] = 'potential flow'
+SOLENOIDAL_FLOW_SCENARIO: Final[str] = 'solenoidal flow'

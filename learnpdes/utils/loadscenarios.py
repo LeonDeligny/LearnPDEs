@@ -28,6 +28,7 @@ from learnpdes import (
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
+    SOLENOIDAL_FLOW_SCENARIO,
 )
 
 # ======= Functions =======
@@ -183,10 +184,11 @@ def load_wind_tunnel(
     )
 
 
-def load_potential_flow(
+def load_2d_mesh(
     num_inputs: int,
     plot: bool = False,
     augmented_grid: int = True,
+    filepath: str = "./meshes/mesh_airfoil_ch10sm.su2"
 ) -> tuple[
     Tensor, dict[str, Tensor],
     int, None,
@@ -200,7 +202,6 @@ def load_potential_flow(
     output_dim = 1  # potential (u = dphi_dx, v = dphi_dy)
     input_homeo, output_homeo, encoding = identity, identity, identity
 
-    filepath = "./meshes/mesh_airfoil_ch10sm.su2"
     with open(filepath, 'r') as f:
         lines = f.readlines()
 
@@ -280,8 +281,8 @@ def load_scenario(
         return load_cosinus(num_inputs)
     elif scenario == LAPLACE_SCENARIO:
         return load_laplace(num_inputs)
-    elif scenario == POTENTIAL_FLOW_SCENARIO:
-        return load_potential_flow(num_inputs)
+    elif scenario in [POTENTIAL_FLOW_SCENARIO, SOLENOIDAL_FLOW_SCENARIO]:
+        return load_2d_mesh(num_inputs, plot=False)
     else:
         raise ValueError(
             f'{scenario=} is not a valid scenario. '
