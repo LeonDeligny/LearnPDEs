@@ -4,6 +4,7 @@ gifs/
 __pycache__/
 .pytest_cache/
 *.pyc
+.venv/
 
 .coverage
 .coverage.*
