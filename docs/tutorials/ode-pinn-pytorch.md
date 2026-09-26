@@ -94,29 +94,28 @@ import torch
 
 from examples.train_pinn import build_problem
 
-for scenario in ("exponential", "cosinus"):
+for scenario in ('exponential', 'cosinus'):
     torch.manual_seed(0)
     model, problem, _ = build_problem(scenario, points=64)
     f = model(problem.inputs)
     df = problem.partial_derivative(f, problem.x)
 
-    if scenario == "exponential":
+    if scenario == 'exponential':
         residual = df - f
         boundary_loss = (f[problem.zero_mask] - 1).square().mean()
     else:
         ddf = problem.partial_derivative(df, problem.x)
         residual = ddf + f
-        boundary_loss = (
-            (f[problem.zero_mask] - 1).square().mean()
-            + df[problem.zero_mask].square().mean()
-        )
+        boundary_loss = (f[problem.zero_mask] - 1).square().mean() + df[
+            problem.zero_mask
+        ].square().mean()
 
     physics_loss = residual.square().mean()
     total_loss = 3 * physics_loss + boundary_loss
     reference_loss, _, _, _ = problem.get_loss(scenario)()
     torch.testing.assert_close(total_loss, reference_loss)
-    print(scenario, "physics:", physics_loss.item())
-    print(scenario, "initial conditions:", boundary_loss.item())
+    print(scenario, 'physics:', physics_loss.item())
+    print(scenario, 'initial conditions:', boundary_loss.item())
 ```
 
 [`Loss.partial_derivative`](../../learnpdes/model/loss.py) calls

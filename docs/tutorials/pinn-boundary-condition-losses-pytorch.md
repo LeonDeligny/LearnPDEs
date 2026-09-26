@@ -38,23 +38,23 @@ import torch
 from examples.train_pinn import build_problem
 
 torch.manual_seed(0)
-model, problem, _ = build_problem("laplace", points=21)
+model, problem, _ = build_problem('laplace', points=21)
 u = model(problem.inputs)
 
 # Every prediction and target has shape (number_of_edge_points, 1).
 top_values = u[problem.top_mask]
 top_target = torch.sin(torch.pi * problem.x[problem.top_mask])
 edge_losses = {
-    "bottom": u[problem.bottom_mask].square().mean(),
-    "top": (top_values - top_target).square().mean(),
-    "left": u[problem.inlet_mask].square().mean(),
-    "right": u[problem.outlet_mask].square().mean(),
+    'bottom': u[problem.bottom_mask].square().mean(),
+    'top': (top_values - top_target).square().mean(),
+    'left': u[problem.inlet_mask].square().mean(),
+    'right': u[problem.outlet_mask].square().mean(),
 }
 boundary_loss = sum(edge_losses.values())
 
 for edge, loss in edge_losses.items():
-    print(f"{edge}: {loss.item():.6e}")
-print("Total boundary loss:", boundary_loss.item())
+    print(f'{edge}: {loss.item():.6e}')
+print('Total boundary loss:', boundary_loss.item())
 ```
 
 Using separate means preserves an explicit weight for each edge even if the
@@ -84,7 +84,7 @@ import torch
 from examples.train_pinn import build_problem
 
 torch.manual_seed(0)
-model, problem, _ = build_problem("cosinus", points=64)
+model, problem, _ = build_problem('cosinus', points=64)
 f = model(problem.inputs)
 df_dx = problem.partial_derivative(f, problem.x)
 d2f_dx2 = problem.partial_derivative(df_dx, problem.x)
@@ -99,8 +99,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 optimizer.zero_grad(set_to_none=True)
 total_loss.backward(retain_graph=True)
 optimizer.step()
-print("Value loss before the update:", value_loss.item())
-print("Slope loss before the update:", slope_loss.item())
+print('Value loss before the update:', value_loss.item())
+print('Slope loss before the update:', slope_loss.item())
 ```
 
 The shared `Loss` object caches coordinate graphs and, for Laplace, a boundary

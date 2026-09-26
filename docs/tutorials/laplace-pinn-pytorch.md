@@ -92,7 +92,7 @@ import torch
 from examples.train_pinn import build_problem
 
 torch.manual_seed(0)
-model, problem, _ = build_problem("laplace", points=21)
+model, problem, _ = build_problem('laplace', points=21)
 u = model(problem.inputs)
 
 du_dx = problem.partial_derivative(u, problem.x)
@@ -112,9 +112,9 @@ boundary_loss = (
 total_loss = 3 * physics_loss + boundary_loss
 reference_loss, _, _, _ = problem.laplace_loss()
 torch.testing.assert_close(total_loss, reference_loss)
-print("Physics loss:", physics_loss.item())
-print("Boundary loss:", boundary_loss.item())
-print("Total loss:", total_loss.item())
+print('Physics loss:', physics_loss.item())
+print('Boundary loss:', boundary_loss.item())
+print('Total loss:', total_loss.item())
 ```
 
 The repository writes the physics term as `MSE(u_xx, -u_yy)`, which is
