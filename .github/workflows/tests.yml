@@ -35,12 +35,3 @@ jobs:
         run: |
           uv run coverage run --source=learnpdes -m unittest discover -s tests -p "test*.py"
           uv run coverage xml
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage.xml
-          flags: tests
-          fail_ci_if_error: true
-          verbose: true
