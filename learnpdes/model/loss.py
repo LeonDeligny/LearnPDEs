@@ -85,7 +85,8 @@ class Loss:
                 xy=input_space,
                 airfoil_mask=mesh_masks['airfoil'],
             )
-            self.n_x, self.n_y = n_x.to(self.device), n_y.to(self.device)
+            self.n_x = n_x[mesh_masks['airfoil']].view(-1, 1).to(self.device)
+            self.n_y = n_y[mesh_masks['airfoil']].view(-1, 1).to(self.device)
 
     def process(
         self: 'Loss',
