@@ -10,3 +10,6 @@ __pycache__/
 coverage.xml
 
 learnpdes.egg-info/
+
+# Ignore local files
+*.local*
