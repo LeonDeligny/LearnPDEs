@@ -23,14 +23,14 @@ required. From a terminal:
 git clone https://github.com/LeonDeligny/LearnPDEs.git
 cd LearnPDEs
 uv sync --locked
-uv run python -m examples.train_pinn exponential --epochs 5000 --points 64
+uv run python -m examples.train_pinn exponential --epochs 10000 --points 256
 uv run python -m examples.train_pinn cosinus --epochs 5000 --points 64
 uv run python -m examples.train_pinn laplace --epochs 5000 --points 21
 ```
 
 If you already have a checkout, run the last four commands from its root. The
 scenario identifier `cosinus` is the name used by LearnPDEs for the cosine ODE.
-For a quick installation check, replace `--epochs 5000` with `--epochs 10`;
+For a quick installation check, use `--epochs 10` in any of the commands;
 ten updates check that training runs, but do not establish solution accuracy.
 
 The [tutorial runner](../../examples/train_pinn.py) uses the same `PINN`, `Loss`,

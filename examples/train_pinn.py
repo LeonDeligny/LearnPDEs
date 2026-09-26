@@ -84,13 +84,17 @@ def main() -> None:
     parser.add_argument(
         '--points',
         type=int,
-        help='Points per axis (default: 21 for Laplace, 64 for ODEs).',
+        help='Points per axis (default: 256 for exponential, 64 for cosinus, 21 for Laplace).',
     )
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
     points = args.points
     if points is None:
-        points = 21 if args.scenario == LAPLACE_SCENARIO else 64
+        points = {
+            EXPONENTIAL_SCENARIO: 256,
+            COSINUS_SCENARIO: 64,
+            LAPLACE_SCENARIO: 21,
+        }[args.scenario]
     if args.epochs < 1:
         parser.error('--epochs must be at least 1')
     if points < 3:
