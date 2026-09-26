@@ -18,30 +18,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@d2e6a045a86077fb6cad6f5adf368e9076ddaa8d
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
-          miniforge-variant: Miniforge3
-          auto-update-conda: true
-          miniforge-version: latest
-          environment-file: environment.yml
-          use-mamba: false
-          activate-environment: learnpdes
+          python-version: 3.12
 
-      - name: Install learnpdes with pip
-        shell: bash -l {0}
-        run: pip install -e .
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
-      - name: Run tests
-        shell: bash -l {0}
-        run: |
-          coverage run --source=learnpdes -m unittest discover -s learnpdes/model/tests -p "*.py"
+      - name: Install dependencies
+        run: uv sync --locked
 
       - name: Run test scenarios
-        shell: bash -l {0}
         run: |
-          coverage run --append --source=learnpdes -m unittest discover -s tests -p "test*.py"
-          coverage xml
+          uv run coverage run --source=learnpdes -m unittest discover -s tests -p "test*.py"
+          uv run coverage xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d

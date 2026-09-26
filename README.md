@@ -1,7 +1,6 @@
 # Physics-Informed Neural Networks (PINNs)
 
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1595a49bb6264b8fb196d55f1f544be0)](https://app.codacy.com/gh/LeonDeligny/LearnPDEs/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![codecov](https://codecov.io/github/LeonDeligny/LearnPDEs/branch/main/graph/badge.svg?token=E2YSVB0M80)](https://codecov.io/github/LeonDeligny/LearnPDEs)
 [![License](https://img.shields.io/badge/license-GNU-blue.svg)](https://github.com/LeonDeligny/LearnPDEs/blob/main/LICENSE)
 
 ## **Project Goal**
@@ -56,6 +55,7 @@ Ensure you have the following installed on your system:
 
 - ✔️ Python 3.12
 - ✔️ MPS support for macOS
+- ✔️ [uv](https://docs.astral.sh/uv/)
 - ✔️ Additional Python dependencies
 
 1. **Clone the Repository**:
@@ -65,8 +65,21 @@ Ensure you have the following installed on your system:
    git clone https://github.com/LeonDeligny/LearnPDEs.git
    cd LearnPDEs
 
-2. **Install dependencies**: 
+2. **Install uv**:
+
+   Follow the [uv installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
+
+3. **Install dependencies**:
 
    Install the dependencies with:
    ```bash
-   conda env create -f environment.yml
+   uv sync
+   ```
+
+   This creates a `.venv` virtual environment and installs the dependencies from `uv.lock`.
+
+4. **Run the tests**:
+
+   ```bash
+   uv run python -m unittest discover -s tests -p "test*.py"
+   ```
