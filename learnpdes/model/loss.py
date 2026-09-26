@@ -474,18 +474,9 @@ class Loss:
         if not pre:
             # Surface boundary condition
             # u(airfoil) = v(airfoil) = 0
-            # airfoil_loss = (
-            #     self.mse_loss(u[self.airfoil_mask], self.airfoil_zero_tensor)
-            #     + self.mse_loss(
-            # v[self.airfoil_mask],
-            # self.airfoil_zero_tensor
-            # )
-            # )
             airfoil_loss = (
-                self.mse_loss(
-                    u[self.airfoil_mask] * self.n_x,
-                    -v[self.airfoil_mask] * self.n_y,
-                )
+                self.mse_loss(u[self.airfoil_mask], self.airfoil_zero_tensor)
+                + self.mse_loss(v[self.airfoil_mask], self.airfoil_zero_tensor)
             )
             boundary_loss += 3 * airfoil_loss
 
