@@ -443,7 +443,7 @@ class Loss:
 
         lap_phi = u_y + v_x
         lap_phi_x = self.partial_derivative(lap_phi, self.x)
-        lap_phi_y = self.partial_derivative(lap_phi, self.x)
+        lap_phi_y = self.partial_derivative(lap_phi, self.y)
 
         physics_loss = self.mse_loss(
             u * lap_phi_x, - v * lap_phi_y
