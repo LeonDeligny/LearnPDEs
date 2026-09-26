@@ -1,6 +1,12 @@
 [project]
 name = "learnpdes"
 version = "1.0"
+description = "Physics-informed neural networks for solving partial differential equations."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Leon Deligny" },
+]
 requires-python = ">=3.12"
 dependencies = [
     "ambiance",
@@ -30,9 +36,20 @@ dependencies = [
 [dependency-groups]
 dev = [
     "coverage",
-    "flake8",
+    "ruff",
 ]
+
+[project.urls]
+Repository = "https://github.com/LeonDeligny/LearnPDEs"
 
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["learnpdes*"]
+exclude = ["tests", "tests.*"]
