@@ -342,7 +342,7 @@ class Loss:
             f[self.zero_mask].view(-1, 1),
             self.one_tensor,
         ) + self.mse_loss(
-            ddf_dxdx[self.zero_mask].view(-1, 1),
+            df_dx[self.zero_mask].view(-1, 1),
             self.zero_tensor
         )
         return (
