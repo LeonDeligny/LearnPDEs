@@ -63,3 +63,14 @@ include-package-data = true
 where = ["."]
 include = ["learnpdes*"]
 exclude = ["tests", "tests.*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E265"]
+
+[tool.ruff.format]
+quote-style = "single"

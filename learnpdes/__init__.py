@@ -1,6 +1,6 @@
-'''
+"""
 Constants and variables for the project.
-'''
+"""
 
 # ======= Imports =======
 
@@ -24,11 +24,7 @@ pi_tensor: Tensor = tensor(pi)
 
 # Detects if Metal Performance Shaders (MPS)
 # is available on your system.
-device_type: str = (
-    'mps'
-    if is_available()
-    else 'cpu'
-)
+device_type: str = 'mps' if is_available() else 'cpu'
 # device_type: str = 'cpu'
 device: Final[TorchDevice] = TorchDevice(device_type)
 print(f'Using {device_type=}.')

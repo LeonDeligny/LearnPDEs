@@ -1,6 +1,6 @@
-'''
+"""
 Training configuration of the PINN model.
-'''
+"""
 
 # ======= Imports =======
 
@@ -37,9 +37,9 @@ class Trainer:
         plot: dict,
         analytical: Union[Callable, None] = None,
     ) -> None:
-        '''
+        """
         Initialiyation of training process.
-        '''
+        """
 
         # Model parameters
         self.model_params = model_params

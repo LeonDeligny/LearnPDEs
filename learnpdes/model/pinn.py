@@ -1,4 +1,4 @@
-'''
+"""
 Physics Informed Neural Network's loss will be an ODE,
 
 Examples:
@@ -11,7 +11,7 @@ Examples:
         f'' = -f, f(0) = 1, f'(0) = 0.
 
 Unique analytical solution is f = exp.
-'''
+"""
 
 # ======= Imports =======
 
@@ -43,10 +43,10 @@ from learnpdes import (
 
 
 class PINN(Module):
-    '''
+    """
     Physics Informed Neural Network (PINN) class.
     This class implements a PINN for solving ODEs using a neural network.
-    '''
+    """
 
     # Constants
     device = device
@@ -85,13 +85,13 @@ class PINN(Module):
             return self.input_dim
 
     def forward(self, x: Tensor) -> Tensor:
-        '''
+        """
         forward = homeo o NN o fourier o homeo
             - input_homeo: [n, .] -> [n, .]
             - encoding: [n, .] -> [n, . * m]
             - NN: [n, . * m] -> [n, .]
             - output_homeo: [n, .] -> [n, .]
-        '''
+        """
         input_homeo = self.input_homeo(x)
         encoding = self.encoding(input_homeo)
         network = self.network(encoding)
@@ -100,10 +100,10 @@ class PINN(Module):
         return output.to(self.device)
 
     def construct_nn(self) -> Sequential:
-        '''
+        """
         Using standard neural network definition.
         By default add a biais.
-        '''
+        """
         # Construct NN
         layers = [
             Linear(self.encoding_dim, self.hidden_dim, bias=True),
@@ -125,11 +125,11 @@ class PINN(Module):
         return network
 
     def _initialize_weights(self):
-        '''
+        """
         Fill the input Tensor with values
         using a Xavier uniform distribution.
         Biais initialized to 0.
-        '''
+        """
         for m in self.modules():
             if isinstance(m, Linear):
                 xavier_uniform_(m.weight)

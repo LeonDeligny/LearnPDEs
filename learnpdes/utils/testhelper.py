@@ -1,6 +1,6 @@
-'''
+"""
 Helper class with default values for testing.
-'''
+"""
 
 #  ======= Imports =======
 
@@ -22,9 +22,7 @@ from learnpdes import device
 class TestHelper(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.default_input = tensor([
-            [-10.0], [-1.0], [0.0], [1.0], [10.0]
-        ]).to(device)
+        cls.default_input = tensor([[-10.0], [-1.0], [0.0], [1.0], [10.0]]).to(device)
         cls.device = 'cpu'
 
     def assert_equal_function(
@@ -39,7 +37,7 @@ class TestHelper(TestCase):
         expected = expected.to(self.device)
         self.assertTrue(
             allclose(actual, expected, atol=1e-4),
-            f'Expected {expected}, but got {actual}'
+            f'Expected {expected}, but got {actual}',
         )
         if isinstance(f, partial):
             print(

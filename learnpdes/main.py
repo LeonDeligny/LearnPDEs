@@ -1,9 +1,9 @@
-'''
+"""
 This script is the entry point for training a
 Physics-Informed Neural Network (PINN) model.
-'''
+"""
 
-# ======= Imports =======
+# ======= Imports =======
 
 from learnpdes.utils.decorators import time
 from learnpdes.utils.plot import get_plot_func
@@ -23,7 +23,7 @@ from learnpdes import (
     SOLENOIDAL_FLOW_SCENARIO,
 )
 
-# ======= Main =======
+# ======= Main =======
 
 
 @time
@@ -32,12 +32,12 @@ def main(
     epochs: int = 100_000,
     pre_epochs: int = 1_000,
 ) -> None:
-    '''
+    """
     Description of workflow.
         1. Construct model.
         2. Train model.
         3. Evaluate model ?
-    '''
+    """
 
     # Scenarios can be either:
     # 'exponential'
@@ -46,9 +46,13 @@ def main(
     # 'potential flow'
 
     (
-        input_space, mesh_masks,
-        output_dim, analytical,
-        input_homeo, output_homeo, encoding
+        input_space,
+        mesh_masks,
+        output_dim,
+        analytical,
+        input_homeo,
+        output_homeo,
+        encoding,
     ) = load_scenario(scenario, num_inputs=100)
 
     # Dimension of input space

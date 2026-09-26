@@ -1,6 +1,6 @@
-'''
+"""
 Customed decorators.
-'''
+"""
 
 # ======= Imports =======
 
@@ -21,9 +21,9 @@ from typing import (
 
 
 def time(func: Callable) -> Callable:
-    '''
+    """
     Decorator to log the execution time of a function.
-    '''
+    """
 
     @wraps(func)
     def wrapper(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
@@ -31,17 +31,14 @@ def time(func: Callable) -> Callable:
         result = func(*args, **kwargs)
         end_time = t.time()
         execution_time = end_time - start_time
-        print(
-            f'Function {func.__name__} '
-            f'executed in {execution_time:.4f} seconds.'
-        )
+        print(f'Function {func.__name__} executed in {execution_time:.4f} seconds.')
         return result
 
     return wrapper
 
 
 def validate(func: Callable) -> Callable:
-    '''
+    """
     Base decorator for validating function arguments.
 
     Objective:
@@ -49,7 +46,7 @@ def validate(func: Callable) -> Callable:
 
     Uniqueness:
         Ensures validation is performed only once per unique set of arguments.
-    '''
+    """
     validated_func = validate_call(func)
 
     @wraps(func)

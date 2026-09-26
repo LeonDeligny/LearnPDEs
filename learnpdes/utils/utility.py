@@ -1,6 +1,6 @@
-'''
+"""
 Utility functions.
-'''
+"""
 
 # ======= Imports =======
 
@@ -24,13 +24,14 @@ class Identity(Module):
     def forward(self, x: Tensor) -> Tensor:
         return x
 
+
 # ======= Functions =======
 
 
 def laplace_function(x: ndarray, y: ndarray) -> ndarray:
-    '''
+    """
     Laplace function.
-    '''
+    """
     return sin(pi * x) * sinh(pi * y) / sinh(pi)
 
 
@@ -46,16 +47,13 @@ def analyze_xy(xy: Tensor) -> None:
     y_min_count = (y == y_min).sum().item()
     y_max_count = (y == y_max).sum().item()
 
-    print(f"x min: {x_min} (count: {x_min_count})")
-    print(f"x max: {x_max} (count: {x_max_count})")
-    print(f"y min: {y_min} (count: {y_min_count})")
-    print(f"y max: {y_max} (count: {y_max_count})")
+    print(f'x min: {x_min} (count: {x_min_count})')
+    print(f'x max: {x_max} (count: {x_max_count})')
+    print(f'y min: {y_min} (count: {y_min_count})')
+    print(f'y max: {y_max} (count: {y_max_count})')
 
 
-def get_marker_masks(
-    filepath: str,
-    num_points: int
-) -> dict[str, Tensor]:
+def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
     """
     Returns a dictionary
     mapping each MARKER_TAG to a boolean mask over the node array.
@@ -67,12 +65,12 @@ def get_marker_masks(
     i = 0
     while i < len(lines):
         line = lines[i]
-        if line.startswith("MARKER_TAG="):
-            tag = line.split("=")[1].strip()
+        if line.startswith('MARKER_TAG='):
+            tag = line.split('=')[1].strip()
             # Find number of elements for this marker
-            while not lines[i].startswith("MARKER_ELEMS="):
+            while not lines[i].startswith('MARKER_ELEMS='):
                 i += 1
-            num_elems = int(lines[i].split("=")[1].strip())
+            num_elems = int(lines[i].split('=')[1].strip())
             indices = []
             for j in range(i + 1, i + 1 + num_elems):
                 parts = lines[j].strip().split()
@@ -87,7 +85,7 @@ def get_marker_masks(
         i += 1
 
     for tag, mask in marker_masks.items():
-        print(f"Marker: {tag}, Number of elements: {mask.sum().item()}")
+        print(f'Marker: {tag}, Number of elements: {mask.sum().item()}')
 
     return marker_masks
 
@@ -106,10 +104,7 @@ def order_airfoil_points(xy: Tensor) -> Tensor:
     return xy[ordered]
 
 
-def compute_normals(
-    xy: Tensor,
-    airfoil_mask: Tensor
-) -> tuple[Tensor, Tensor]:
+def compute_normals(xy: Tensor, airfoil_mask: Tensor) -> tuple[Tensor, Tensor]:
     """
     Compute outward normals for the airfoil boundary.
     """
@@ -137,7 +132,7 @@ def compute_normals(
 
 
 def detach_to_numpy(
-    f: Union[tuple[Tensor, ...], Tensor]
+    f: Union[tuple[Tensor, ...], Tensor],
 ) -> Union[tuple[ndarray, ...], ndarray]:
     """
     Essentially sends to cpu, detach, and converts to ndarray.

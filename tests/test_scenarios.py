@@ -1,11 +1,11 @@
-'''
+"""
 Testing the integration of the learnpdes module.
 
 Test out the following scenarios:
     1. exponential
     2. cosinus
     3. laplace
-'''
+"""
 
 # ======= Imports =======
 

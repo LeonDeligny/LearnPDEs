@@ -1,6 +1,6 @@
-'''
+"""
 Plot functions.
-'''
+"""
 #  ======= Imports =======
 
 import os
@@ -57,7 +57,7 @@ def create_gif(
             for file_name in os.listdir(input_folder)
             if file_name.endswith('.png') and file_name.startswith('epoch_')
         ],
-        key=lambda x: int(x.split('_')[1].split('.')[0])
+        key=lambda x: int(x.split('_')[1].split('.')[0]),
     )
 
     for file_name in sorted_files:
@@ -71,10 +71,10 @@ def create_gif(
 def ensure_directory_exists(
     output_dir: str = './gifs/epochs',
 ) -> Path:
-    '''
+    """
     Ensure directory exists and
     that the directory is cleaned before each run.
-    '''
+    """
     if os.path.exists(output_dir):
         for file in os.listdir(output_dir):
             if file.endswith('.png'):
@@ -92,7 +92,7 @@ def save_plot(
     f: ndarray,
     loss: float,
     geometry_mask: ndarray,
-    analytical: Callable
+    analytical: Callable,
 ) -> None:
 
     inputs = inputs[geometry_mask]
@@ -126,12 +126,15 @@ def create_plot(
         )
 
     mesh = ax.scatter(
-        x1, x2, c=data,
+        x1,
+        x2,
+        c=data,
         cmap='viridis',
     )
     ax.set_title(title)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
+    ax.set_aspect('equal', adjustable='box')
     fig.colorbar(mesh, ax=ax)
 
 
@@ -148,9 +151,7 @@ def save_airfoil_plot(
     Save a 2D plot of the model output (u, v, p) using triangulation.
     """
     if analytical is not None:
-        raise NotImplementedError(
-            "No analytical solution for flow around airfoil."
-        )
+        raise NotImplementedError('No analytical solution for flow around airfoil.')
 
     # Extract x1 and x2 from inputs
     x1, x2 = inputs[:, 0], inputs[:, 1]
@@ -160,7 +161,7 @@ def save_airfoil_plot(
     triang = Triangulation(x1, x2)
     triangles = triang.triangles
     if geometry_mask is not None:
-        if hasattr(geometry_mask, "cpu"):
+        if hasattr(geometry_mask, 'cpu'):
             geometry_mask = geometry_mask.cpu().numpy()
         triangle_mask = np.any(geometry_mask[triangles], axis=1)
         triang.set_mask(triangle_mask)
@@ -179,15 +180,11 @@ def save_airfoil_plot(
     # Create a vertical layout for the plots
     # 3 rows, 1 column
     fig, axes = plt.subplots(3, 1, figsize=(10, 10))
+    for ax in axes:
+        ax.set_aspect('equal', adjustable='box')
 
     # Plot u
-    contour_u = axes[0].tricontourf(
-        triang,
-        u,
-        cmap=cmap,
-        levels=100,
-        norm=norm_u
-    )
+    contour_u = axes[0].tricontourf(triang, u, cmap=cmap, levels=100, norm=norm_u)
     cbar_u = fig.colorbar(contour_u, ax=axes[0])
     cbar_u.ax.tick_params(labelsize=12)
     axes[0].set_title('u Component', fontsize=15)
@@ -196,13 +193,7 @@ def save_airfoil_plot(
     axes[0].triplot(triang, color='grey', lw=0.0)
 
     # Plot v
-    contour_v = axes[1].tricontourf(
-        triang,
-        v,
-        cmap=cmap,
-        levels=100,
-        norm=norm_v
-    )
+    contour_v = axes[1].tricontourf(triang, v, cmap=cmap, levels=100, norm=norm_v)
     cbar_v = fig.colorbar(contour_v, ax=axes[1])
     cbar_v.ax.tick_params(labelsize=12)
     axes[1].set_title('v Component', fontsize=15)
@@ -211,13 +202,7 @@ def save_airfoil_plot(
     axes[1].triplot(triang, color='grey', lw=0.0)
 
     # Plot p
-    contour_p = axes[2].tricontourf(
-        triang,
-        p,
-        cmap=cmap,
-        levels=100,
-        norm=norm_p
-    )
+    contour_p = axes[2].tricontourf(triang, p, cmap=cmap, levels=100, norm=norm_p)
     cbar_p = fig.colorbar(contour_p, ax=axes[2])
     cbar_p.ax.tick_params(labelsize=12)
     axes[2].set_title('p Component', fontsize=15)
@@ -242,17 +227,15 @@ def save_2d_plot(
     analytical: Union[Callable, None],
 ) -> None:
     if geometry_mask is not None:
-        raise ValueError(
-            "geometry_mask is not None for grid plot"
-        )
+        raise ValueError('geometry_mask is not None for grid plot')
 
     # Extract x1 and x2 from inputs
     x1, x2 = inputs[:, 0], inputs[:, 1]
 
-    # Reshape x1, x2, and f into 2D grids
-    n = int(len(x1)**0.5)
-    x1_grid = x2.reshape(n, n).T
-    x2_grid = x1.reshape(n, n).T
+    # Keep coordinates and values aligned: rows along y, columns along x.
+    n = int(len(x1) ** 0.5)
+    x1_grid = x1.reshape(n, n).T
+    x2_grid = x2.reshape(n, n).T
     f_grid = f.reshape(n, n).T
 
     ncols = 1 if analytical is None else 3
@@ -262,7 +245,7 @@ def save_2d_plot(
     create_plot(x1_grid, x2_grid, fig, axes[0], f_grid, 'Model Output')
 
     if analytical is not None:
-        ana_f: ndarray = analytical(x1_grid, x2_grid).T
+        ana_f: ndarray = analytical(x1_grid, x2_grid)
         difference = f_grid - ana_f
         create_plot(x1_grid, x2_grid, fig, axes[1], ana_f, 'Analytical')
         create_plot(x1_grid, x2_grid, fig, axes[2], difference, 'Difference')
@@ -298,21 +281,21 @@ def plot_mesh(xy: Tensor, mesh_masks: dict[str, Tensor]) -> None:
     colors = itertools.cycle(['blue', 'red', 'green', 'orange', 'purple'])
     for name, mesh in mesh_masks.items():
         plt.scatter(
-            xy[mesh, 0],
-            xy[mesh, 1],
-            s=10,
-            label=name,
-            color=next(colors),
-            alpha=0.8
+            xy[mesh, 0], xy[mesh, 1], s=10, label=name, color=next(colors), alpha=0.8
         )
     plt.quiver(
-        xy[geometry_mask, 0], xy[geometry_mask, 1],
-        n_x[geometry_mask], n_y[geometry_mask],
-        color="blue", scale=100, width=0.003, label="Normals"
+        xy[geometry_mask, 0],
+        xy[geometry_mask, 1],
+        n_x[geometry_mask],
+        n_y[geometry_mask],
+        color='blue',
+        scale=100,
+        width=0.003,
+        label='Normals',
     )
     plt.legend()
-    plt.axis("equal")
-    plt.title("Mesh with Cross-Sections")
-    plt.xlabel("x")
-    plt.ylabel("y")
+    plt.axis('equal')
+    plt.title('Mesh with Cross-Sections')
+    plt.xlabel('x')
+    plt.ylabel('y')
     plt.show()

@@ -1,6 +1,6 @@
-'''
+"""
 Utility functions.
-'''
+"""
 
 # ======= Imports =======
 
@@ -34,33 +34,28 @@ from learnpdes import (
 # ======= Functions =======
 
 
-def load_real_space(
-    num_inputs: int
-) -> tuple[Tensor, dict[str, Tensor]]:
-    '''
+def load_real_space(num_inputs: int) -> tuple[Tensor, dict[str, Tensor]]:
+    """
     Load real segment around 0, ensuring correct order.
-    '''
-    real_space = torch.cat([
-        linspace(-3, 3, num_inputs),
-        torch.tensor([0.0]),
-    ])
+    """
+    real_space = torch.cat(
+        [
+            linspace(-3, 3, num_inputs),
+            torch.tensor([0.0]),
+        ]
+    )
     sorted_space, _ = torch.sort(real_space)
     mask_zero = sorted_space == 0
-    mesh_masks = {"zero": mask_zero}
+    mesh_masks = {'zero': mask_zero}
     return sorted_space, mesh_masks
 
 
 def load_exponential(
-    num_inputs: int
-) -> tuple[
-    Tensor,
-    dict[str, Tensor],
-    int, Callable,
-    Callable, Callable, Callable
-]:
-    '''
+    num_inputs: int,
+) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
+    """
     Load configuration space (around 0) for exponential PDE
-    '''
+    """
     # Define constants
     output_dim = 1
     input_homeo = identity
@@ -72,23 +67,22 @@ def load_exponential(
     x, mesh_masks = load_real_space(num_inputs)
 
     return (
-        x, mesh_masks,
-        output_dim, analytical,
-        input_homeo, output_homeo, encoding,
+        x,
+        mesh_masks,
+        output_dim,
+        analytical,
+        input_homeo,
+        output_homeo,
+        encoding,
     )
 
 
 def load_cosinus(
-    num_inputs: int
-) -> tuple[
-    Tensor,
-    dict[str, Tensor],
-    int, Callable,
-    Callable, Callable, Callable
-]:
-    '''
+    num_inputs: int,
+) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
+    """
     Load configuration space (around 0) for exponential PDE
-    '''
+    """
     # Define constants
     output_dim = 1
     input_homeo = identity
@@ -100,22 +94,22 @@ def load_cosinus(
     x, mesh_masks = load_real_space(num_inputs)
 
     return (
-        x, mesh_masks,
-        output_dim, analytical,
-        input_homeo, output_homeo, encoding,
+        x,
+        mesh_masks,
+        output_dim,
+        analytical,
+        input_homeo,
+        output_homeo,
+        encoding,
     )
 
 
 def load_laplace(
-    num_inputs: int
-) -> tuple[
-    Tensor, dict[str, Tensor],
-    int, Callable,
-    Callable, Callable, Callable
-]:
-    '''
+    num_inputs: int,
+) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
+    """
     Load a square [0, 1] x [0, 1] as input space for laplace PDE.
-    '''
+    """
     # Define constants
     output_dim = 1
     input_homeo = identity
@@ -133,29 +127,29 @@ def load_laplace(
     x = xy[:, 0]
     y = xy[:, 1]
     mesh_masks = {
-        "inlet": x == 0,
-        "outlet": x == 1,
-        "bottom": y == 0,
-        "top": y == 1,
+        'inlet': x == 0,
+        'outlet': x == 1,
+        'bottom': y == 0,
+        'top': y == 1,
     }
 
     return (
-        xy, mesh_masks,
-        output_dim, analytical,
-        input_homeo, output_homeo, encoding,
+        xy,
+        mesh_masks,
+        output_dim,
+        analytical,
+        input_homeo,
+        output_homeo,
+        encoding,
     )
 
 
 def load_wind_tunnel(
-    num_inputs: int
-) -> tuple[
-    Tensor, dict[str, Tensor],
-    int, Callable,
-    Callable, Callable, Callable
-]:
-    '''
+    num_inputs: int,
+) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
+    """
     Load a square [0, 4] x [0, 1] as input space.
-    '''
+    """
     # Define constants
     output_dim = 1
     input_homeo = identity
@@ -172,15 +166,19 @@ def load_wind_tunnel(
     x = xy[:, 0]
     y = xy[:, 1]
     mesh_masks = {
-        "inlet": x == 0,
-        "outlet": x == 4,
-        "wall": ((y == 0) | (y == 1)),
+        'inlet': x == 0,
+        'outlet': x == 4,
+        'wall': ((y == 0) | (y == 1)),
     }
 
     return (
-        xy, mesh_masks,
-        output_dim, None,
-        input_homeo, output_homeo, encoding,
+        xy,
+        mesh_masks,
+        output_dim,
+        None,
+        input_homeo,
+        output_homeo,
+        encoding,
     )
 
 
@@ -188,16 +186,12 @@ def load_2d_mesh(
     num_inputs: int,
     plot: bool = False,
     augmented_grid: int = True,
-    filepath: str = "./meshes/mesh_airfoil_ch10sm.su2"
-) -> tuple[
-    Tensor, dict[str, Tensor],
-    int, None,
-    Callable, Callable, Callable
-]:
-    '''
+    filepath: str = './meshes/mesh_airfoil_ch10sm.su2',
+) -> tuple[Tensor, dict[str, Tensor], int, None, Callable, Callable, Callable]:
+    """
     Loads node coordinates from a SU2 mesh file.
     Returns as a tensor of shape [N, 2].
-    '''
+    """
     # Define constants
     output_dim = 1  # potential (u = dphi_dx, v = dphi_dy)
     input_homeo, output_homeo, encoding = identity, identity, identity
@@ -207,12 +201,12 @@ def load_2d_mesh(
 
     # Find the line with "NPOIN"
     for i, line in enumerate(lines):
-        if "NPOIN" in line:
+        if 'NPOIN' in line:
             num_points = int(re.findall(r'\d+', line)[0])
             start_idx = i + 1
             break
     else:
-        raise ValueError("NPOIN not found in SU2 file.")
+        raise ValueError('NPOIN not found in SU2 file.')
 
     # Read the next num_points lines for coordinates
     coords = []
@@ -244,14 +238,18 @@ def load_2d_mesh(
     num_points = xy.shape[0]
     mesh_masks = get_marker_masks(filepath, num_points)
 
-    print(f"Total number of vertices: {xy.shape[0]}")
+    print(f'Total number of vertices: {xy.shape[0]}')
     if plot:
         plot_mesh(xy, mesh_masks)
 
     return (
-        xy, mesh_masks,
-        output_dim, None,
-        input_homeo, output_homeo, encoding,
+        xy,
+        mesh_masks,
+        output_dim,
+        None,
+        input_homeo,
+        output_homeo,
+        encoding,
     )
 
 
@@ -259,11 +257,15 @@ def load_scenario(
     scenario: str,
     num_inputs: int = 100,
 ) -> tuple[
-    Tensor, dict[str, Tensor],
-    int, Union[Callable, None],
-    Callable, Callable, Callable,
+    Tensor,
+    dict[str, Tensor],
+    int,
+    Union[Callable, None],
+    Callable,
+    Callable,
+    Callable,
 ]:
-    '''
+    """
     Function that loads the according scenario with:
         - space data
         - mesh masks (for boundaries)
@@ -272,7 +274,7 @@ def load_scenario(
         - input homeomorphism
         - output homeomorphism
         - encoding
-    '''
+    """
     print(f'Loading scenario: {scenario}')
 
     if scenario == EXPONENTIAL_SCENARIO:
