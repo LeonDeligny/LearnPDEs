@@ -50,6 +50,14 @@ and maximum absolute error on the visualization samples. Flow plots label all
 three fields and omit error metrics when no reference is available. The tutorial
 runner also reports relative L₂ error on its separate validation grid.
 
+Animations loop at 10 FPS (100 ms per checkpoint), holding the final result for
+2 seconds. Checkpoints follow a logarithmic schedule with at most 80 frames,
+including the untrained model at step 0 and the final completed optimizer step.
+The `Trainer` plot options `max_frames`, `duration_ms`, `final_hold_ms`,
+`output_dir`, and `gif_path` customize capture and playback. Durations use
+[Pillow's millisecond convention](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif)
+and must be positive multiples of 10 ms, the GIF format's timing precision.
+
 ## **Objectives**
 
 The project progresses through increasingly complex problems:

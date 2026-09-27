@@ -6,13 +6,14 @@ Plot functions.
 import os
 import itertools
 import numpy as np
-import imageio.v2 as imageio
+from PIL import Image
 import matplotlib.pyplot as plt
 
 from learnpdes.utils.utility import compute_normals
 
 from torch import Tensor
 from pathlib import Path
+from functools import partial
 from numpy import ndarray
 from matplotlib.collections import LineCollection
 from matplotlib.tri import Triangulation
@@ -29,36 +30,50 @@ from learnpdes import (
 
 
 def get_plot_func(scenario: str) -> Callable:
+    """Create a plotter with color limits shared across all of its frames."""
     if scenario in [EXPONENTIAL_SCENARIO, COSINUS_SCENARIO]:
         return save_plot
     elif scenario == LAPLACE_SCENARIO:
-        return save_2d_plot
+        return partial(save_2d_plot, color_norms={})
     else:
-        return save_airfoil_plot
+        return partial(save_airfoil_plot, color_norms={})
 
 
 def create_gif(
     output_path: Path = './gifs/training_process.gif',
     input_folder: Path = './gifs/epochs',
-    duration: float = 0.5,
+    duration_ms: int = 100,
+    final_hold_ms: int = 2000,
 ) -> None:
-    images = []
-    # Sort files by epoch number
-    sorted_files = sorted(
-        [
-            file_name
-            for file_name in os.listdir(input_folder)
-            if file_name.endswith('.png') and file_name.startswith('epoch_')
-        ],
-        key=lambda x: int(x.split('_')[1].split('.')[0]),
+    """Write looping GIFs with explicit millisecond delays, including a final hold."""
+    for delay in (duration_ms, final_hold_ms):
+        if not isinstance(delay, int) or not 10 <= delay <= 655350 or delay % 10:
+            raise ValueError(
+                'GIF delays must be multiples of 10 ms between 10 and 655350.'
+            )
+    files = sorted(
+        Path(input_folder).glob('epoch_*.png'),
+        key=lambda path: int(path.stem.split('_')[1]),
     )
-
-    for file_name in sorted_files:
-        file_path = os.path.join(input_folder, file_name)
-        images.append(imageio.imread(file_path))
-
-    # Save the GIF using only the image data
-    imageio.mimsave(output_path, images, duration=duration)
+    if not files:
+        raise ValueError(f'No epoch frames found in {input_folder}.')
+    images = []
+    try:
+        for file in files:
+            with Image.open(file) as frame:
+                images.append(frame.convert('RGB'))
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        images[0].save(
+            output_path,
+            save_all=True,
+            append_images=images[1:],
+            duration=[duration_ms] * (len(images) - 1) + [final_hold_ms],
+            loop=0,
+            disposal=2,
+        )
+    finally:
+        for image in images:
+            image.close()
 
 
 def ensure_directory_exists(
@@ -221,7 +236,7 @@ def finish_field(fig, ax, mesh, title, label):
     ax.set_aspect('equal', adjustable='box')
     slot = ax.get_position()
     cax = fig.add_axes([slot.x1 + 0.008, slot.y0, 0.011, slot.height])
-    colorbar = fig.colorbar(mesh, cax=cax)
+    colorbar = fig.colorbar(mesh, cax=cax, extend='both')
     colorbar.set_label(label)
     colorbar.formatter.set_powerlimits((-2, 2))
     colorbar.update_ticks()
@@ -231,12 +246,19 @@ def value_norm(*fields, symmetric=False):
     lo = min(float(np.min(field)) for field in fields)
     hi = max(float(np.max(field)) for field in fields)
     if symmetric:
-        bound = max(abs(lo), abs(hi), 1e-12)
+        bound = max(abs(lo), abs(hi)) or 1.0
         return Normalize(-bound, bound)
     if lo == hi:
-        pad = max(abs(lo) * 0.01, 1e-12)
+        pad = abs(lo) * 0.01 or 1.0
         lo, hi = lo - pad, hi + pad
     return Normalize(lo, hi)
+
+
+def fixed_norm(color_norms, name, *fields, symmetric=False):
+    """Initialize limits from the first frame and keep them for this plotter."""
+    if name not in color_norms:
+        color_norms[name] = value_norm(*fields, symmetric=symmetric)
+    return color_norms[name]
 
 
 def save_airfoil_plot(
@@ -252,7 +274,14 @@ def save_airfoil_plot(
     loss_history=None,
     total_epochs=None,
     pressure_label='Pressure p (model units)',
+    *,
+    color_norms: dict[str, Normalize] | None = None,
 ) -> None:
+    """Save flow fields with fixed scales when color_norms is reused across calls.
+
+    get_plot_func owns this state for an animation. Callers can also supply
+    explicit Normalize objects under 'u', 'v', and 'p' to choose the ranges.
+    """
     if analytical is not None:
         raise NotImplementedError('No analytical solution for flow around airfoil.')
     triang = triangulation
@@ -261,6 +290,11 @@ def save_airfoil_plot(
         if geometry_mask is not None:
             mask = np.asarray(geometry_mask)
             triang.set_mask(np.any(mask[triang.triangles], axis=1))
+    if color_norms is None:
+        color_norms = {}
+    visible_nodes = np.unique(triang.get_masked_triangles())
+    # The unit inlet speed prevents tiny initial velocities setting tiny limits.
+    velocity_range = np.array([-1.0, 1.0])
     with plt.rc_context(PLOT_STYLE):
         fig, axes = publication_figure(epoch, loss, loss_history, total_epochs)
         titles = ['Horizontal velocity', 'Vertical velocity', 'Pressure']
@@ -271,12 +305,18 @@ def save_airfoil_plot(
         ]
         for index, (ax, field, title, label) in enumerate(zip(axes, f, titles, labels)):
             values = np.asarray(field).ravel()
+            fields = (values[visible_nodes],)
+            if index < 2:
+                fields += (velocity_range,)
+            norm = fixed_norm(
+                color_norms, ('u', 'v', 'p')[index], *fields, symmetric=index < 2
+            )
             mesh = ax.tripcolor(
                 triang,
                 values,
                 shading='gouraud',
                 cmap='RdBu_r' if index < 2 else 'viridis',
-                norm=value_norm(values, symmetric=index < 2),
+                norm=norm,
                 rasterized=True,
             )
             if boundary_edges is not None:
@@ -297,7 +337,14 @@ def save_2d_plot(
     analytical: Callable | None,
     loss_history=None,
     total_epochs=None,
+    *,
+    color_norms: dict[str, Normalize] | None = None,
 ) -> None:
+    """Save prediction/reference and signed error with shared, fixed color limits.
+
+    Reuse color_norms across calls or obtain a stateful plotter from get_plot_func.
+    Supply explicit norms under 'solution' and 'error' to choose the ranges.
+    """
     if geometry_mask is not None:
         raise ValueError('geometry_mask is not None for grid plot')
     # Accept rectangular grids and arbitrary input ordering; rows are y, columns x.
@@ -311,13 +358,12 @@ def save_2d_plot(
         np.asarray(analytical(x_grid, y_grid)) if analytical is not None else None
     )
     metrics = error_metrics(prediction, reference) if reference is not None else None
+    if color_norms is None:
+        color_norms = {}
     with plt.rc_context(PLOT_STYLE):
         fig, axes = publication_figure(epoch, loss, loss_history, total_epochs, metrics)
-        norm = (
-            value_norm(prediction, reference)
-            if reference is not None
-            else value_norm(prediction)
-        )
+        fields = (prediction,) if reference is None else (prediction, reference)
+        norm = fixed_norm(color_norms, 'solution', *fields)
         create_plot(x_grid, y_grid, fig, axes[0], prediction, 'Prediction', norm=norm)
         if reference is not None:
             create_plot(x_grid, y_grid, fig, axes[1], reference, 'Reference', norm=norm)
@@ -330,7 +376,7 @@ def save_2d_plot(
                 difference,
                 'Signed error',
                 label='Prediction − reference',
-                norm=value_norm(difference, symmetric=True),
+                norm=fixed_norm(color_norms, 'error', difference, symmetric=True),
                 cmap='RdBu_r',
             )
         else:
