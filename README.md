@@ -12,6 +12,7 @@ equations using physics-informed neural networks (PINNs). Training uses only:
 - **Boundary Conditions (BC) Loss**: Ensuring the solution satisfies the boundary constraints.
 - **Initial Conditions (IC) Loss**: Prescribing the initial state for ODEs and time-dependent PDEs.
 
+> [!WARNING]
 **Never use simulation data in any scenario, including for validation or
 comparison.** No numerical ODE trajectories, CFD/FEM/FDM/spectral solution
 fields, teacher-model predictions, simulation-derived boundary values, or
@@ -24,21 +25,39 @@ must never enter training, pretraining, adaptive sampling, or early stopping.
 Prescribed forcing and exact initial/boundary traces are legitimate problem
 inputs. No experimental reference dataset is currently selected.
 
+Grow one step at a time: ODEs, stationary scalar PDEs, time-dependent scalar
+PDEs, then coupled fluid equations and curved boundaries. The
+[validation plan](docs/validation.md) defines all current scenarios'
+reference policies, intermediate problems, papers, exact comparison values,
+and proposed accuracy gates across three seeds. Implementation or a successful
+animation does not mean a scenario has passed those gates. Cylinder and airfoil
+cases remain exploratory because no admissible full-setup reference is selected.
+
 ## Tutorials
 
 Learn how to solve differential equations with physics-informed neural networks
 in PyTorch. These worked examples explain the equations, automatic
 differentiation, and loss functions, with runnable code and training animations.
 
-- [Physics-informed neural networks for ODEs: a worked example](docs/tutorials/ode-pinn-pytorch.md): exponential growth and cosine oscillations.
+- [Exponential growth with a PINN](docs/tutorials/exponential-ode-pinn-pytorch.md): solve $f'=f$ with $f(0)=1$.
+- [The harmonic oscillator with a PINN](docs/tutorials/harmonic-oscillator-pinn-pytorch.md): solve $f''+f=0$ with $f(0)=1$ and $f'(0)=0$.
 - [Solve the Laplace equation with a PINN in PyTorch](docs/tutorials/laplace-pinn-pytorch.md): a two-dimensional boundary-value problem.
-- [Implementing PINN boundary-condition losses in PyTorch](docs/tutorials/pinn-boundary-condition-losses-pytorch.md): value constraints, derivative constraints, and loss weighting.
+- [Circular Couette with a PINN](docs/tutorials/circular-couette-pinn-pytorch.md): verify curved no-slip walls against an exact solution.
+- [Cylinder plots and fluid test log](docs/fluid-scenario-log.md): separate measured verification records and the staged path toward airfoil flow.
+- [Poiseuille flow with a PINN](docs/tutorials/poiseuille-flow-pinn-pytorch.md): learn viscous channel flow from a pressure drop and stationary walls.
 
 Start with the [tutorial setup and running instructions](docs/tutorials/README.md).
 
+## Repository organization
+
+Each setup owns its problem definition under `learnpdes/scenarios/`. Shared
+networks, optimization, physics residuals, evaluation, and visualization remain
+reusable across setups. See the [architecture guide](docs/architecture.md) for
+the layout, compatibility imports, and steps to add a scenario.
+
 ## Run any scenario
 
-All nine cases use one scenario catalog and a Typer CLI with grouped help,
+All registered cases use one scenario catalog and a Typer CLI with grouped help,
 validated parameters, and a saved configuration for each run:
 
 ```bash
@@ -66,6 +85,7 @@ runs remain available. These short checks verify execution, not convergence.
 output controls. Scenario-specific flags include `--cosinus-order`,
 `--lbfgs-steps`, `--resample-every`, and `--mesh`. Use a single compatible case
 when setting a nondefault derivative order, L-BFGS budget, or custom mesh.
+See the [complete scenario and parameter guide](docs/tutorials/README.md#run-any-scenario).
 
 `scenarios` displays the full catalog and defaults in a table; `examples` prints
 copyable commands for every case and common parameter changes. For scripts,
@@ -81,11 +101,24 @@ commands now support the complete catalog and the same defaults;
 The original `learnpdes laplace ...`, `--scenario NAME`, and `--list-scenarios`
 forms remain supported.
 
+The tutorials also have a static documentation site prepared for GitHub Pages.
+To preview it locally without installing the training dependencies:
+
+```bash
+UV_PROJECT_ENVIRONMENT=.venv-docs uv run --locked --only-group docs mkdocs serve -f docs/website/mkdocs.yml
+```
+
+Open <http://127.0.0.1:8000/LearnPDEs/>. See the
+[documentation guide](docs/README.md) and [website launch guide](docs/publishing.md)
+for validation, the manual publishing workflow, Search Console setup, and sharing
+drafts. The website is not deployed yet; pushes and pull requests only build and
+check it.
+
 ## Training results
 
 Each training invocation creates a unique, portable run under
 `assets/runs/<scenario>/<run-id>/`. It saves `training.gif`, `training.html`,
-`run.json`, `loss.csv`, and `model.pt`; rendered PNGs stay in `frames/`.
+`run.json`, `loss.csv`, `collocation.json`, and `model.pt`; rendered PNGs stay in `frames/`.
 Repeating a scenario preserves previous runs. The manifest records settings,
 source revision, validation results when available, and export success/failure.
 Numerical results and weights are saved before rendering begins.
@@ -104,6 +137,14 @@ share it offline. `--output-dir` changes the asset root. `--max-frames` controls
 the checkpoint count; `--resolution` controls display samples independently of
 training samples. `main(...)` uses `visualization_resolution` for this setting.
 
+The first prediction panel shows the actual training coordinates: navy PDE
+points, orange boundary points, red initial/pressure anchors, and purple flux
+quadrature points. For ODEs, marks along the bottom indicate x locations only.
+HTML has **Show points / Hide points** controls; GIFs keep the points visible.
+Recorded checkpoints follow resampling, and fixed point sets are saved once in
+`collocation.json`. Historical exports without recorded coordinates must be
+regenerated to show them.
+
 Kaleido is installed with the project. GIF export also needs Chrome and FFmpeg:
 
 ```bash
@@ -117,10 +158,22 @@ runners `examples.generate_animations` and `examples.generate_interactive` use
 the same run layout. `examples.compare_cosinus` groups comparisons under
 `assets/comparisons/`. All working runs are ignored by Git.
 
+The README and website use selected results from `assets/examples/`. After
+reviewing a run, publish it explicitly:
+
+```bash
+uv run python -m examples.publish_run 'assets/runs/laplace/<run-id>' --replace
+```
+
+See the [asset layout and lifecycle](assets/README.md) for metadata, failure
+recovery, checkpoints, and publication. Existing examples were preserved with
+their original provenance; they are never overwritten by ordinary training.
+
 ## **Objectives**
 
-The following scenarios are implemented. Quantitative accuracy must be checked
-against an admissible exact reference independently of training loss.
+The following scenarios are implemented; their accuracy must be established
+using the [staged validation plan](docs/validation.md). Additional intermediate
+ODEs and PDEs in that plan are proposed, not yet runnable.
 
 1. **Simple ODEs** — implemented:
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
@@ -129,7 +182,7 @@ against an admissible exact reference independently of training loss.
    - Boundary Loss: $\lVert f_{\theta}(0) - 1 \rVert$
    - Analytical solution: $\exp: \mathbb{R} \rightarrow \mathbb{R}$
 
-   ![PINN training toward the exponential ODE solution](./assets/exponential.gif)
+   ![PINN training toward the exponential ODE solution](./assets/examples/exponential/training.gif)
 
 1. **Higher-Order ODEs** — implemented:
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
@@ -138,7 +191,7 @@ against an admissible exact reference independently of training loss.
    - Boundary Loss: $\lVert f_{\theta}(0) - 1 \rVert, \lVert f'_{\theta}(0) \rVert$
    - Analytical solution: $\cos: \mathbb{R} \rightarrow \mathbb{R}$
 
-   ![PINN training toward the cosine ODE solution](./assets/cosinus.gif)
+   ![PINN training toward the cosine ODE solution](./assets/examples/cosinus/training.gif)
 
 1. **Laplace Equation** — implemented:
    - PINN: $f_{\theta}: [0, 1]^2 \rightarrow \mathbb{R}$
@@ -148,7 +201,7 @@ against an admissible exact reference independently of training loss.
    - Boundary loss: $\lVert f_{\theta}(\cdot, 0) \rVert, \lVert f_{\theta}(\cdot, 1) - \sin(\pi x) \rVert, \lVert f_{\theta}(0, \cdot) \rVert, \lVert f_{\theta}(1, \cdot) \rVert$
    - Analytical solution: $f(x, y) = \sin(\pi x) \sinh(\pi y)/\sinh(\pi)$
 
-   ![PINN training toward the Laplace equation solution on a unit square](./assets/laplace.gif)
+   ![PINN training toward the Laplace equation solution on a unit square](./assets/examples/laplace/training.gif)
 
 1. **Potential, irrotational flow** — exploratory:
    - Wind tunnel scenario with no geometry
@@ -160,9 +213,14 @@ against an admissible exact reference independently of training loss.
      remain pending. Both bundled airfoil formulations are also exploratory;
      their meshes provide geometry, not admissible solution references.
 
-   ![Training Process](./assets/wind_tunnel_no_geometry.gif)
+   ![Training Process](./assets/examples/wind_tunnel_no_geometry/training.gif)
 
 1. **Navier–Stokes: Poiseuille flow between flat plates** — implemented:
+
+   Follow the [Poiseuille flow tutorial](docs/tutorials/poiseuille-flow-pinn-pytorch.md)
+   for the problem, training command, PyTorch loss, and accuracy checks.
+
+   ![Poiseuille PINN training between stationary parallel plates](./assets/examples/poiseuille/training.gif)
 
    Use scenario **`poiseuille`** for steady, incompressible viscous flow in
    $[0,4]\times[0,1]$. The network predicts $(u,v,p)$ directly. In dimensionless
@@ -219,7 +277,7 @@ against an admissible exact reference independently of training loss.
 
    The CLI and Python entry point both default to 21 × 21 training points and an
    independent 51 × 51 display grid. Parameters and the reference solution are in
-   [learnpdes/poiseuille.py](learnpdes/poiseuille.py); the
+   [learnpdes/scenarios/poiseuille.py](learnpdes/scenarios/poiseuille.py); the
    [benchmark tests](tests/test_poiseuille.py) verify the exact solution, pressure
    forcing, no-slip walls, automatic derivatives, and training/plot integration.
 
@@ -278,7 +336,7 @@ against an admissible exact reference independently of training loss.
 
    The CLI and Python entry point both default to 961 interior samples, 124
    samples per boundary, and an independent 51 × 51 display grid. Benchmark constants and the NumPy/Torch
-   exact solution live in [learnpdes/kovasznay.py](learnpdes/kovasznay.py).
+   exact solution live in [learnpdes/scenarios/kovasznay.py](learnpdes/scenarios/kovasznay.py).
    The [benchmark tests](tests/test_kovasznay.py) check exact residual cancellation,
    both momentum equations, all velocity boundaries, the pressure gauge, and
    training/evaluation integration. The equations and rectangle follow the
@@ -294,10 +352,15 @@ against an admissible exact reference independently of training loss.
    no-slip wall enforcement, and a do-nothing outlet that fixes pressure.
 
    ```bash
-   uv run python -m examples.train_pinn cylinder --epochs 3000 --lbfgs-steps 3000 --points 45 --no-gif
+   uv run learnpdes train circular-couette --epochs 1500 --lbfgs-steps 2000 --points 32 --no-gif
+   uv run learnpdes train cylinder --epochs 1500 --lbfgs-steps 2500 --points 45 --no-gif
+   uv run python -m examples.refine_fluid path/to/cylinder-run --points 81 --lbfgs-steps 3000
+   uv run python -m examples.plot_fluid path/to/refined-run --png
    ```
 
-   Fluid runs also save each PDE
+   [Cylinder setup and validation](docs/tutorials/cylinder-flow-pinn-pytorch.md)
+   explains nondimensionalization, geometry, boundary conditions, reference
+   quantities, and quantitative training tests. Fluid runs also save each PDE
    and boundary loss in `residuals.csv`. The evaluator reports predicted drag,
    lift, pressure drop, and mass balance as diagnostics. Published DFG reference
    values come from numerical simulations and are excluded from comparison.
