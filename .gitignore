@@ -1,4 +1,8 @@
 gifs/
+plots/
+assets/*_frames/
+assets/runs/
+assets/comparisons/
 .DS_Store
 
 __pycache__/

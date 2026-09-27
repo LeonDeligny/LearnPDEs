@@ -21,6 +21,8 @@ from torch.nn.init import (
 )
 
 from torch import Tensor
+from learnpdes.model.derivatives import tanh_derivatives
+from learnpdes.model.encodings import identity
 from functools import partial
 # from complexPyTorch.complexLayers import ComplexLinear
 
@@ -58,6 +60,8 @@ class PINN(Module):
         input_homeo: Callable[[Tensor], Tensor],
         output_homeo: Callable[[Tensor], Tensor],
         encoding: Union[partial, Callable[[Tensor], Tensor]],
+        *,
+        output_transform: Callable[[Tensor, Tensor], Tensor] | None = None,
     ) -> None:
         super(PINN, self).__init__()
 
@@ -72,6 +76,7 @@ class PINN(Module):
         self.input_homeo = input_homeo
         self.output_homeo = output_homeo
         self.encoding = encoding
+        self.output_transform = output_transform
         self.encoding_dim = self.get_encoding_dim()
 
         # Network parameters
@@ -96,8 +101,25 @@ class PINN(Module):
         encoding = self.encoding(input_homeo)
         network = self.network(encoding)
         output = self.output_homeo(network)
+        if self.output_transform is not None:
+            output = self.output_transform(x, output)
 
-        return output.to(self.device)
+        return output
+
+    def input_derivatives(self, x: Tensor, order: int) -> list[Tensor]:
+        """Efficient high-order derivatives of the unencoded scalar Tanh network."""
+        if (
+            self.output_transform is not None
+            or self.input_dim != 1
+            or any(
+                transform is not identity
+                for transform in (self.input_homeo, self.output_homeo, self.encoding)
+            )
+        ):
+            raise ValueError(
+                'Taylor derivatives require an unencoded one-dimensional network.'
+            )
+        return tanh_derivatives(self.network, x, order)
 
     def construct_nn(self) -> Sequential:
         """

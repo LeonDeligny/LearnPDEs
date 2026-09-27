@@ -26,12 +26,12 @@ dependencies = [
     "flask",
     "gmsh",
     "imageio",
-    "matplotlib",
+    "kaleido>=1,<2",
     "narwhals",
     "networkx",
     "numpy",
     "pillow",
-    "plotly",
+    "plotly>=6.1.1",
     "pydantic",
     "requests",
     "scikit-learn",
@@ -41,12 +41,20 @@ dependencies = [
     "torchaudio",
     "torchvision",
     "typing-extensions",
+    "typer>=0.16,<1",
+    "rich>=13,<15",
 ]
+
+[project.scripts]
+learnpdes = "learnpdes.cli:main"
 
 [dependency-groups]
 dev = [
     "coverage",
     "ruff",
+]
+export = [
+    "kaleido>=1,<2",
 ]
 
 [project.urls]
@@ -63,6 +71,10 @@ include-package-data = true
 where = ["."]
 include = ["learnpdes*"]
 exclude = ["tests", "tests.*"]
+
+[tool.setuptools.package-data]
+"learnpdes" = ["data/*.su2"]
+"learnpdes.utils" = ["cosinus_comparison.html", "training_playback.js"]
 
 [tool.ruff]
 target-version = "py312"

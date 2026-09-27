@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Cosine · Compare derivative orders</title>
+  <script src="plotly.min.js"></script>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #222; background: #fff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1360px; margin: auto; padding: 28px 24px; }
+    h1 { margin: 0 0 10px; font-size: clamp(23px, 3vw, 32px); font-weight: 600; letter-spacing: -.025em; }
+    p { margin: 8px 0; line-height: 1.5; }
+    .muted { color: #606b73; font-size: 13px; }
+    .domains { display: flex; gap: 10px 24px; flex-wrap: wrap; margin: 18px 0 24px; font-size: 14px; }
+    .controls { padding: 16px; border: 1px solid #ddd; background: #fafafa; border-radius: 6px; }
+    .filters { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; }
+    fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+    legend { font-size: 13px; margin-bottom: 10px; color: #606b73; }
+    #orders { display: flex; gap: 10px; flex-wrap: wrap; }
+    .order { display: flex; align-items: center; gap: 7px; border: 1px solid #ccc; background: white; padding: 9px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; }
+    .order input { accent-color: var(--color); }
+    .swatch { display: inline-block; width: 20px; height: 3px; background: var(--color); flex-shrink: 0; }
+    button, select { font: inherit; font-size: 14px; padding: 9px 12px; border: 1px solid #bbb; background: #fff; border-radius: 4px; color: #222; }
+    button { cursor: pointer; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #315b87; outline-offset: 3px; }
+    .seed { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+    .timeline { margin-top: 20px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+    .timeline label { display: block; font-size: 13px; margin-bottom: 6px; }
+    #step { width: 100%; margin: 0; accent-color: #315b87; }
+    #step-value { font-variant-numeric: tabular-nums; }
+    .milestones { margin-top: 12px; }
+    .plot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 28px; }
+    .panel { min-width: 0; }
+    h2 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+    .chart { width: 100%; height: 360px; }
+    #convergence { height: 360px; }
+    .convergence-header { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-top: 20px; }
+    .convergence-header label { font-size: 13px; }
+    .table-wrap { overflow-x: auto; margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+    caption { text-align: left; font-weight: 600; margin-bottom: 10px; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid #ddd; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: #fff; z-index: 1; }
+    th { font-size: 12px; font-weight: 500; color: #606b73; }
+    td .swatch { margin-right: 8px; vertical-align: middle; }
+    details { border-top: 1px solid #ddd; padding-top: 16px; margin-top: 22px; }
+    summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+    .equation { white-space: normal; text-align: left; line-height: 1.7; }
+    .empty { min-height: 20px; color: #ad493b; font-size: 14px; }
+    @media (max-width: 700px) {
+      main { padding: 18px 12px; }
+      .plot-grid { grid-template-columns: 1fr; gap: 20px; }
+      .timeline { grid-template-columns: auto minmax(0, 1fr); }
+      #last { grid-column: 2; justify-self: end; }
+      th, td { padding: 10px 8px; font-size: 12px; }
+      .chart, #convergence { height: 330px; }
+      .convergence-header { align-items: start; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Does adding derivatives help?</h1>
+  <p>Compare every selected order at the same training step. Show all curves together, or add the higher orders one by one.</p>
+  <div class="domains">
+    <span>Training: <strong>[−π, π]</strong></span>
+    <span>Evaluation: <strong id="evaluation-domain"></strong></span>
+    <span>π ≈ 3.141593</span>
+  </div>
+  <div class="controls">
+    <div class="filters">
+      <fieldset><legend>Maximum derivative order in each model</legend><div id="orders"></div></fieldset>
+      <button id="all" type="button">Show all orders</button>
+      <label class="seed" for="seed">Seed <select id="seed"></select></label>
+    </div>
+    <div class="timeline">
+      <button id="play" type="button" aria-pressed="false">Play</button>
+      <div><label for="step">Training step: <output id="step-value" for="step"></output></label><input id="step" type="range" min="0" step="1" value="0"></div>
+      <button id="last" type="button">Final step</button>
+    </div>
+    <div id="milestones" class="milestones" hidden><button id="baseline" type="button">5,000-step baseline</button></div>
+    <p class="muted">Each order starts from matching initial weights for its seed. The slider uses shared recorded steps, without interpolation.</p>
+  </div>
+  <p id="empty" class="empty" role="status"></p>
+  <div class="plot-grid">
+    <section class="panel"><h2>Learned solutions</h2><p class="muted">Green shading marks training; amber marks the far band beyond ±2π. The dashed curve is cos(x).</p><div id="solution" class="chart"></div></section>
+    <section class="panel"><h2>Absolute error across the domain</h2><p class="muted">Logarithmic scale: each decade is a factor of ten.</p><div id="error" class="chart"></div></section>
+  </div>
+  <section>
+    <div class="convergence-header"><div><h2>Convergence for every order</h2><p class="muted">MSE against cos(x), excluded from training. Dots mark the selected step.</p></div>
+      <label for="region">Evaluation region <select id="region"></select></label>
+    </div>
+    <div id="convergence"></div>
+  </section>
+  <div class="table-wrap"><table><caption>Errors at the selected step</caption><thead><tr id="metric-headings"><th>Model</th></tr></thead><tbody id="metrics"></tbody></table></div>
+  <p class="muted">Outside-to-2π and outside-to-3π exclude the training interval. The far band isolates 2π &lt; |x| ≤ 3π. Full metrics include the training interval. Axis ranges stay fixed through training. Errors below 10⁻¹² are displayed at the plot floor; the table retains their values.</p>
+  <details><summary>Which equations and initial conditions does each order add?</summary><div class="table-wrap"><table><thead><tr><th>Model</th><th>All included equations</th><th>Initial conditions</th></tr></thead><tbody id="constraints"></tbody></table></div>
+    <p class="muted">All constraints are imposed only within [−π, π]. Higher orders keep every earlier constraint. These equations already follow from the original ODE for an exact solution; additional penalties may help finite training, but do not guarantee extrapolation.</p>
+  </details>
+  <noscript>Enable JavaScript to compare the recorded derivative orders.</noscript>
+</main>
+<script id="comparison-data" type="application/json">__COMPARISON_DATA__</script>
+<script>
+(() => {
+  'use strict';
+  const data = JSON.parse(document.getElementById('comparison-data').textContent);
+  const get = id => document.getElementById(id);
+  const floor = 1e-12;
+  const color = order => data.colors[data.orders.indexOf(order) % data.colors.length];
+  const checks = [];
+  let playing = false;
+  let timer;
+  let rendering = Promise.resolve();
+  const config = {responsive: true, displaylogo: false, scrollZoom: false};
+  const extent = data.evaluation_pi;
+  get('evaluation-domain').textContent = `[−${extent}π, ${extent}π]`;
+  const tickMultiples = Array.from({length: 2*extent + 1}, (_, i) => i - extent)
+    .filter(n => extent < 3 || !matchMedia('(max-width: 700px)').matches || Math.abs(n) !== 2);
+  const ticks = {tickmode: 'array', tickvals: tickMultiples.map(n => n*Math.PI),
+    ticktext: tickMultiples.map(n => n === 0 ? '0' : `${n < 0 ? '−' : ''}${Math.abs(n) === 1 ? '' : Math.abs(n)}π<br>${(n*Math.PI).toFixed(3).replace('-', '−')}`),
+    range: [data.coordinates[0], data.coordinates.at(-1)], title: {text: 'x (π ≈ 3.141593)', standoff: 12}};
+  const domainShapes = [
+    ...(extent < 3 ? [] : [[-3, -2], [2, 3]].map(([a, b]) => ({type: 'rect', xref: 'x', yref: 'paper',
+      x0: a*Math.PI, x1: b*Math.PI, y0: 0, y1: 1, fillcolor: '#b78526', opacity: .06, line: {width: 0}, layer: 'below'}))),
+    {type: 'rect', xref: 'x', yref: 'paper', x0: -Math.PI, x1: Math.PI, y0: 0, y1: 1,
+      fillcolor: '#27816b', opacity: .07, line: {width: 0}, layer: 'below'},
+    ...[-Math.PI, Math.PI].map(x => ({type: 'line', xref: 'x', yref: 'paper', x0: x, x1: x, y0: 0, y1: 1,
+      line: {color: '#606b73', width: 1, dash: 'dot'}}))];
+  const base = {paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: {family: 'DejaVu Sans, Arial, sans-serif', size: 11, color: '#222'},
+    margin: {l: 64, r: 18, t: 36, b: 82}, showlegend: false, hovermode: 'closest', uirevision: 'cosinus-comparison'};
+  const axis = {showline: true, linecolor: '#333', ticks: 'outside', gridcolor: '#ececec', zeroline: false, automargin: true};
+  const fmt = number => number === 0 ? '0' : number.toExponential(3);
+  const superscript = number => String(number).split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[Number(c)]).join('');
+  const derivative = order => order === 0 ? 'f' : order === 2 ? 'f″' : `f⁽${superscript(order)}⁾`;
+  for (const order of data.orders) {
+    const label = document.createElement('label');
+    label.className = 'order'; label.style.setProperty('--color', color(order));
+    const input = document.createElement('input'); input.type = 'checkbox'; input.checked = true; input.value = order;
+    input.addEventListener('change', update);
+    const swatch = document.createElement('span'); swatch.className = 'swatch'; swatch.setAttribute('aria-hidden', 'true');
+    label.append(input, swatch, document.createTextNode(`Order ${order}`));
+    get('orders').append(label); checks.push(input);
+    const equations = [], anchors = ['f(0) = 1', 'f′(0) = 0'];
+    for (let n = 2; n <= order; n += 2) {
+      equations.push(`${derivative(n)} + ${derivative(n - 2)} = 0`);
+      if (n >= 4) anchors.push(`${derivative(n)}(0) = ${n % 4 === 0 ? '1' : '−1'}`);
+    }
+    const tr = document.createElement('tr');
+    for (const text of [`Order ${order}`, equations.join('; '), anchors.join('; ')]) {
+      const cell = document.createElement('td'); cell.className = 'equation'; cell.textContent = text; tr.append(cell);
+    }
+    get('constraints').append(tr);
+  }
+  for (const seed of data.seeds) get('seed').add(new Option(String(seed), String(seed)));
+  for (const [key, label] of Object.entries(data.regions)) {
+    get('region').add(new Option(label, key));
+    const heading = document.createElement('th');
+    heading.textContent = data.region_titles[key]; heading.title = label;
+    get('metric-headings').append(heading);
+  }
+  get('region').value = data.regions.outside_3pi ? 'outside_3pi' : 'outside';
+  const baselineIndex = data.steps.indexOf(5000);
+  get('milestones').hidden = baselineIndex < 0 || data.steps.at(-1) <= 5000;
+  get('step').max = data.steps.length - 1;
+  get('step').value = data.steps.length - 1;
+  get('play').disabled = data.steps.length < 2;
+
+  function pause() {
+    playing = false; clearTimeout(timer); get('play').textContent = 'Play'; get('play').setAttribute('aria-pressed', 'false');
+  }
+  function render() {
+    const index = Number(get('step').value), step = data.steps[index], seed = Number(get('seed').value), region = get('region').value;
+    const available = data.runs.filter(run => run.seed === seed);
+    for (const input of checks) {
+      input.disabled = !available.some(run => run.order === Number(input.value));
+      input.parentElement.style.opacity = input.disabled ? .4 : 1;
+    }
+    const orders = new Set(checks.filter(input => input.checked && !input.disabled).map(input => Number(input.value)));
+    const selected = available.filter(run => orders.has(run.order));
+    get('step-value').textContent = `${step.toLocaleString()} / ${data.steps.at(-1).toLocaleString()}`;
+    get('empty').textContent = selected.length ? '' : 'Select an order to compare its solution and errors.';
+    // Compute ranges over every recorded step for this seed, including hidden orders.
+    let low = -1, high = 1, maxError = floor;
+    const mseBounds = Object.fromEntries(Object.keys(data.regions).map(key => [key, [Infinity, floor]]));
+    for (const run of available) for (const frame of run.frames) {
+      for (let i = 0; i < frame.prediction.length; i++) {
+        low = Math.min(low, frame.prediction[i]); high = Math.max(high, frame.prediction[i]);
+        maxError = Math.max(maxError, Math.abs(frame.prediction[i] - data.reference[i]));
+      }
+      for (const key of Object.keys(data.regions)) {
+        mseBounds[key][0] = Math.min(mseBounds[key][0], Math.max(floor, frame.mse[key]));
+        mseBounds[key][1] = Math.max(mseBounds[key][1], frame.mse[key]);
+      }
+    }
+    const prediction = [{x: data.coordinates, y: data.reference, type: 'scatter', mode: 'lines',
+      name: 'cos(x)', line: {color: '#222', width: 1.8, dash: 'dash'},
+      hovertemplate: 'x %{x:.4f}<br>cos(x) %{y:.5g}<extra></extra>'}];
+    const errors = [], convergence = [];
+    get('metrics').replaceChildren();
+    for (const run of selected) {
+      const frame = run.frames[index], name = `Order ${run.order}`, line = {color: color(run.order), width: 2.2};
+      prediction.push({x: data.coordinates, y: frame.prediction, type: 'scatter', mode: 'lines', name, line,
+        hovertemplate: 'x %{x:.4f}<br>f(x) %{y:.5g}<extra>%{fullData.name}</extra>'});
+      const absolute = frame.prediction.map((value, i) => Math.abs(value - data.reference[i]));
+      errors.push({x: data.coordinates, y: absolute.map(value => Math.max(floor, value)), customdata: absolute,
+        type: 'scatter', mode: 'lines', name, line,
+        hovertemplate: 'x %{x:.4f}<br>Absolute error %{customdata:.3e}<extra>%{fullData.name}</extra>'});
+      convergence.push({x: data.steps, y: run.frames.map(frame => Math.max(floor, frame.mse[region])),
+        customdata: run.frames.map(frame => frame.mse[region]), type: 'scatter', mode: 'lines', name, line,
+        hovertemplate: 'Step %{x:,.0f}<br>MSE %{customdata:.3e}<extra>%{fullData.name}</extra>'});
+      convergence.push({x: [step], y: [Math.max(floor, frame.mse[region])], customdata: [frame.mse[region]],
+        type: 'scatter', mode: 'markers', name, marker: {color: color(run.order), size: 9},
+        hovertemplate: 'Step %{x:,.0f}<br>MSE %{customdata:.3e}<extra>%{fullData.name}</extra>'});
+      const tr = document.createElement('tr'), label = document.createElement('td'), swatch = document.createElement('span');
+      tr.dataset.order = run.order; swatch.className = 'swatch'; swatch.style.setProperty('--color', color(run.order));
+      label.append(swatch, document.createTextNode(name)); tr.append(label);
+      for (const key of Object.keys(data.regions)) {
+        const cell = document.createElement('td'); cell.dataset.region = key; cell.textContent = fmt(frame.mse[key]); tr.append(cell);
+      }
+      get('metrics').append(tr);
+    }
+    const pad = .08 * (high - low);
+    const [mseLow, mseHigh] = mseBounds[region];
+    return Promise.all([
+      Plotly.react('solution', prediction, {...base, xaxis: {...axis, ...ticks},
+        yaxis: {...axis, title: {text: 'f(x)'}, range: [low - pad, high + pad]}, shapes: domainShapes}, config),
+      Plotly.react('error', errors, {...base, xaxis: {...axis, ...ticks},
+        yaxis: {...axis, title: {text: '|f(x) − cos(x)|'}, type: 'log', range: [-12, Math.max(-11, Math.ceil(Math.log10(maxError)))], tickformat: '.0e', dtick: 2}, shapes: domainShapes}, config),
+      Plotly.react('convergence', convergence, {...base, margin: {...base.margin, b: 60},
+        xaxis: {...axis, title: {text: 'Training step'}, range: [0, Math.max(1, data.steps.at(-1))]},
+        yaxis: {...axis, title: {text: 'Evaluation MSE'}, type: 'log', range: [Math.floor(Math.log10(mseLow)) - .25, Math.ceil(Math.log10(mseHigh)) + .25], tickformat: '.0e', dtick: 1},
+        annotations: [{xref: 'paper', yref: 'paper', x: 0, y: 1.12, xanchor: 'left', text: data.regions[region], showarrow: false}],
+        shapes: [
+          ...(baselineIndex >= 0 && data.steps.at(-1) > 5000 ? [{type: 'line', x0: 5000, x1: 5000, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: {color: '#bbb', width: 1, dash: 'dash'}}] : []),
+          {type: 'line', x0: step, x1: step, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: {color: '#aaa', width: 1, dash: 'dot'}}]}, config)
+    ]).then(() => { document.body.dataset.step = step; document.body.dataset.ready = 'true'; });
+  }
+  function update() {
+    rendering = rendering.then(render).catch(error => { pause(); get('empty').textContent = 'Could not render the comparison: ' + error.message; throw error; });
+    return rendering;
+  }
+  async function advance() {
+    if (!playing) return;
+    const next = Number(get('step').value) + 1;
+    if (next >= data.steps.length) { pause(); return; }
+    get('step').value = next;
+    await update();
+    if (playing) timer = setTimeout(advance, 180);
+  }
+  get('play').addEventListener('click', async () => {
+    if (playing) { pause(); return; }
+    if (Number(get('step').value) === data.steps.length - 1) get('step').value = 0;
+    playing = true; get('play').textContent = 'Pause'; get('play').setAttribute('aria-pressed', 'true');
+    await update(); if (playing) timer = setTimeout(advance, 180);
+  });
+  get('step').addEventListener('input', () => { pause(); update(); });
+  get('last').addEventListener('click', () => { pause(); get('step').value = data.steps.length - 1; update(); });
+  get('baseline').addEventListener('click', () => { pause(); get('step').value = baselineIndex; update(); });
+  get('all').addEventListener('click', () => { checks.forEach(input => { input.checked = true; }); update(); });
+  get('seed').addEventListener('change', () => { pause(); update(); });
+  get('region').addEventListener('change', update);
+  update();
+})();
+</script>
+</body>
+</html>

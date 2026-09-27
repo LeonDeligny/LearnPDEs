@@ -72,7 +72,11 @@ class TestAnimation(unittest.TestCase):
                 lambda: iter([parameter]),
                 objective,
                 {'learning_rate': 0.1, 'epochs': 3},
-                {'plot_func': plot, 'output_dir': folder},
+                {
+                    'plot_func': plot,
+                    'output_dir': folder,
+                    'gif_path': Path(folder) / 'training.gif',
+                },
             )
             trainer.train()
             encode.assert_called_once()

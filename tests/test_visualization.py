@@ -2,6 +2,8 @@
 
 import unittest
 
+from learnpdes.scenarios import DEFAULT_MESH
+
 import numpy as np
 import torch
 
@@ -68,21 +70,26 @@ class TestVisualization(unittest.TestCase):
                 self.assertIsNone(model.scale.grad)
 
     def test_refinement_preserves_fluid_area_and_solid_hole(self):
-        mesh_path = 'meshes/mesh_airfoil_ch10sm.su2'
+        mesh_path = DEFAULT_MESH
         coarse = airfoil_grid(mesh_path, subdivisions=0)
         fine = airfoil_grid(mesh_path)
         self.assertGreater(len(fine.coordinates), len(coarse.coordinates))
         np.testing.assert_array_equal(fine.boundary_edges, coarse.boundary_edges)
 
         def area(grid):
-            vertices = grid.coordinates[grid.triangulation.triangles]
+            vertices = grid.coordinates[grid.triangles]
             a, b = vertices[:, 1] - vertices[:, 0], vertices[:, 2] - vertices[:, 0]
             return np.abs(a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]).sum() / 2
 
         self.assertAlmostEqual(area(coarse), area(fine))
         # The middle of the airfoil must remain outside the fluid triangulation.
         center = coarse.boundary_edges.mean(axis=(0, 1))
-        self.assertEqual(fine.triangulation.get_trifinder()(*center), -1)
+        vertices = fine.coordinates[fine.triangles]
+        edges = np.roll(vertices, -1, axis=1) - vertices
+        offsets = center - vertices
+        cross = edges[:, :, 0] * offsets[:, :, 1] - edges[:, :, 1] * offsets[:, :, 0]
+        inside = np.all(cross >= 0, axis=1) | np.all(cross <= 0, axis=1)
+        self.assertFalse(inside.any())
 
 
 if __name__ == '__main__':

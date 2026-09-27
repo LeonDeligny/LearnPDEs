@@ -1,133 +1,69 @@
-"""
-This script is the entry point for training a
-Physics-Informed Neural Network (PINN) model.
-"""
+"""Python training API and compatibility module entry point."""
 
-# ======= Imports =======
+from pathlib import Path
+import warnings
 
-from learnpdes.utils.decorators import time
-from learnpdes.utils.plot import get_plot_func
-from learnpdes.utils.loadscenarios import load_scenario
-from learnpdes.utils.visualization import ModelEvaluator, visualization_grid
-
-from torch.nn import Tanh
-from learnpdes.model.pinn import PINN
-from learnpdes.model.loss import Loss
-from learnpdes.model.trainer import Trainer
-
-from learnpdes import (
-    device,
-    # EXPONENTIAL_SCENARIO,
-    # COSINUS_SCENARIO,
-    # LAPLACE_SCENARIO,
-    # POTENTIAL_FLOW_SCENARIO,
-    SOLENOIDAL_FLOW_SCENARIO,
-)
-
-# ======= Main =======
+from learnpdes.scenarios import RunConfig
 
 
-@time
 def main(
     scenario: str,
-    epochs: int = 100_000,
-    pre_epochs: int = 1_000,
-    visualization_resolution: int = 300,
-) -> None:
+    epochs: int | None = None,
+    pre_epochs: int = 0,
+    visualization_resolution: int = 51,
+    output_dir: str | Path = 'assets',
+    cosinus_order: int = 2,
+    save_gif: bool = True,
+    max_frames: int = 40,
+    num_inputs: int | None = None,
+    seed: int = 0,
+    lbfgs_steps: int = 0,
+    resample_every: int = 100,
+    *,
+    learning_rate: float = 0.001,
+    hidden_dim: int | None = None,
+    hidden_layers: int = 4,
+    threads: int = 1,
+    mesh_path: str | Path | None = None,
+) -> Path:
+    """Train one registered case and return its interactive HTML path.
+
+    Unspecified epochs and num_inputs use the same scenario defaults as the CLI.
+    Set save_gif=False to run without Chrome or FFmpeg. pre_epochs is a deprecated
+    compatibility argument: pretraining was never active in this entry point.
     """
-    Description of workflow.
-        1. Construct model.
-        2. Train model.
-        3. Evaluate model ?
-    """
+    if pre_epochs:
+        warnings.warn(
+            'pre_epochs has no effect and is deprecated.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    from learnpdes.training import train
 
-    # Scenarios can be either:
-    # 'exponential'
-    # 'cosinus'
-    # 'laplace'
-    # 'potential flow'
-
-    (
-        input_space,
-        mesh_masks,
-        output_dim,
-        analytical,
-        input_homeo,
-        output_homeo,
-        encoding,
-    ) = load_scenario(scenario, num_inputs=100)
-
-    # Dimension of input space
-    input_dim = input_space.ndimension()
-
-    # 1. Construct model
-    pinn = PINN(
-        nn_params={
-            'input_dim': input_dim,
-            'hidden_dim': 20,
-            'output_dim': output_dim,
-            'num_hidden_layers': 4,
-            'activation': Tanh,
-        },
-        input_homeo=input_homeo,
-        output_homeo=output_homeo,
-        encoding=encoding,
-    ).to(device)
-
-    # 2. Define loss function
-    loss = Loss(
-        scenario=scenario,
-        input_space=input_space,
-        input_dim=input_dim,
-        forward=pinn.forward,
-        mesh_masks=mesh_masks,
+    trainer = train(
+        RunConfig(
+            scenario,
+            epochs=epochs,
+            points=num_inputs,
+            resolution=visualization_resolution,
+            output_dir=Path(output_dir),
+            cosinus_order=cosinus_order,
+            save_gif=save_gif,
+            max_frames=max_frames,
+            seed=seed,
+            lbfgs_steps=lbfgs_steps,
+            resample_every=resample_every,
+            learning_rate=learning_rate,
+            hidden_dim=hidden_dim,
+            hidden_layers=hidden_layers,
+            threads=threads,
+            mesh_path=Path(mesh_path) if mesh_path is not None else None,
+        )
     )
-
-    # 3. Pre-train model
-    # Pre-training is always without the geometry
-    # pre_traier = Trainer(
-    #     model_params=pinn.parameters,
-    #     loss=loss.get_pre_loss(scenario),
-    #     training_params={
-    #         'learning_rate': 0.001,
-    #         'epochs': pre_epochs,
-    #     },
-    #     plot={
-    #         'dim_plot': input_dim,
-    #         'plot_func': get_plot_func(scenario),
-    #     },
-    #     analytical=analytical,
-    # )
-    # pre_traier.train()
-
-    # 4. Train model
-    trainer = Trainer(
-        model_params=pinn.parameters,
-        loss=loss.get_loss(scenario),
-        training_params={
-            'learning_rate': 0.001,
-            'epochs': epochs,
-        },
-        plot={
-            'dim_plot': input_dim,
-            'plot_func': get_plot_func(scenario),
-            'evaluate': ModelEvaluator(
-                pinn,
-                scenario,
-                visualization_grid(scenario, input_space, visualization_resolution),
-                density=loss.rho.item(),
-            ),
-        },
-        analytical=analytical,
-    )
-    trainer.train()
-
-    # 4. Evaluate model
-    # TODO: Evaluate model
-    # Look at convergence of the loss function
-    # Look at extremas of the analytical solution
-    # so as to 'test' the solution on extremas.
+    return trainer.html_path
 
 
 if __name__ == '__main__':
-    main(scenario=SOLENOIDAL_FLOW_SCENARIO)  # pragma: no cover
+    from learnpdes.cli import main as cli
+
+    cli()

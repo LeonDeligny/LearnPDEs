@@ -27,7 +27,6 @@ pi_tensor: Tensor = tensor(pi)
 device_type: str = 'mps' if is_available() else 'cpu'
 # device_type: str = 'cpu'
 device: Final[TorchDevice] = TorchDevice(device_type)
-print(f'Using {device_type=}.')
 
 # Fixing seed
 manual_seed(0)
@@ -37,5 +36,8 @@ manual_seed(0)
 EXPONENTIAL_SCENARIO: Final[str] = 'exponential'
 COSINUS_SCENARIO: Final[str] = 'cosinus'
 LAPLACE_SCENARIO: Final[str] = 'laplace'
+KOVASZNAY_SCENARIO: Final[str] = 'kovasznay'
+CYLINDER_SCENARIO: Final[str] = 'cylinder'
+POISEUILLE_SCENARIO: Final[str] = 'poiseuille'
 POTENTIAL_FLOW_SCENARIO: Final[str] = 'potential flow'
 SOLENOIDAL_FLOW_SCENARIO: Final[str] = 'solenoidal flow'

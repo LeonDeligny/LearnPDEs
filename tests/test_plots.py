@@ -1,23 +1,16 @@
-"""Check field orientation, comparable scales, and publication frame layout."""
+"""Check numerical metrics and Plotly mesh data."""
 
-import tempfile
 import unittest
-from pathlib import Path
-from unittest.mock import patch
 
-import matplotlib
+from learnpdes.scenarios import DEFAULT_MESH
 
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
+import plotly.graph_objects as go
+import torch
 
-from learnpdes.utils.plot import (
-    error_metrics,
-    save_2d_plot,
-    save_airfoil_plot,
-    save_plot,
-)
+from learnpdes import POTENTIAL_FLOW_SCENARIO
+from learnpdes.utils.plot import error_metrics, get_plot_func, plot_mesh, plot_xy
+from learnpdes.utils.visualization import airfoil_grid
 
 
 class TestPlots(unittest.TestCase):
@@ -28,38 +21,38 @@ class TestPlots(unittest.TestCase):
         self.assertEqual(error_metrics(np.zeros(2), np.zeros(2))['relative_l2'], 0)
         self.assertTrue(np.isinf(error_metrics(np.ones(2), np.zeros(2))['relative_l2']))
 
-    def test_rectangular_field_orientation_and_shared_scale(self):
-        xy = np.array([[1, 2], [0, 0], [1, 0], [0, 1], [0, 2], [1, 1]])
-        values = xy[:, 0] + 10 * xy[:, 1]
-        with patch('learnpdes.utils.plot.save_figure') as save:
-            save_2d_plot('.', 10, xy, values, 2.31e-6, None, lambda x, y: x + 10 * y)
-        fig = save.call_args.args[0]
-        try:
-            predicted, reference, error = [ax.collections[0] for ax in fig.axes[:3]]
-            np.testing.assert_array_equal(
-                predicted.get_array(), [[0, 1], [10, 11], [20, 21]]
-            )
-            self.assertIs(predicted.norm, reference.norm)
-            np.testing.assert_array_equal(error.get_array(), np.zeros((3, 2)))
-            self.assertIn('2.31e-06', fig._suptitle.get_text())
-            self.assertEqual(
-                [ax.get_title() for ax in fig.axes[:3]],
-                ['Prediction', 'Reference', 'Signed error'],
-            )
-        finally:
-            plt.close(fig)
+    def test_plotly_uses_supplied_fluid_cells_without_filling_airfoil(self):
+        grid = airfoil_grid(DEFAULT_MESH, subdivisions=0)
+        plotter = get_plot_func(POTENTIAL_FLOW_SCENARIO)
+        plotter(
+            '.',
+            epoch=0,
+            inputs=grid.coordinates,
+            f=(np.zeros(len(grid.coordinates)),) * 3,
+            loss=0.0,
+            analytical=None,
+            loss_history=[(0, 0.0)],
+            triangles=grid.triangles,
+            boundary_edges=grid.boundary_edges,
+        )
+        fig = plotter.figure()
+        for trace in fig.data[:3]:
+            values = np.asarray(trace.z)
+            np.testing.assert_array_equal(values[np.isfinite(values)], 0)
+            # A sample inside the solid airfoil must have no field value.
+            ix = np.argmin(np.abs(np.asarray(trace.x) - 0.5))
+            iy = np.argmin(np.abs(np.asarray(trace.y) - 0.08))
+            self.assertTrue(np.isnan(values[iy, ix]))
+        self.assertTrue(np.isfinite(fig.layout.yaxis4.range).all())
 
-    def test_frame_dimensions_and_zero_flow(self):
-        with tempfile.TemporaryDirectory() as folder:
-            x = np.linspace(-3, 3, 30)
-            save_plot(
-                folder, 1, x, np.cos(x), 1e-6, None, np.cos, [(0, 1), (1, 1e-6)], 10
-            )
-            xy = np.array([[0, 0], [1, 0], [0, 1], [1, 1]])
-            save_airfoil_plot(folder, 2, xy, (np.zeros(4),) * 3, 0, None)
-            for step in (1, 2):
-                with Image.open(Path(folder) / f'epoch_{step}.png') as frame:
-                    self.assertEqual(frame.size, (1600, 900 if step == 1 else 1200))
+    def test_mesh_inspection_returns_plotly_figures(self):
+        xy = torch.tensor([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+        nodes = plot_xy(xy, show=False)
+        mesh = plot_mesh(xy, {'airfoil': torch.ones(4, dtype=torch.bool)}, show=False)
+        self.assertIsInstance(nodes, go.Figure)
+        self.assertIsInstance(mesh, go.Figure)
+        np.testing.assert_array_equal(nodes.data[0].x, xy[:, 0].numpy())
+        self.assertEqual(len(mesh.data), 2)
 
 
 if __name__ == '__main__':

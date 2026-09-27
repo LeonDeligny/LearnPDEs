@@ -18,14 +18,19 @@ from functools import partial
 from ambiance import Atmosphere
 
 from learnpdes import (
+    cosinus,
     device,
+    kovasznay,
+    KOVASZNAY_SCENARIO,
     pi_tensor,
+    poiseuille,
 )
 
 from learnpdes import (
     EXPONENTIAL_SCENARIO,
     COSINUS_SCENARIO,
     LAPLACE_SCENARIO,
+    POISEUILLE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
     SOLENOIDAL_FLOW_SCENARIO,
 )
@@ -42,7 +47,6 @@ class Loss:
     # Density of air at water level
     atm = Atmosphere(h=0.0)
     density = array([atm.density])
-    print(f'Density of fluid {atm.density[0]}')
     rho = torch.tensor(density, dtype=torch.float32).to(device)
 
     def __init__(
@@ -52,16 +56,28 @@ class Loss:
         input_dim: int,
         forward: Callable[[Tensor], Tensor],
         mesh_masks: dict[str, Tensor],
+        *,
+        cosinus_order: int = 2,
+        cosinus_derivatives: Callable[[Tensor, int], list[Tensor]] | None = None,
     ) -> None:
         """
         Initialization of the loss.
         """
 
+        cosinus.validate_order(cosinus_order)
+        if scenario != COSINUS_SCENARIO and cosinus_order != 2:
+            raise ValueError('cosinus_order only applies to the cosinus scenario.')
+        self.cosinus_order = cosinus_order
+        self.cosinus_derivatives = cosinus_derivatives
         self.forward = forward
         self.input_space = input_space
         self.dim = input_dim
         self.mesh_masks = mesh_masks
         self.scenario = scenario
+        if scenario == POISEUILLE_SCENARIO:
+            self.rho = torch.full_like(self.rho, poiseuille.DENSITY)
+        elif scenario == KOVASZNAY_SCENARIO:
+            self.rho = torch.ones_like(self.rho)
         print(f'Input space is of dimension {self.dim}.')
 
         # Transform input space into
@@ -185,8 +201,22 @@ class Loss:
     def generate_laplace_boundary(self: 'Loss') -> None:
         self.sin = torch.sin(pi_tensor * self.x[self.top_mask]).view(-1, 1)
 
+    def generate_kovasznay_boundary(self: 'Loss') -> None:
+        """Exact velocity on every edge, plus one pressure value to fix its gauge."""
+        masks = {name: mask.to(self.device) for name, mask in self.mesh_masks.items()}
+        self.boundary_mask = torch.stack(list(masks.values())).any(dim=0)
+        self.pressure_mask = masks['outlet'] & masks['bottom']
+        boundary = self.inputs[self.boundary_mask].detach()
+        gauge = self.inputs[self.pressure_mask].detach()
+        u, v, _ = kovasznay.analytical(*boundary.unbind(dim=1))
+        self.boundary_velocity = torch.stack((u, v), dim=1)
+        self.pressure_target = kovasznay.analytical(*gauge.unbind(dim=1))[2][:, None]
+
     def generate_boundaries(self: 'Loss') -> None:
-        if self.dim == 1:
+        if self.scenario == KOVASZNAY_SCENARIO:
+            self.generate_kovasznay_boundary()
+
+        elif self.dim == 1:
             self.generate_1d_boundaries()
 
         elif self.dim == 2:
@@ -199,16 +229,18 @@ class Loss:
         """
         Compute the first derivative of 1D outputs with respect to the inputs.
         """
-        return (
-            grad(
-                outputs=f,
-                inputs=x,
-                grad_outputs=torch.ones_like(f),
-                create_graph=True,
-            )[0]
-            .view(-1, 1)
-            .to(self.device)
-        )
+        # Exact fields can be constant or affine: their derivatives must still
+        # support further differentiation when evaluating viscous residuals.
+        if not f.requires_grad:
+            return x * 0
+        derivative = grad(
+            outputs=f,
+            inputs=x,
+            grad_outputs=torch.ones_like(f),
+            create_graph=True,
+            allow_unused=True,
+        )[0]
+        return (x * 0 if derivative is None else derivative).view(-1, 1)
 
     def get_loss(self: 'Loss', scenario: str) -> Callable:
         print('\n ----- Started training -----\n')
@@ -218,6 +250,10 @@ class Loss:
             return self.cosinus_loss
         elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
+        elif scenario == KOVASZNAY_SCENARIO:
+            return self.kovasznay_loss
+        elif scenario == POISEUILLE_SCENARIO:
+            return self.poiseuille_loss
         elif scenario in POTENTIAL_FLOW_SCENARIO:
             return self.potential_irrotational_flow_loss
         elif scenario in SOLENOIDAL_FLOW_SCENARIO:
@@ -233,6 +269,10 @@ class Loss:
             return self.cosinus_loss
         elif scenario == LAPLACE_SCENARIO:
             return self.laplace_loss
+        elif scenario == KOVASZNAY_SCENARIO:
+            return self.kovasznay_loss
+        elif scenario == POISEUILLE_SCENARIO:
+            return self.poiseuille_loss
         elif scenario == POTENTIAL_FLOW_SCENARIO:
             return partial(
                 self.potential_irrotational_flow_loss,
@@ -245,6 +285,45 @@ class Loss:
             )
         else:
             raise ValueError(f'{scenario=} is not a valid scenario for a pre-training.')
+
+    def kovasznay_residuals(self: 'Loss', fields: Tensor) -> tuple[Tensor, ...]:
+        """Return x/y momentum and continuity residuals, with no forcing."""
+        u, v, p = fields.split(1, dim=1)
+        u_x = self.partial_derivative(u, self.x)
+        u_y = self.partial_derivative(u, self.y)
+        v_x = self.partial_derivative(v, self.x)
+        v_y = self.partial_derivative(v, self.y)
+        p_x = self.partial_derivative(p, self.x)
+        p_y = self.partial_derivative(p, self.y)
+        laplace_u = self.partial_derivative(u_x, self.x) + self.partial_derivative(
+            u_y, self.y
+        )
+        laplace_v = self.partial_derivative(v_x, self.x) + self.partial_derivative(
+            v_y, self.y
+        )
+        return (
+            u * u_x + v * u_y + p_x - kovasznay.VISCOSITY * laplace_u,
+            u * v_x + v * v_y + p_y - kovasznay.VISCOSITY * laplace_v,
+            u_x + v_y,
+        )
+
+    def kovasznay_loss(
+        self: 'Loss',
+    ) -> tuple[Tensor, Tensor, tuple[Tensor, Tensor, Tensor], None]:
+        fields = self.forward(self.inputs)
+        physics_loss = sum(
+            residual.square().mean() for residual in self.kovasznay_residuals(fields)
+        )
+        velocity_error = fields[self.boundary_mask, :2] - self.boundary_velocity
+        boundary_loss = velocity_error.square().mean(dim=0).sum() + self.mse_loss(
+            fields[self.pressure_mask, 2:3], self.pressure_target
+        )
+        return (
+            self.process(physics_loss, boundary_loss),
+            self.inputs,
+            tuple(fields.split(1, dim=1)),
+            None,
+        )
 
     def laplace_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.inputs)
@@ -284,6 +363,43 @@ class Loss:
         )
         return self.process(physics_loss, boundary_loss), self.inputs, f, None
 
+    def poiseuille_loss(
+        self: 'Loss',
+    ) -> tuple[Tensor, Tensor, tuple[Tensor, Tensor, Tensor], None]:
+        """Steady incompressible Navier–Stokes with pressure-driven open ends."""
+        u, v, p = self.forward(self.inputs).split(1, dim=1)
+        derivative = self.partial_derivative
+        u_x, u_y = derivative(u, self.x), derivative(u, self.y)
+        v_x, v_y = derivative(v, self.x), derivative(v, self.y)
+        p_x, p_y = derivative(p, self.x), derivative(p, self.y)
+        lap_u = derivative(u_x, self.x) + derivative(u_y, self.y)
+        lap_v = derivative(v_x, self.x) + derivative(v_y, self.y)
+
+        residuals = (
+            u_x + v_y,
+            self.rho * (u * u_x + v * u_y) + p_x - poiseuille.VISCOSITY * lap_u,
+            self.rho * (u * v_x + v * v_y) + p_y - poiseuille.VISCOSITY * lap_v,
+        )
+        physics_loss = sum(residual.square().mean() for residual in residuals)
+
+        # Stationary plates: no tangential slip and no penetration.
+        boundary_loss = (
+            u[self.wall_mask].square().mean() + v[self.wall_mask].square().mean()
+        )
+        # Fully developed ends: du/dx = 0 and v = 0. The prescribed pressures
+        # drive the flow and fix its gauge without supplying a velocity profile.
+        for mask, pressure in (
+            (self.inlet_mask, poiseuille.INLET_PRESSURE),
+            (self.outlet_mask, poiseuille.OUTLET_PRESSURE),
+        ):
+            boundary_loss = (
+                boundary_loss
+                + (p[mask] - pressure).square().mean()
+                + u_x[mask].square().mean()
+                + v[mask].square().mean()
+            )
+        return self.process(physics_loss, boundary_loss), self.inputs, (u, v, p), None
+
     def exponential_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
         f = self.forward(self.x)
         df_dx = self.partial_derivative(f, self.x)
@@ -305,9 +421,18 @@ class Loss:
         )
 
     def cosinus_loss(self: 'Loss') -> tuple[Tensor, Tensor, Tensor, None]:
-        f = self.forward(self.inputs)
-        df_dx = self.partial_derivative(f, self.x)
-        ddf_dxdx = self.partial_derivative(df_dx, self.x)
+        """Cumulative even-order residuals, sampled only on the training domain.
+
+        Order 2 preserves the original initial conditions. Each added order n
+        contributes f^(n) + f^(n-2) = 0 and f^(n)(0) = (-1)^(n/2).
+        """
+        if self.cosinus_derivatives is None:
+            derivatives = [self.forward(self.inputs)]
+            for _ in range(self.cosinus_order):
+                derivatives.append(self.partial_derivative(derivatives[-1], self.x))
+        else:
+            derivatives = self.cosinus_derivatives(self.inputs, self.cosinus_order)
+        f, df_dx, ddf_dxdx = derivatives[:3]
 
         # f'' = -f
         physics_loss = self.mse_loss(f, -ddf_dxdx)
@@ -317,6 +442,15 @@ class Loss:
             f[self.zero_mask].view(-1, 1),
             self.one_tensor,
         ) + self.mse_loss(df_dx[self.zero_mask].view(-1, 1), self.zero_tensor)
+        previous = ddf_dxdx
+        for order in range(4, self.cosinus_order + 1, 2):
+            current = derivatives[order]
+            physics_loss = physics_loss + (current + previous).square().mean()
+            boundary_loss = (
+                boundary_loss
+                + (current[self.zero_mask] - (-1) ** (order // 2)).square().mean()
+            )
+            previous = current
         return (
             self.process(physics_loss, boundary_loss),
             self.inputs,

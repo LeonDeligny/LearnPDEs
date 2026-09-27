@@ -1,50 +1,63 @@
-"""
-Testing the integration of the learnpdes module.
+"""Every registered scenario completes through the public batch command."""
 
-Test out the following scenarios:
-    1. exponential
-    2. cosinus
-    3. laplace
-"""
+import contextlib
+import io
+import json
+import math
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
 
-# ======= Imports =======
-
-from learnpdes.main import main as pinn
-
-from unittest import (
-    main,
-    TestCase,
-)
-
-from learnpdes import (
-    EXPONENTIAL_SCENARIO,
-    COSINUS_SCENARIO,
-    LAPLACE_SCENARIO,
-    POTENTIAL_FLOW_SCENARIO,
-)
-
-# ======= Tests =======
+from learnpdes.cli import main
+from learnpdes.scenarios import SCENARIOS
 
 
-class TestScenarios(TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.epochs: int = 10
+class TestScenarios(unittest.TestCase):
+    def test_all_scenarios_export_html_without_static_encoder(self):
+        with (
+            tempfile.TemporaryDirectory() as folder,
+            contextlib.chdir(folder),
+            contextlib.redirect_stdout(io.StringIO()),
+            patch('learnpdes.model.trainer.create_gif') as encode,
+            patch('learnpdes.utils.plot.require_gif_export') as dependencies,
+        ):
+            main(
+                [
+                    'train',
+                    'all',
+                    '--epochs',
+                    '1',
+                    '--points',
+                    '3',
+                    '--resolution',
+                    '3',
+                    '--max-frames',
+                    '2',
+                    '--no-gif',
+                    '--output-dir',
+                    folder,
+                ]
+            )
+            encode.assert_not_called()
+            dependencies.assert_not_called()
+            manifests = list(Path(folder).glob('runs/*/*/run.json'))
+            self.assertEqual(len(manifests), len(SCENARIOS))
+            self.assertEqual({p.parent.parent.name for p in manifests}, set(SCENARIOS))
+            for path in manifests:
+                with self.subTest(scenario=path.parent.parent.name):
+                    manifest = json.loads(path.read_text())
+                    self.assertEqual(manifest['status'], 'completed')
+                    self.assertEqual(manifest['completed_steps'], 1)
+                    self.assertTrue(math.isfinite(manifest['final_loss']))
+                    self.assertEqual(manifest['export']['checkpoint_steps'], [0, 1])
+                    output = path.parent / 'training.html'
+                    self.assertIn('Plotly.newPlot', output.read_text())
+                    self.assertTrue((path.parent / 'plotly.min.js').is_file())
+                    self.assertTrue((path.parent / 'loss.csv').is_file())
+                    self.assertTrue((path.parent / 'model.pt').is_file())
+                    self.assertFalse((path.parent / 'training.gif').exists())
 
-    def test_first_scenario(self) -> None:
-        pinn(EXPONENTIAL_SCENARIO, self.epochs, pre_epochs=0)
-
-    def test_second_scenario(self) -> None:
-        pinn(COSINUS_SCENARIO, self.epochs, pre_epochs=0)
-
-    def test_third_scenario(self) -> None:
-        pinn(LAPLACE_SCENARIO, self.epochs, pre_epochs=0)
-
-    def test_fourth_scenario(self) -> None:
-        pinn(POTENTIAL_FLOW_SCENARIO, self.epochs, pre_epochs=0)
-
-
-# ======= Main =======
 
 if __name__ == '__main__':
-    main(verbosity=0)  # pragma: no cover
+    unittest.main()

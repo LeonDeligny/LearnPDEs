@@ -6,6 +6,8 @@ Utility functions.
 
 import re
 import torch
+from learnpdes.scenarios import DEFAULT_MESH
+
 import numpy as np
 
 from torch import linspace
@@ -24,9 +26,15 @@ from typing import (
 )
 
 from learnpdes import (
+    cosinus,
+    kovasznay,
+    KOVASZNAY_SCENARIO,
+    poiseuille,
     EXPONENTIAL_SCENARIO,
     COSINUS_SCENARIO,
+    CYLINDER_SCENARIO,
     LAPLACE_SCENARIO,
+    POISEUILLE_SCENARIO,
     POTENTIAL_FLOW_SCENARIO,
     SOLENOIDAL_FLOW_SCENARIO,
 )
@@ -34,13 +42,15 @@ from learnpdes import (
 # ======= Functions =======
 
 
-def load_real_space(num_inputs: int) -> tuple[Tensor, dict[str, Tensor]]:
+def load_real_space(
+    num_inputs: int, bounds: tuple[float, float] = (-3, 3)
+) -> tuple[Tensor, dict[str, Tensor]]:
     """
     Load real segment around 0, ensuring correct order.
     """
     real_space = torch.cat(
         [
-            linspace(-3, 3, num_inputs),
+            linspace(*bounds, num_inputs),
             torch.tensor([0.0]),
         ]
     )
@@ -81,7 +91,7 @@ def load_cosinus(
     num_inputs: int,
 ) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
     """
-    Load configuration space (around 0) for exponential PDE
+    Load cosine collocation points on [-pi, pi], including the initial point.
     """
     # Define constants
     output_dim = 1
@@ -91,7 +101,7 @@ def load_cosinus(
     analytical = np.cos
 
     # Load space
-    x, mesh_masks = load_real_space(num_inputs)
+    x, mesh_masks = load_real_space(num_inputs, cosinus.TRAINING_BOUNDS)
 
     return (
         x,
@@ -144,6 +154,45 @@ def load_laplace(
     )
 
 
+def load_poiseuille(
+    num_inputs: int,
+) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
+    """Load a flat channel with primitive outputs (u, v, p)."""
+    if num_inputs < 3:
+        raise ValueError('Poiseuille flow requires at least 3 points per axis.')
+    xy = torch.cartesian_prod(
+        torch.linspace(0, poiseuille.LENGTH, num_inputs),
+        torch.linspace(0, poiseuille.HEIGHT, num_inputs),
+    )
+    x, y = xy.unbind(dim=1)
+    mesh_masks = {
+        'inlet': x == 0,
+        'outlet': x == poiseuille.LENGTH,
+        'wall': (y == 0) | (y == poiseuille.HEIGHT),
+    }
+    return xy, mesh_masks, 3, poiseuille.analytical, identity, identity, identity
+
+
+def load_kovasznay(
+    num_inputs: int,
+) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
+    """Sample an obstacle-free rectangle for the Re=40 velocity-pressure problem."""
+    if num_inputs < 3:
+        raise ValueError('Kovasznay flow requires at least 3 points per axis.')
+    xy = torch.cartesian_prod(
+        torch.linspace(*kovasznay.X_BOUNDS, num_inputs),
+        torch.linspace(*kovasznay.Y_BOUNDS, num_inputs),
+    )
+    x, y = xy.unbind(dim=1)
+    mesh_masks = {
+        'inlet': x == kovasznay.X_BOUNDS[0],
+        'outlet': x == kovasznay.X_BOUNDS[1],
+        'bottom': y == kovasznay.Y_BOUNDS[0],
+        'top': y == kovasznay.Y_BOUNDS[1],
+    }
+    return xy, mesh_masks, 3, kovasznay.analytical, identity, identity, identity
+
+
 def load_wind_tunnel(
     num_inputs: int,
 ) -> tuple[Tensor, dict[str, Tensor], int, Callable, Callable, Callable, Callable]:
@@ -186,7 +235,7 @@ def load_2d_mesh(
     num_inputs: int,
     plot: bool = False,
     augmented_grid: int = True,
-    filepath: str = './meshes/mesh_airfoil_ch10sm.su2',
+    filepath=DEFAULT_MESH,
 ) -> tuple[Tensor, dict[str, Tensor], int, None, Callable, Callable, Callable]:
     """
     Loads node coordinates from a SU2 mesh file.
@@ -283,6 +332,29 @@ def load_scenario(
         return load_cosinus(num_inputs)
     elif scenario == LAPLACE_SCENARIO:
         return load_laplace(num_inputs)
+    elif scenario == KOVASZNAY_SCENARIO:
+        return load_kovasznay(num_inputs)
+    elif scenario == CYLINDER_SCENARIO:
+        from learnpdes.fluid import CylinderProblem, sample_fluid
+
+        if num_inputs < 3:
+            raise ValueError('Cylinder flow requires at least 3 points per axis.')
+        samples = sample_fluid(
+            CylinderProblem(),
+            num_inputs**2,
+            4 * num_inputs,
+            generator=torch.Generator().manual_seed(torch.initial_seed()),
+        )
+        groups = [samples.interior, *samples.boundary.values()]
+        xy = torch.cat(groups).float()
+        masks, offset = {}, len(samples.interior)
+        for name, points in samples.boundary.items():
+            masks[name] = torch.zeros(len(xy), dtype=torch.bool)
+            masks[name][offset : offset + len(points)] = True
+            offset += len(points)
+        return xy, masks, 3, None, identity, identity, identity
+    elif scenario == POISEUILLE_SCENARIO:
+        return load_poiseuille(num_inputs)
     elif scenario in [POTENTIAL_FLOW_SCENARIO, SOLENOIDAL_FLOW_SCENARIO]:
         return load_2d_mesh(num_inputs, plot=False)
     else:
