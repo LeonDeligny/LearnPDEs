@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "status": "completed",
+  "scenario": "cosinus_comparison",
+  "source_results": "assets/comparisons/cosinus_derivatives/20260927T124636.095349Z-cf1facbe/results.json",
+  "orders": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12
+  ],
+  "seed": 0,
+  "epochs": 25000,
+  "evaluation_bounds": [
+    -9.42477796076938,
+    9.42477796076938
+  ],
+  "evaluation_points": 601,
+  "baseline_step": 5000,
+  "evaluation_regions": {
+    "inside": "Inside [\u2212\u03c0, \u03c0]",
+    "outside": "Outside: \u03c0 < |x| \u2264 2\u03c0",
+    "outside_3pi": "Outside to 3\u03c0: \u03c0 < |x| \u2264 3\u03c0",
+    "far_outside": "Far outside: 2\u03c0 < |x| \u2264 3\u03c0",
+    "full": "Full [\u22122\u03c0, 2\u03c0]",
+    "full_3pi": "Full [\u22123\u03c0, 3\u03c0]"
+  },
+  "baseline_reproduced": true
+}

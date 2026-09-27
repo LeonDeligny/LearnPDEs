@@ -1,0 +1,189 @@
+{
+  "scenario": "circular-couette",
+  "training_seed": 0,
+  "reference_type": "analytical",
+  "reference_implementation": "learnpdes/circular_couette.py:analytical",
+  "reference_formula": "r^2=x^2+y^2; u=-2*y*(1-1/r^2)/3; v=2*x*(1-1/r^2)/3; p=(2*r^2-4*log(r^2)-2/r^2)/9-(8-4*log(4)-0.5)/9",
+  "reference_source": "Project-derived annular Couette formula; substitution and hand checkpoints in tests/test_circular_couette.py",
+  "pressure_gauge": "p(2, 0)=0",
+  "thresholds": {
+    "pde_rms": 0.01,
+    "boundary_rms": 0.001,
+    "hard_boundary_rms": 3.814697265625e-06,
+    "relative_l2": 0.01,
+    "max_absolute_error": 0.02,
+    "characteristic_output_scales": [
+      1,
+      1,
+      1
+    ]
+  },
+  "evaluations": [
+    {
+      "interior_count": 4096,
+      "boundary_count_per_edge": 256,
+      "seed": 2027,
+      "metrics": {
+        "continuity_rms": 0.0011046283020310055,
+        "momentum_u_rms": 0.0016231222379396912,
+        "momentum_v_rms": 0.0014858496599222417,
+        "inner_u_rms": 1.921170955654361e-08,
+        "inner_v_rms": 1.6682653480870613e-08,
+        "outer_u_rms": 9.902928255201005e-09,
+        "outer_v_rms": 1.3576741508813939e-08,
+        "pressure_rms": 1.0132789611816406e-06,
+        "rmse": 0.0005885133286938071,
+        "max_error": 0.0020191222429275513,
+        "relative_l2": 0.001509257359430194,
+        "u_rmse": 0.0001874510053312406,
+        "u_max_error": 0.0006276071071624756,
+        "u_relative_l2": 0.000400352175347507,
+        "v_rmse": 0.0002042382984654978,
+        "v_max_error": 0.0007190704345703125,
+        "v_relative_l2": 0.0004427823005244136,
+        "p_rmse": 0.0009809142211452127,
+        "p_max_error": 0.0020191222429275513,
+        "p_relative_l2": 0.006310557946562767
+      },
+      "checks": {
+        "continuity_rms": true,
+        "momentum_u_rms": true,
+        "momentum_v_rms": true,
+        "inner_u_rms": true,
+        "inner_v_rms": true,
+        "outer_u_rms": true,
+        "outer_v_rms": true,
+        "pressure_rms": true,
+        "u_relative_l2": true,
+        "v_relative_l2": true,
+        "p_relative_l2": true,
+        "u_max_error": true,
+        "v_max_error": true,
+        "p_max_error": true
+      },
+      "passed": true
+    },
+    {
+      "interior_count": 8192,
+      "boundary_count_per_edge": 256,
+      "seed": 1729,
+      "metrics": {
+        "continuity_rms": 0.0010949487903274462,
+        "momentum_u_rms": 0.0016616818995391868,
+        "momentum_v_rms": 0.0014920579131613343,
+        "inner_u_rms": 1.3928383779671094e-08,
+        "inner_v_rms": 1.730805010424774e-08,
+        "outer_u_rms": 1.1595173710077233e-08,
+        "outer_v_rms": 1.2154116824092398e-08,
+        "pressure_rms": 1.0132789611816406e-06,
+        "rmse": 0.0005896991933695972,
+        "max_error": 0.002032533288002014,
+        "relative_l2": 0.0015198133187368512,
+        "u_rmse": 0.00018785813881549984,
+        "u_max_error": 0.0006377696990966797,
+        "u_relative_l2": 0.00040888666990213096,
+        "v_rmse": 0.00020277968724258244,
+        "v_max_error": 0.000719904899597168,
+        "v_relative_l2": 0.0004362207546364516,
+        "p_rmse": 0.0009832725627347827,
+        "p_max_error": 0.002032533288002014,
+        "p_relative_l2": 0.006284903734922409
+      },
+      "checks": {
+        "continuity_rms": true,
+        "momentum_u_rms": true,
+        "momentum_v_rms": true,
+        "inner_u_rms": true,
+        "inner_v_rms": true,
+        "outer_u_rms": true,
+        "outer_v_rms": true,
+        "pressure_rms": true,
+        "u_relative_l2": true,
+        "v_relative_l2": true,
+        "p_relative_l2": true,
+        "u_max_error": true,
+        "v_max_error": true,
+        "p_max_error": true
+      },
+      "passed": true
+    }
+  ],
+  "single_run_checks_passed": true,
+  "project_acceptance": false,
+  "limitations": "Single training seed and density; the multi-seed, two-density project gate is not established.",
+  "run_id": "20260927T134119.749576Z-013c30d9",
+  "training_settings": {
+    "seed": 0,
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "model": {
+      "input_dim": 2,
+      "output_dim": 3,
+      "hidden_dim": 64,
+      "num_hidden_layers": 4,
+      "activation": "Tanh"
+    },
+    "training_samples": 1024,
+    "fluid": {
+      "name": "circular-couette",
+      "reynolds": 10.0,
+      "x_bounds": [
+        -2.0,
+        2.0
+      ],
+      "y_bounds": [
+        -2.0,
+        2.0
+      ],
+      "inner_radius": 1.0,
+      "outer_radius": 2.0,
+      "interior_samples": 1024,
+      "samples_per_boundary": 128,
+      "boundary_weight": 10
+    },
+    "training_bounds": [
+      [
+        -1.9715734752389193,
+        -1.9923005594660095
+      ],
+      [
+        1.9938286194951877,
+        1.9948949236381275
+      ]
+    ],
+    "points_per_axis": 32,
+    "visualization_resolution": 25,
+    "cosinus_order": 2,
+    "config": {
+      "scenario": "circular-couette",
+      "epochs": 1500,
+      "points": 32,
+      "learning_rate": 0.001,
+      "hidden_dim": 64,
+      "hidden_layers": 4,
+      "seed": 0,
+      "threads": 1,
+      "lbfgs_steps": 2000,
+      "resample_every": 100,
+      "cosinus_order": 2,
+      "resolution": 25,
+      "max_frames": 20,
+      "save_gif": false,
+      "output_dir": "assets",
+      "mesh_path": null
+    }
+  },
+  "training": {
+    "optimizer": "Adam + L-BFGS",
+    "learning_rate": 0.001,
+    "epochs": 1500,
+    "lbfgs_steps": 2000,
+    "resample_every": 100
+  },
+  "checkpoint_sha256": "fb271169e952a2964924c4b19616099efd9de81e42ee0595d2db047a62f8b605",
+  "evaluated_at": "2026-09-27T13:50:04.866699+00:00",
+  "evaluator_source": {
+    "commit": "c983321073a2b3fe8cad3c0dee193650b8fe7e12",
+    "dirty": true
+  }
+}

@@ -1,32 +1,26 @@
-"""
-Customed decorators.
-"""
+"""Customed decorators."""
 
 # ======= Imports =======
-
 import time as t
+from functools import (
+    lru_cache,
+    wraps,
+)
+from typing import (
+    Callable,
+    cast,
+)
 
 from pydantic import validate_call
-from functools import (
-    wraps,
-    lru_cache,
-)
-
-from typing import (
-    Any,
-    Callable,
-)
 
 # ======= Functions =======
 
 
-def time(func: Callable) -> Callable:
-    """
-    Decorator to log the execution time of a function.
-    """
+def time[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator to log the execution time of a function."""
 
     @wraps(func)
-    def wrapper(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         start_time = t.time()
         result = func(*args, **kwargs)
         end_time = t.time()
@@ -34,12 +28,11 @@ def time(func: Callable) -> Callable:
         print(f'Function {func.__name__} executed in {execution_time:.4f} seconds.')
         return result
 
-    return wrapper
+    return cast(Callable[P, R], wrapper)
 
 
-def validate(func: Callable) -> Callable:
-    """
-    Base decorator for validating function arguments.
+def validate[**P, R](func: Callable[P, R]) -> Callable[P, R]:
+    """Base decorator for validating function arguments.
 
     Objective:
         Redefines the @validate_call decorator to cache validation results.
@@ -51,7 +44,7 @@ def validate(func: Callable) -> Callable:
 
     @wraps(func)
     @lru_cache(maxsize=None)
-    def wrapper(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         return validated_func(*args, **kwargs)
 
-    return wrapper
+    return cast(Callable[P, R], wrapper)

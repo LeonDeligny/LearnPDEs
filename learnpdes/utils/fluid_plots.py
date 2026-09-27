@@ -4,22 +4,35 @@ These plots evaluate the network directly on a fresh grid. Solid points are
 masked before model evaluation; no interpolation across the obstacle is used.
 """
 
+from __future__ import annotations
+
 import csv
 import hashlib
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import torch
+from plotly.subplots import make_subplots
 
-from learnpdes.fluid import CylinderProblem, build_fluid_problem
-from learnpdes.fluid_evaluation import evaluate_fluid
+from learnpdes.model.fluid import FluidObjective, FluidProblem
+from learnpdes.scenarios.cylinder import EVALUATION
+from learnpdes.scenarios.cylinder.problem import CylinderProblem
+from learnpdes.training import build_problem
+from learnpdes.types import RecordedPoints
 from learnpdes.utils.artifacts import atomic_json
+from learnpdes.utils.collocation import add_overlay, load_final_points, summary
 
 
-def sample_fields(model, problem, x_bounds, y_bounds, resolution=401):
+def sample_fields(
+    model: torch.nn.Module,
+    problem: FluidProblem,
+    x_bounds: tuple[float, float],
+    y_bounds: tuple[float, float],
+    resolution: int = 401,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Return physical fields and PDE residuals with NaNs in the solid."""
     if resolution < 3:
         raise ValueError('Plot resolution must be at least 3.')
@@ -27,7 +40,10 @@ def sample_fields(model, problem, x_bounds, y_bounds, resolution=401):
     counts = np.maximum(
         3, np.rint((resolution - 1) * span / span.max()).astype(int) + 1
     )
-    x, y = np.linspace(*x_bounds, counts[0]), np.linspace(*y_bounds, counts[1])
+    x, y = (
+        np.linspace(*x_bounds, int(counts[0])),
+        np.linspace(*y_bounds, int(counts[1])),
+    )
     xx, yy = np.meshgrid(x, y)
     coordinates = torch.tensor(np.column_stack((xx.ravel(), yy.ravel())))
     inside = problem.contains(coordinates).numpy()
@@ -64,7 +80,7 @@ def sample_fields(model, problem, x_bounds, y_bounds, resolution=401):
     return x, y, fields.reshape(shape), residuals.reshape(shape)
 
 
-def _obstacle(figure, problem, row, col):
+def _obstacle(figure: go.Figure, problem: FluidProblem, row: int, col: int) -> None:
     if isinstance(problem, CylinderProblem):
         cx, cy = problem.center
         radius = problem.radius
@@ -81,11 +97,13 @@ def _obstacle(figure, problem, row, col):
         )
 
 
-def field_figure(model, problem, *, resolution=601, full_domain=False):
-    bounds = problem.x_bounds if full_domain else (0, 8)
-    x, y, values, residuals = sample_fields(
-        model, problem, bounds, problem.y_bounds, resolution
-    )
+def _field_panels(
+    x: np.ndarray,
+    y: np.ndarray,
+    values: np.ndarray,
+    problem: CylinderProblem,
+    bounds: tuple[float, float],
+) -> go.Figure:
     fields = make_subplots(
         rows=2,
         cols=2,
@@ -148,6 +166,16 @@ def field_figure(model, problem, *, resolution=601, full_domain=False):
         height=860,
         margin={'t': 105, 'b': 65, 'l': 70, 'r': 110},
     )
+    return fields
+
+
+def _residual_panels(
+    x: np.ndarray,
+    y: np.ndarray,
+    residuals: np.ndarray,
+    problem: CylinderProblem,
+    bounds: tuple[float, float],
+) -> go.Figure:
     diagnostics = make_subplots(
         rows=3,
         cols=1,
@@ -175,11 +203,14 @@ def field_figure(model, problem, *, resolution=601, full_domain=False):
         _obstacle(diagnostics, problem, i + 1, 1)
         diagnostics.update_yaxes(
             title_text='y / D',
+            range=list(problem.y_bounds),
             scaleanchor='x' if i == 0 else f'x{i + 1}',
             row=i + 1,
             col=1,
         )
-        diagnostics.update_xaxes(title_text='x / D', row=i + 1, col=1)
+        diagnostics.update_xaxes(
+            title_text='x / D', range=list(bounds), row=i + 1, col=1
+        )
     diagnostics.update_layout(
         title='Independent grid · absolute equation residuals<br><sup>Common logarithmic scale; values below 10⁻⁵ are clipped for display</sup>',
         template='plotly_white',
@@ -193,13 +224,64 @@ def field_figure(model, problem, *, resolution=601, full_domain=False):
         },
         margin={'t': 100},
     )
+    return diagnostics
+
+
+def _field_collocation(
+    fields: go.Figure, diagnostics: go.Figure, collocation: RecordedPoints | None
+) -> None:
+    for figure in (fields, diagnostics):
+        add_overlay(figure, collocation)
+        if collocation is not None:
+            cast(Any, figure.layout).updatemenus[-1].update(x=1, xanchor='right')
+            figure.add_annotation(
+                text='First panel: navy PDE points · orange boundaries · red pressure anchors · purple flux quadrature',
+                x=0.5,
+                y=0,
+                xref='paper',
+                yref='paper',
+                yshift=-60,
+                showarrow=False,
+                font={'size': 10},
+            )
+        figure.update_layout(
+            title_text=cast(Any, figure.layout).title.text
+            + '<br><sup>'
+            + summary(collocation)
+            + '</sup>',
+            margin_t=140,
+        )
+
+
+def field_figure(
+    model: torch.nn.Module,
+    problem: CylinderProblem,
+    *,
+    resolution: int = 601,
+    full_domain: bool = False,
+    collocation: RecordedPoints | None = None,
+) -> tuple[go.Figure, go.Figure]:
+    bounds = problem.x_bounds if full_domain else (0, 8)
+    x, y, values, residuals = sample_fields(
+        model, problem, bounds, problem.y_bounds, resolution
+    )
+    fields = _field_panels(x, y, values, problem, bounds)
+    diagnostics = _residual_panels(x, y, residuals, problem, bounds)
+    _field_collocation(fields, diagnostics, collocation)
     return fields, diagnostics
 
 
-def convergence_figure(path):
+def convergence_figure(
+    path: str | Path, *, collocation: RecordedPoints | None = None
+) -> go.Figure:
     with Path(path).open() as file:
         rows = list(csv.DictReader(file))
-    figure = go.Figure()
+    figure = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[0.6, 0.4],
+        subplot_titles=['Residual history', 'Final collocation coordinates'],
+    )
     for name in (
         'continuity',
         'momentum_u',
@@ -214,6 +296,8 @@ def convergence_figure(path):
                 y=[float(row[name]) for row in rows],
                 name=name,
                 mode='lines',
+                row=1,
+                col=1,
             )
     figure.update_layout(
         title='Training residuals · unweighted mean square',
@@ -223,23 +307,61 @@ def convergence_figure(path):
         yaxis_type='log',
         width=1100,
         height=600,
+        margin={'t': 140, 'b': 100},
     )
+    add_overlay(figure, collocation, xaxis='x2', yaxis='y2')
+    if collocation is not None:
+        cast(Any, figure.layout).updatemenus[-1].update(x=1, xanchor='right')
+        figure.add_annotation(
+            text='Navy: PDE · orange: boundaries · red: pressure anchors · purple: flux quadrature',
+            x=0.5,
+            y=0,
+            xref='paper',
+            yref='paper',
+            yshift=-75,
+            showarrow=False,
+            font={'size': 10},
+        )
+    figure.update_xaxes(title_text='x / D', row=1, col=2)
+    figure.update_yaxes(
+        title_text='y / D', scaleanchor='x2', constrain='domain', row=1, col=2
+    )
+    if collocation is None:
+        figure.add_annotation(
+            x=0.8,
+            y=0.5,
+            xref='paper',
+            yref='paper',
+            text='Training points were not recorded',
+            showarrow=False,
+        )
     return figure
 
 
-def export_cylinder_plots(directory, *, output_dir=None, resolution=601, png=False):
+def export_cylinder_plots(
+    directory: str | Path,
+    *,
+    output_dir: str | Path | None = None,
+    resolution: int = 601,
+    png: bool = False,
+) -> Path:
     """Reconstruct the saved architecture; recompute diagnostics, never old errors."""
     directory = Path(directory)
     metadata = json.loads((directory / 'run.json').read_text())
     if metadata['scenario'] != 'cylinder' or metadata['status'] != 'completed':
         raise ValueError('Select a completed cylinder run.')
     architecture = metadata['settings']['model']
-    model, objective, _ = build_fluid_problem(
+    model, objective, _ = build_problem(
         'cylinder',
         3,
         hidden_dim=architecture['hidden_dim'],
         hidden_layers=architecture['num_hidden_layers'],
     )
+    if not isinstance(objective, FluidObjective):
+        raise ValueError('Cylinder plots require a fluid objective.')
+    if not isinstance(objective.problem, CylinderProblem):
+        raise ValueError('Cylinder plots require a cylinder problem.')
+    problem = cast(CylinderProblem, objective.problem)
     checkpoint = torch.load(
         directory / 'model.pt', map_location='cpu', weights_only=True
     )
@@ -247,14 +369,21 @@ def export_cylinder_plots(directory, *, output_dir=None, resolution=601, png=Fal
     model.cpu()
     output_dir = Path(output_dir or directory / 'plots')
     output_dir.mkdir(parents=True, exist_ok=True)
+    collocation = load_final_points(directory)
     figures = {}
     figures['flow-fields'], figures['equation-residuals'] = field_figure(
-        model, objective.problem, resolution=resolution
+        model, problem, resolution=resolution, collocation=collocation
     )
     figures['full-channel'], _ = field_figure(
-        model, objective.problem, resolution=resolution, full_domain=True
+        model,
+        problem,
+        resolution=resolution,
+        full_domain=True,
+        collocation=collocation,
     )
-    figures['convergence'] = convergence_figure(directory / 'residuals.csv')
+    figures['convergence'] = convergence_figure(
+        directory / 'residuals.csv', collocation=collocation
+    )
     for name, figure in figures.items():
         figure.write_html(output_dir / f'{name}.html', include_plotlyjs='directory')
         if png:
@@ -268,9 +397,12 @@ def export_cylinder_plots(directory, *, output_dir=None, resolution=601, png=Fal
         'status': 'exploratory_accuracy_unverified',
         'interpretation': 'Residuals and conserved flux are diagnostics, not a bound on solution error. No simulation reference data used.',
         'evaluation': {'samples': 8192, 'boundary_samples_per_edge': 256, 'seed': 2027},
-        'metrics': evaluate_fluid(model, objective.problem, count=8192, seed=2027),
+        'metrics': EVALUATION.evaluate(model, objective.problem, count=8192, seed=2027),
         'units': {'length': 'D', 'velocity': 'mean inlet U', 'pressure': 'rho U^2'},
         'figures': [f'{name}.html' for name in figures],
+        'collocation': 'Final checkpoint coordinates from collocation.json'
+        if collocation is not None
+        else 'Not recorded in this historical run; no points reconstructed or invented.',
     }
     atomic_json(output_dir / 'diagnostics.json', report)
     return output_dir

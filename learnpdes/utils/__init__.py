@@ -1,3 +1,1 @@
-"""
-Initialization file for the utils module.
-"""
+"""Initialization file for the utils module."""

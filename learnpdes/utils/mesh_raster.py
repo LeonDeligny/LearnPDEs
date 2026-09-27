@@ -4,13 +4,20 @@ Interpolation uses only existing cells, so holes and concave boundaries are
 never filled by a new triangulation. The weights are reused for every frame.
 """
 
-import numpy as np
+from __future__ import annotations
 
-from learnpdes.utils.visualization import rectangular_triangles
+import numpy as np
+from numpy.typing import ArrayLike
+
+from learnpdes.types import Array
+from learnpdes.visualization.grids import rectangular_triangles
 
 
 class MeshRaster:
-    def __init__(self, xy, triangles, resolution=401):
+    def __init__(
+        self, xy: ArrayLike, triangles: ArrayLike, resolution: int = 401
+    ) -> None:
+        """Precompute interpolation weights on the supplied fluid triangles."""
         xy = np.asarray(xy, dtype=float)
         triangles = np.asarray(triangles)
         x, y = np.unique(xy[:, 0]), np.unique(xy[:, 1])
@@ -58,7 +65,7 @@ class MeshRaster:
             self.vertices[iy0:iy1, ix0:ix1][inside] = cell
             self.weights[iy0:iy1, ix0:ix1][inside] = weights[inside]
 
-    def sample(self, values):
+    def sample(self, values: ArrayLike) -> Array:
         values = np.asarray(values)
         if self.order is not None:
             return (

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{# Omit lastmod: the build date is not necessarily a content modification date. #}
+{% for file in pages %}
+  {% if file.page.canonical_url and not file.page.is_link %}
+  <url><loc>{{ file.page.canonical_url | e }}</loc></url>
+  {% endif %}
+{% endfor %}
+</urlset>

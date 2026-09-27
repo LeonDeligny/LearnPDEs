@@ -10,3 +10,6 @@ pre-commit:
     pyright:
       glob: "*.py"
       run: uv run --group docs pyright
+    complexity:
+      glob: "*.py"
+      run: uv run lizard -l python -C 12 -L 100 -a 14 -w learnpdes docs/website tests

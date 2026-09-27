@@ -1,0 +1,76 @@
+site_name: LearnPDEs
+site_description: Learn physics-informed neural networks in PyTorch, from exact ODE solutions to cylinder flow plots and independent physics diagnostics.
+site_url: https://leondeligny.github.io/LearnPDEs/
+site_author: Leon Deligny
+repo_url: https://github.com/LeonDeligny/LearnPDEs
+repo_name: GitHub
+edit_uri: blob/main/docs/
+docs_dir: ..
+site_dir: ../../site
+exclude_docs: |
+  /README.md
+  /publishing.md
+  /website/
+strict: true
+
+theme:
+  name: null
+  custom_dir: overrides
+  search_index_only: true
+  static_templates:
+    - 404.html
+    - sitemap.xml
+
+nav:
+  - Overview: index.md
+  - Getting started: tutorials/README.md
+  - Validation plan: validation.md
+  - Fluid test log: fluid-scenario-log.md
+  - Tutorials:
+      - Exponential growth: tutorials/exponential-ode-pinn-pytorch.md
+      - Harmonic oscillator: tutorials/harmonic-oscillator-pinn-pytorch.md
+      - Laplace equation: tutorials/laplace-pinn-pytorch.md
+      - Poiseuille flow: tutorials/poiseuille-flow-pinn-pytorch.md
+      - Cylinder flow: tutorials/cylinder-flow-pinn-pytorch.md
+      - Circular Couette: tutorials/circular-couette-pinn-pytorch.md
+
+plugins:
+  - search
+
+hooks:
+  - live_hooks.py
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      use_pygments: false
+  - pymdownx.superfences
+
+extra_css:
+  - assets/site/extra.css
+  - assets/site/interactive.css
+extra_javascript:
+  - assets/site/mathjax.js
+  - path: https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js
+    defer: true
+  - path: assets/site/site.js
+    defer: true
+
+extra:
+  google_site_verification: !ENV [GOOGLE_SITE_VERIFICATION, ""]
+
+validation:
+  nav:
+    omitted_files: warn
+  links:
+    anchors: warn
+    unrecognized_links: warn
+
+watch:
+  - ../../assets
+  - overrides
+  - hooks.py

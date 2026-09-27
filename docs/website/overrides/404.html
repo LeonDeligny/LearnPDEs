@@ -1,0 +1,12 @@
+{% extends "main.html" %}
+
+{% block htmltitle %}<title>Page not found · {{ config.site_name | e }}</title>{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <p class="eyebrow">404 / Not found</p>
+  <h1>Page not found</h1>
+  <p>This address does not point to a tutorial.</p>
+  <p><a href="{{ nav.homepage.url | url }}">Return to LearnPDEs</a> or search for a topic.</p>
+</section>
+{% endblock %}

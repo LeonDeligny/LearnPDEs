@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "scenario": "cosinus",
+  "status": "imported",
+  "imported_at": "2026-09-27T11:54:58.042620+00:00",
+  "note": "Existing published assets. GIF and HTML provenance is retained separately because they may come from different training invocations.",
+  "provenance": {
+    "gif": {
+      "seed": 0,
+      "epochs": 5000,
+      "training_points_per_axis": 64,
+      "visualization_samples": 401,
+      "checkpoint_steps": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        12,
+        15,
+        18,
+        23,
+        29,
+        36,
+        45,
+        57,
+        71,
+        88,
+        111,
+        139,
+        173,
+        217,
+        271,
+        340,
+        425,
+        532,
+        665,
+        832,
+        1041,
+        1303,
+        1630,
+        2040,
+        2552,
+        3194,
+        3996,
+        5000
+      ],
+      "final_loss": 1.7823741700340179e-06,
+      "validation": {
+        "rmse": 0.09743677079677582,
+        "max_error": 0.3283257484436035,
+        "relative_l2": 0.13762490451335907,
+        "inside_mse": 7.773683918799179e-09,
+        "outside_mse": 0.019035309553146362,
+        "full_mse": 0.009493923746049404
+      },
+      "torch_version": "2.14.0",
+      "device": "cpu",
+      "cosinus_order": 2,
+      "training_bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "evaluation_bounds": [
+        -6.283185307179586,
+        6.283185307179586
+      ],
+      "training_samples": 65,
+      "frame_size": [
+        1600,
+        1200
+      ],
+      "duration_ms": 100,
+      "final_hold_ms": 2000
+    },
+    "html": {
+      "seed": 0,
+      "epochs": 5000,
+      "training_points_per_axis": 64,
+      "visualization_samples": 401,
+      "checkpoint_steps": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        9,
+        12,
+        15,
+        18,
+        23,
+        29,
+        36,
+        45,
+        57,
+        71,
+        88,
+        111,
+        139,
+        173,
+        217,
+        271,
+        340,
+        425,
+        532,
+        665,
+        832,
+        1041,
+        1303,
+        1630,
+        2040,
+        2552,
+        3194,
+        3996,
+        5000
+      ],
+      "final_loss": 1.7823741700340179e-06,
+      "validation": {
+        "rmse": 0.09743677079677582,
+        "max_error": 0.3283257484436035,
+        "relative_l2": 0.13762490451335907,
+        "inside_mse": 7.773683918799179e-09,
+        "outside_mse": 0.019035309553146362,
+        "full_mse": 0.009493923746049404
+      },
+      "torch_version": "2.14.0",
+      "device": "cpu",
+      "cosinus_order": 2,
+      "training_bounds": [
+        -3.141592653589793,
+        3.141592653589793
+      ],
+      "evaluation_bounds": [
+        -6.283185307179586,
+        6.283185307179586
+      ]
+    }
+  },
+  "artifacts": {
+    "plotly.min.js": {
+      "bytes": 4815814,
+      "sha256": "3b6e15d45dbb7fca5bd2094291e961ddc5472cd887009e6009a56dab668d721f"
+    },
+    "training.gif": {
+      "bytes": 482171,
+      "sha256": "d92e7b841e4408f6dc84eac33119dd8e09ecac15e61bf640ddca7655a2da9757"
+    },
+    "training.html": {
+      "bytes": 747969,
+      "sha256": "34cf8976870864558d43fffff7a8cc21bdf8c5ad6ed6eaffb75c287a442b870a"
+    }
+  }
+}

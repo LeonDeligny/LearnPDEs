@@ -1,0 +1,164 @@
+{% macro icon(name, size=20) -%}
+<svg width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% if name == 'grid' %}<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+{% elif name == 'book' %}<path d="M12 5v15M3 4h5a4 4 0 0 1 4 2 4 4 0 0 1 4-2h5v15h-5a4 4 0 0 0-4 2 4 4 0 0 0-4-2H3Z"/>
+{% elif name == 'search' %}<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>
+{% elif name == 'arrow' %}<path d="M4 12h16m-6-6 6 6-6 6"/>
+{% elif name == 'external' %}<path d="M14 3h7v7m0-7L10 14m0-9H4v15h15v-6"/>
+{% elif name == 'sidebar' %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>
+{% elif name == 'collapse' %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m7-11-3 3 3 3"/>
+{% elif name == 'hover' %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m4-11 3 3-3 3"/>
+{% elif name == 'close' %}<path d="m6 6 12 12M6 18 18 6"/>
+{% elif name == 'code' %}<path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18"/>
+{% elif name == 'github' %}<path fill="currentColor" stroke="none" d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.73.083-.73 1.205.084 1.838 1.237 1.838 1.237 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.467-1.332-5.467-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23a11.5 11.5 0 0 1 3-.404c1.02.005 2.045.138 3 .404 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+{% endif %}
+</svg>
+{%- endmacro %}
+{% set lessons = nav.pages | selectattr('meta.scenario') | list %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% block htmltitle %}<title>{% if page %}{{ page.meta.title | e }} · {% endif %}{{ config.site_name | e }}</title>{% endblock %}
+  <meta name="author" content="{{ config.site_author | e }}">
+  <meta name="theme-color" content="#ffffff">
+  <script src="{{ 'assets/site/sidebar-state.js' | url }}"></script>
+  <link rel="icon" href="{{ 'assets/site/favicon.svg' | url }}" type="image/svg+xml">
+  <link rel="preload" href="{{ 'assets/site/fonts/Manrope.ttf' | url }}" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="{{ 'assets/site/fonts/IBMPlexMono-Regular.ttf' | url }}" as="font" type="font/ttf" crossorigin>
+  {% if page %}
+  <link rel="canonical" href="{{ page.canonical_url | e }}">
+  <meta name="description" content="{{ page.meta.description | e }}">
+  <meta property="og:type" content="{{ 'website' if page.is_homepage else 'article' }}">
+  <meta property="og:site_name" content="{{ config.site_name | e }}">
+  <meta property="og:title" content="{{ page.meta.title | e }}">
+  <meta property="og:description" content="{{ page.meta.description | e }}">
+  <meta property="og:url" content="{{ page.canonical_url | e }}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ page.meta.title | e }}">
+  <meta name="twitter:description" content="{{ page.meta.description | e }}">
+  {% else %}<meta name="robots" content="noindex">{% endif %}
+  {% if config.extra.google_site_verification %}
+  <meta name="google-site-verification" content="{{ config.extra.google_site_verification | e }}">
+  {% endif %}
+  {% for stylesheet in config.extra_css %}<link rel="stylesheet" href="{{ stylesheet | url }}">{% endfor %}
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="topbar">
+    <div class="header-context">
+      <a class="brand" href="{{ nav.homepage.url | url }}" aria-label="LearnPDEs home">
+        <span class="brand-mark">{{ icon('code', 22) }}</span>
+        <span class="brand-name">LearnPDEs</span>
+      </a>
+    </div>
+    <button class="search-trigger" type="button" data-open-search aria-label="Search" aria-haspopup="dialog" aria-controls="site-search">{{ icon('search', 19) }}<span>Search</span><kbd>/</kbd></button>
+    <a class="icon-button github-link" href="{{ config.repo_url }}" aria-label="Source code on GitHub" title="Source code on GitHub">{{ icon('github', 23) }}</a>
+  </header>
+  <aside class="sidebar" id="site-sidebar" aria-label="Documentation navigation">
+    <div class="sidebar-navigation">
+    <nav>
+      {% for item in nav if not item.children and not item.is_homepage %}
+      <a class="nav-item{% if item.active %} is-active{% endif %}" href="{{ item.url | url }}" aria-label="{{ item.title | e }}" title="{{ item.title | e }}"{% if item.active %} aria-current="page"{% endif %}>
+        {{ icon('book', 20) }} <span class="nav-text">{{ item.title | e }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <span class="nav-label lessons-label">Tutorials</span>
+    <nav>
+      {% for lesson in lessons %}
+      <a class="nav-item lesson-nav{% if lesson.active %} is-active{% endif %}" href="{{ lesson.url | url }}" aria-label="{{ lesson.meta.short_title | e }}" title="{{ lesson.meta.short_title | e }}"{% if lesson.active %} aria-current="page"{% endif %}>
+        <span class="lesson-number" aria-hidden="true">{{ loop.index }}.</span>
+        <span class="nav-text">{{ lesson.meta.short_title | e }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    </div>
+    <div class="sidebar-controls">
+      <button class="sidebar-mode-trigger" type="button" aria-label="Sidebar mode" title="Sidebar mode" aria-expanded="false" aria-controls="sidebar-modes">
+        {{ icon('sidebar', 20) }}<span class="nav-text" id="sidebar-mode-label">Expanded</span>
+      </button>
+    </div>
+  </aside>
+  <div class="sidebar-modes" id="sidebar-modes" role="group" aria-labelledby="sidebar-mode-title" hidden>
+    <p id="sidebar-mode-title">Sidebar mode</p>
+    <label><input type="radio" name="sidebar-mode" value="collapsed">{{ icon('collapse', 18) }}<span>Collapsed</span></label>
+    <label><input type="radio" name="sidebar-mode" value="hover">{{ icon('hover', 18) }}<span>Expand on hover</span></label>
+    <label><input type="radio" name="sidebar-mode" value="expanded" checked>{{ icon('sidebar', 18) }}<span>Expanded</span></label>
+    <p id="sidebar-mode-note" role="status" hidden>Collapsed to fit this screen.</p>
+  </div>
+  <div class="workspace">
+    <main id="main-content" class="main-content{% if page and page.is_homepage %} dashboard{% endif %}" tabindex="-1">
+    {% block content %}
+      {% if page.is_homepage %}
+      <section class="dashboard-hero">
+        <div class="hero-copy">
+          {{ page.content }}
+        </div>
+      </section>
+      <section class="curriculum" aria-label="Tutorials">
+        <div class="lesson-grid">
+          {% for lesson in lessons %}
+          <a class="lesson-card" href="{{ lesson.url | url }}">
+            <span class="pill">{{ lesson.meta.topic | e }}</span>
+            <div class="card-equation arithmatex">\[{{ lesson.meta.equation | e }}\]</div>
+            <h2>{{ lesson.meta.short_title | e }} {{ icon('arrow', 18) }}</h2>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% set result = config.extra.cylinder_result %}
+      <section class="cylinder-result" aria-labelledby="cylinder-results-title">
+        <div class="result-heading">
+          <div><p class="eyebrow">Recorded fluid result · Re = 20</p><h2 id="cylinder-results-title">Flow around a cylinder</h2></div>
+          <span class="result-status">Exploratory</span>
+        </div>
+        <p class="result-summary">{% if result.passed %}Single-run physics checks passed.{% else %}Single-run physics checks remain incomplete.{% endif %} Full-field accuracy remains unverified.</p>
+        <figure class="result-figure">
+          <a href="{{ 'assets/examples/cylinder/plots/training.gif' | url }}" aria-label="Open the cylinder training convergence GIF">
+            <img src="{{ 'assets/examples/cylinder/plots/training.gif' | url }}" alt="Cylinder PINN training convergence: speed, pressure, both velocity components, and loss evolve over 7,000 optimizer updates" width="1400" height="1150" loading="lazy">
+          </a>
+          <figcaption>{{ result.animation_frames }} recorded checkpoints · {{ result.animation_steps }} optimizer updates · seed {{ result.seed }}. Adam and L-BFGS followed by refinement on {{ result.points }} points. Fixed colour scales; this is training progress, not physical time. Historical point coordinates were not recorded.</figcaption>
+        </figure>
+        <dl class="result-metrics">
+          {% for metric in result.metrics %}<div><dt>{{ metric.label }}</dt><dd>{{ metric.value }}</dd></div>{% endfor %}
+        </dl>
+        <p class="result-note">Worst values on {{ result.evaluation_counts }} unseen interior points. Flux error is measured against the prescribed inlet flow. These diagnostics do not establish solution accuracy.</p>
+        <p class="result-note">A separate run from scratch missed the momentum threshold; repeatability and sampling-density independence remain unproven.</p>
+        <div class="result-links">
+          <a href="{{ 'assets/examples/cylinder/plots/training.gif' | url }}">Convergence GIF {{ icon('external', 14) }}</a>
+          <a href="{{ 'assets/examples/cylinder/plots/flow-fields.html' | url }}">Interactive fields {{ icon('external', 14) }}</a>
+          <a href="{{ 'assets/examples/cylinder/plots/equation-residuals.html' | url }}">Equation residuals {{ icon('external', 14) }}</a>
+          <a href="{{ 'assets/examples/cylinder/plots/full-channel.html' | url }}">Full channel {{ icon('external', 14) }}</a>
+          <a href="{{ 'assets/examples/cylinder/plots/convergence.html' | url }}">Residual history {{ icon('external', 14) }}</a>
+          <a href="{{ result.report | url }}">Verification report {{ icon('external', 14) }}</a>
+          <a href="{{ 'fluid-scenario-log/' | url }}">All fluid results {{ icon('arrow', 14) }}</a>
+        </div>
+      </section>
+      {% else %}
+      <div class="reading-layout">
+        <article class="article"{% if page.meta.scenario %} data-scenario="{{ page.meta.scenario | e }}"{% endif %}>
+          {% if page.meta.scenario %}<p class="eyebrow">{{ page.meta.topic | e }}</p>{% endif %}
+          {{ page.content }}
+          <nav class="page-pagination" aria-label="Previous and next pages">
+            {% if page.previous_page %}<a href="{{ page.previous_page.url | url }}"><small>Previous</small><strong>{{ page.previous_page.meta.short_title | default(page.previous_page.title) | e }}</strong></a>{% endif %}
+            {% if page.next_page %}<a href="{{ page.next_page.url | url }}"><small>Up next</small><strong>{{ page.next_page.meta.short_title | default(page.next_page.title) | e }} {{ icon('arrow', 16) }}</strong></a>{% endif %}
+          </nav>
+        </article>
+        <aside class="page-outline"><p class="nav-label">On this page</p><nav aria-label="On this page">{% for heading in page.toc %}{% for item in heading.children %}<a href="{{ item.url }}">{{ item.title | e }}</a>{% endfor %}{% endfor %}</nav><a class="source-link" href="{{ page.edit_url }}">View page source {{ icon('external', 14) }}</a></aside>
+      </div>
+      {% endif %}
+    {% endblock %}
+    </main>
+  </div>
+  <dialog class="search-dialog" id="site-search" aria-labelledby="search-title" data-index-url="{{ 'search/search_index.json' | url }}" data-base-url="{{ nav.homepage.url | url }}">
+    <div class="search-heading"><h2 id="search-title">Search</h2><button type="button" class="icon-button" data-close-search aria-label="Close search">{{ icon('close') }}</button></div>
+    <label class="sr-only" for="search-input">Search tutorials</label>
+    <div class="search-field">{{ icon('search') }}<input id="search-input" type="search" placeholder="Equation or topic" autocomplete="off"></div>
+    <p class="search-status" role="status"></p>
+    <div id="search-results"></div>
+  </dialog>
+  {% for script in config.extra_javascript %}{{ script | script_tag }}{% endfor %}
+</body>
+</html>

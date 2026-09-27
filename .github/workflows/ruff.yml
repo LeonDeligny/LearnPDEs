@@ -1,4 +1,4 @@
-name: Ruff
+name: Code quality
 
 on:
   push:
@@ -20,15 +20,21 @@ jobs:
         python-version: 3.12
 
     - name: Set up uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
       with:
         enable-cache: true
 
     - name: Install dependencies
-      run: uv sync --locked
+      run: uv sync --locked --group docs
 
     - name: Run Ruff check
       run: uv run ruff check .
 
     - name: Check Ruff formatting
       run: uv run ruff format --check .
+
+    - name: Check Python types
+      run: uv run --group docs pyright
+
+    - name: Check Python complexity
+      run: uv run lizard -l python -C 12 -L 100 -a 14 -w learnpdes docs/website tests

@@ -1,0 +1,176 @@
+{
+  "scenario": "kovasznay",
+  "training_seed": 0,
+  "reference_type": "analytical",
+  "reference_implementation": "learnpdes/kovasznay.py:analytical",
+  "reference_formula": "lambda=Re/2-sqrt(Re^2/4+4*pi^2); u=1-exp(lambda*x)*cos(2*pi*y); v=lambda/(2*pi)*exp(lambda*x)*sin(2*pi*y); p=(1-exp(2*lambda*x))/2",
+  "reference_source": "https://deepxde.readthedocs.io/en/latest/demos/pinn_forward/Kovasznay.flow.html",
+  "pressure_gauge": "Exact pressure at (1, -0.5)",
+  "thresholds": {
+    "pde_rms": 0.01,
+    "boundary_rms": 0.001,
+    "hard_boundary_rms": 3.814697265625e-06,
+    "relative_l2": 0.01,
+    "max_absolute_error": 0.02,
+    "characteristic_output_scales": [
+      1,
+      1,
+      1
+    ]
+  },
+  "evaluations": [
+    {
+      "interior_count": 4096,
+      "boundary_count_per_edge": 256,
+      "seed": 2027,
+      "metrics": {
+        "continuity_rms": 0.0036069279062434017,
+        "momentum_u_rms": 0.00543473753181596,
+        "momentum_v_rms": 0.00366173923318106,
+        "inlet_u_rms": 0.0004200941475573927,
+        "inlet_v_rms": 0.0006111375405453146,
+        "outlet_u_rms": 0.00029786210507154465,
+        "outlet_v_rms": 0.00031200135708786547,
+        "bottom_u_rms": 0.0002080088888760656,
+        "bottom_v_rms": 0.0003682883980218321,
+        "top_u_rms": 0.00022245223226491362,
+        "top_v_rms": 0.0001236387324752286,
+        "pressure_rms": 1.33514404296875e-05,
+        "rmse": 0.0011562902946025133,
+        "max_error": 0.008658170700073242,
+        "relative_l2": 0.0016148649156093597,
+        "u_rmse": 0.0007867452804930508,
+        "u_max_error": 0.002404928207397461,
+        "u_relative_l2": 0.0006624844390898943,
+        "v_rmse": 0.000426592247094959,
+        "v_max_error": 0.0015465319156646729,
+        "v_relative_l2": 0.00424773246049881,
+        "p_rmse": 0.0017916675424203277,
+        "p_max_error": 0.008658170700073242,
+        "p_relative_l2": 0.005222581326961517
+      },
+      "checks": {
+        "continuity_rms": true,
+        "momentum_u_rms": true,
+        "momentum_v_rms": true,
+        "inlet_u_rms": true,
+        "inlet_v_rms": true,
+        "outlet_u_rms": true,
+        "outlet_v_rms": true,
+        "bottom_u_rms": true,
+        "bottom_v_rms": true,
+        "top_u_rms": true,
+        "top_v_rms": true,
+        "pressure_rms": true,
+        "u_relative_l2": true,
+        "v_relative_l2": true,
+        "p_relative_l2": true,
+        "u_max_error": true,
+        "v_max_error": true,
+        "p_max_error": true
+      },
+      "passed": true
+    },
+    {
+      "interior_count": 8192,
+      "boundary_count_per_edge": 256,
+      "seed": 1729,
+      "metrics": {
+        "continuity_rms": 0.0037256601493344936,
+        "momentum_u_rms": 0.005561697577589742,
+        "momentum_v_rms": 0.0036968153446274373,
+        "inlet_u_rms": 0.0004529036523308605,
+        "inlet_v_rms": 0.0005542017170228064,
+        "outlet_u_rms": 0.0003093811683356762,
+        "outlet_v_rms": 0.0003235280164517462,
+        "bottom_u_rms": 0.0002232118567917496,
+        "bottom_v_rms": 0.00036903281579725444,
+        "top_u_rms": 0.00021572700643446296,
+        "top_v_rms": 0.00012345550931058824,
+        "pressure_rms": 1.33514404296875e-05,
+        "rmse": 0.001159439911134541,
+        "max_error": 0.008118391036987305,
+        "relative_l2": 0.0015935130650177598,
+        "u_rmse": 0.0007997178472578526,
+        "u_max_error": 0.0024030208587646484,
+        "u_relative_l2": 0.0006620322237722576,
+        "v_rmse": 0.00042655240395106375,
+        "v_max_error": 0.0016672015190124512,
+        "v_relative_l2": 0.004239508416503668,
+        "p_rmse": 0.001792039955034852,
+        "p_max_error": 0.008118391036987305,
+        "p_relative_l2": 0.005197364836931229
+      },
+      "checks": {
+        "continuity_rms": true,
+        "momentum_u_rms": true,
+        "momentum_v_rms": true,
+        "inlet_u_rms": true,
+        "inlet_v_rms": true,
+        "outlet_u_rms": true,
+        "outlet_v_rms": true,
+        "bottom_u_rms": true,
+        "bottom_v_rms": true,
+        "top_u_rms": true,
+        "top_v_rms": true,
+        "pressure_rms": true,
+        "u_relative_l2": true,
+        "v_relative_l2": true,
+        "p_relative_l2": true,
+        "u_max_error": true,
+        "v_max_error": true,
+        "p_max_error": true
+      },
+      "passed": true
+    }
+  ],
+  "single_run_checks_passed": true,
+  "project_acceptance": false,
+  "limitations": "Single training seed and density; the multi-seed, two-density project gate is not established.",
+  "run_id": "20260927T124950.024802Z-cb8877fb",
+  "training_settings": {
+    "seed": 0,
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "model": {
+      "input_dim": 2,
+      "output_dim": 3,
+      "hidden_dim": 64,
+      "num_hidden_layers": 4,
+      "activation": "Tanh"
+    },
+    "training_samples": 961,
+    "fluid": {
+      "reynolds": 40.0,
+      "interior_samples": 961,
+      "samples_per_boundary": 124,
+      "boundary_weight": 10
+    },
+    "training_bounds": [
+      [
+        -0.4990433970682266,
+        -0.49989876604360317
+      ],
+      [
+        0.9983815529669886,
+        1.4973619254545991
+      ]
+    ],
+    "points_per_axis": 31,
+    "visualization_resolution": 41,
+    "cosinus_order": 2
+  },
+  "training": {
+    "optimizer": "Adam + L-BFGS",
+    "learning_rate": 0.001,
+    "epochs": 1500,
+    "lbfgs_steps": 1500,
+    "resample_every": 100
+  },
+  "checkpoint_sha256": "394d83ef77f8efd01a4edc92986503dd0f0cfc5fec0e69fb635a2937e7d2c585",
+  "evaluated_at": "2026-09-27T13:50:04.618464+00:00",
+  "evaluator_source": {
+    "commit": "c983321073a2b3fe8cad3c0dee193650b8fe7e12",
+    "dirty": true
+  }
+}

@@ -1,21 +1,13 @@
-"""
-Utility functions.
-"""
+"""Utility functions."""
 
 # ======= Imports =======
 
+from typing import Union, overload
+
 import torch
-
-from torch import Tensor
 from numpy import ndarray
+from torch import Tensor
 from torch.nn import Module
-from typing import Union
-
-from numpy import (
-    pi,
-    sin,
-    sinh,
-)
 
 # ======= Class =======
 
@@ -26,13 +18,6 @@ class Identity(Module):
 
 
 # ======= Functions =======
-
-
-def laplace_function(x: ndarray, y: ndarray) -> ndarray:
-    """
-    Laplace function.
-    """
-    return sin(pi * x) * sinh(pi * y) / sinh(pi)
 
 
 def analyze_xy(xy: Tensor) -> None:
@@ -54,8 +39,8 @@ def analyze_xy(xy: Tensor) -> None:
 
 
 def get_marker_masks(filepath: str, num_points: int) -> dict[str, Tensor]:
-    """
-    Returns a dictionary
+    """Returns a dictionary.
+
     mapping each MARKER_TAG to a boolean mask over the node array.
     """
     with open(filepath, 'r') as f:
@@ -98,16 +83,14 @@ def order_airfoil_points(xy: Tensor) -> Tensor:
         last = ordered[-1]
         dists = torch.norm(xy - xy[last], dim=1)
         dists[list(used)] = float('inf')
-        next_idx = torch.argmin(dists).item()
+        next_idx = int(torch.argmin(dists).item())
         ordered.append(next_idx)
         used.add(next_idx)
     return xy[ordered]
 
 
 def compute_normals(xy: Tensor, airfoil_mask: Tensor) -> tuple[Tensor, Tensor]:
-    """
-    Compute outward normals for the airfoil boundary.
-    """
+    """Compute outward normals for the airfoil boundary."""
     # Extract airfoil boundary points
     airfoil_pts = xy[airfoil_mask]  # shape [M, 2]
 
@@ -131,11 +114,19 @@ def compute_normals(xy: Tensor, airfoil_mask: Tensor) -> tuple[Tensor, Tensor]:
     return -normals_x, -normals_y
 
 
+@overload
+def detach_to_numpy(f: Tensor) -> ndarray: ...
+
+
+@overload
+def detach_to_numpy(f: tuple[Tensor, ...]) -> tuple[ndarray, ...]: ...
+
+
 def detach_to_numpy(
     f: Union[tuple[Tensor, ...], Tensor],
 ) -> Union[tuple[ndarray, ...], ndarray]:
-    """
-    Essentially sends to cpu, detach, and converts to ndarray.
+    """Essentially sends to cpu, detach, and converts to ndarray.
+
     Applies .cpu().detach().numpy() on object.
     """
     if isinstance(f, tuple):

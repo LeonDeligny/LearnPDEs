@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "scenario": "poiseuille",
+  "status": "imported",
+  "imported_at": "2026-09-27T11:54:58.061315+00:00",
+  "note": "Historical output moved without retraining. No weights or complete run settings were saved by the old exporter.",
+  "original_directory": "assets",
+  "artifacts": {
+    "training.html": {
+      "bytes": 3795447,
+      "sha256": "a33aecb49f01739d7872e416e34e3344cddd3554ba1363a01b72f3cfc70804f4"
+    }
+  }
+}

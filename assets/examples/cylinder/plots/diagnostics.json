@@ -1,0 +1,46 @@
+{
+  "run_id": "20260927T131815.547280Z-deeed8d6",
+  "checkpoint_sha256": "3e7184ef7255ae4640d3a34dc14f85959a65589517f67aee5c0faaac4f9d0325",
+  "reference_type": "none",
+  "status": "exploratory_accuracy_unverified",
+  "interpretation": "Residuals and conserved flux are diagnostics, not a bound on solution error. No simulation reference data used.",
+  "evaluation": {
+    "samples": 8192,
+    "boundary_samples_per_edge": 256,
+    "seed": 2027
+  },
+  "metrics": {
+    "continuity_rms": 0.00572175519920068,
+    "momentum_u_rms": 0.007127115754289634,
+    "momentum_v_rms": 0.005863202606097302,
+    "inlet_u_rms": 1.2904783908140871e-08,
+    "inlet_v_rms": 0.0,
+    "outlet_normal_rms": 0.00015372161578852683,
+    "outlet_tangent_rms": 0.00012091937969671562,
+    "bottom_u_rms": 0.0,
+    "bottom_v_rms": 0.0,
+    "top_u_rms": 0.0,
+    "top_v_rms": 0.0,
+    "cylinder_u_rms": 4.563567017612513e-07,
+    "cylinder_v_rms": 3.3988376912930107e-07,
+    "drag": 5.577709197998047,
+    "lift": 0.008111469447612762,
+    "pressure_drop": 2.9530436992645264,
+    "inlet_flow_rate": 4.09999942779541,
+    "outlet_flow_rate": 4.099905014038086,
+    "mass_balance_relative_error": 2.3027745688833843e-05,
+    "outlet_flow_relative_error": 2.3167307783831032e-05
+  },
+  "units": {
+    "length": "D",
+    "velocity": "mean inlet U",
+    "pressure": "rho U^2"
+  },
+  "figures": [
+    "flow-fields.html",
+    "equation-residuals.html",
+    "full-channel.html",
+    "convergence.html"
+  ],
+  "collocation": "Not recorded in this historical run; no points reconstructed or invented."
+}

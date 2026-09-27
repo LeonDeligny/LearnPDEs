@@ -1,0 +1,12 @@
+@import url("extra.css");
+
+body {
+  margin: 0;
+  background: white;
+  font-family: var(--sans);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+}

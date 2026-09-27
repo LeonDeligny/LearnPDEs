@@ -1,5 +1,12 @@
 """Publication styling shared by every Plotly view."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Any, cast
+
+import plotly.graph_objects as go
+
 BLUE = '#315b87'
 GREEN = '#27816b'
 RED = '#ad493b'
@@ -7,7 +14,7 @@ COLORS = [BLUE, GREEN, RED, '#80649a', '#b18335', '#438b91']
 FONT = 'DejaVu Sans, Arial, sans-serif'
 
 
-def scientific_style(fig):
+def scientific_style(fig: go.Figure) -> go.Figure:
     """Use the typography, restrained colours and axes of the static figures."""
     fig.update_layout(
         template='none',
@@ -53,7 +60,7 @@ def scientific_style(fig):
         automargin=True,
     )
     fig.update_annotations(font={'family': FONT, 'size': 15, 'color': '#222222'})
-    for axis in fig.select_yaxes():
+    for axis in cast(Iterable[Any], fig.select_yaxes()):
         if axis.type == 'log':
             axis.update(
                 dtick=1 if axis.range and axis.range[1] - axis.range[0] >= 1 else None,
@@ -63,7 +70,9 @@ def scientific_style(fig):
     return fig
 
 
-def colorbar(domain, *, x=1.015, title=''):
+def colorbar(
+    domain: tuple[float, float], *, x: float = 1.015, title: str = ''
+) -> dict[str, object]:
     return {
         'title': {'text': title, 'side': 'right'},
         'x': x,
@@ -83,16 +92,17 @@ def colorbar(domain, *, x=1.015, title=''):
     }
 
 
-def align_field_panels(fig, width, height):
+def align_field_panels(fig: go.Figure, width: int, height: int) -> None:
     """Place bars beside the actual equal-aspect fields in a static export."""
-    margin = fig.layout.margin
+    layout = cast(Any, fig.layout)
+    margin = layout.margin
     available_width = width - margin.l - margin.r
     available_height = height - margin.t - margin.b
     for index, trace in enumerate(fig.data[:3]):
         if trace.type != 'heatmap':
             continue
-        xaxis = fig.layout['xaxis' + trace.xaxis[1:]]
-        yaxis = fig.layout['yaxis' + trace.yaxis[1:]]
+        xaxis = layout['xaxis' + trace.xaxis[1:]]
+        yaxis = layout['yaxis' + trace.yaxis[1:]]
         left, right = xaxis.domain
         bottom, top = yaxis.domain
         aspect = (xaxis.range[1] - xaxis.range[0]) / (yaxis.range[1] - yaxis.range[0])
@@ -104,14 +114,12 @@ def align_field_panels(fig, width, height):
         )
         xaxis.domain = [(left + right - span_x) / 2, (left + right + span_x) / 2]
         yaxis.domain = [(bottom + top - span_y) / 2, (bottom + top + span_y) / 2]
-        bar = (
-            fig.layout[trace.coloraxis].colorbar if trace.coloraxis else trace.colorbar
-        )
+        bar = layout[trace.coloraxis].colorbar if trace.coloraxis else trace.colorbar
         bar.update(x=xaxis.domain[1] + 0.01, y=sum(yaxis.domain) / 2, len=span_y)
         if not trace.coloraxis:
             for other in fig.data[3:]:
                 if other.type == 'heatmap' and other.xaxis == trace.xaxis:
                     other.colorbar.update(x=bar.x, y=bar.y, len=bar.len)
-        fig.layout.annotations[index].update(
+        layout.annotations[index].update(
             y=yaxis.domain[1], x=sum(xaxis.domain) / 2, yshift=14
         )

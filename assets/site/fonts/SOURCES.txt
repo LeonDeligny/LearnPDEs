@@ -1,0 +1,12 @@
+The website uses exactly two font families, served locally:
+
+Manrope variable (weights 200–800)
+https://github.com/google/fonts/tree/main/ofl/manrope
+License: Manrope-OFL.txt
+
+IBM Plex Mono Regular
+https://github.com/google/fonts/tree/main/ofl/ibmplexmono
+License: IBMPlexMono-OFL.txt
+
+Both are distributed under the SIL Open Font License 1.1.
+The font files are unmodified upstream TTF files.

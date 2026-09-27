@@ -24,7 +24,7 @@ jobs:
           python-version: 3.12
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
         with:
           enable-cache: true
 
@@ -34,7 +34,7 @@ jobs:
       - name: Install animation encoder
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Run test scenarios
+      - name: Run scenario and workflow tests
         run: |
           uv run coverage run --source=learnpdes -m unittest discover -s tests -p "test*.py"
           uv run coverage xml

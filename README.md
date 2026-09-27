@@ -25,157 +25,27 @@ must never enter training, pretraining, adaptive sampling, or early stopping.
 Prescribed forcing and exact initial/boundary traces are legitimate problem
 inputs. No experimental reference dataset is currently selected.
 
-Grow one step at a time: ODEs, stationary scalar PDEs, time-dependent scalar
-PDEs, then coupled fluid equations and curved boundaries. The
-[validation plan](docs/validation.md) defines all current scenarios'
-reference policies, intermediate problems, papers, exact comparison values,
-and proposed accuracy gates across three seeds. Implementation or a successful
-animation does not mean a scenario has passed those gates. Cylinder and airfoil
-cases remain exploratory because no admissible full-setup reference is selected.
-
-## Tutorials
+## Objectives and tutorials
 
 Learn how to solve differential equations with physics-informed neural networks
 in PyTorch. These worked examples explain the equations, automatic
 differentiation, and loss functions, with runnable code and training animations.
 
-- [Exponential growth with a PINN](docs/tutorials/exponential-ode-pinn-pytorch.md): solve $f'=f$ with $f(0)=1$.
-- [The harmonic oscillator with a PINN](docs/tutorials/harmonic-oscillator-pinn-pytorch.md): solve $f''+f=0$ with $f(0)=1$ and $f'(0)=0$.
-- [Solve the Laplace equation with a PINN in PyTorch](docs/tutorials/laplace-pinn-pytorch.md): a two-dimensional boundary-value problem.
-- [Circular Couette with a PINN](docs/tutorials/circular-couette-pinn-pytorch.md): verify curved no-slip walls against an exact solution.
-- [Cylinder plots and fluid test log](docs/fluid-scenario-log.md): separate measured verification records and the staged path toward airfoil flow.
-- [Poiseuille flow with a PINN](docs/tutorials/poiseuille-flow-pinn-pytorch.md): learn viscous channel flow from a pressure drop and stationary walls.
-
 Start with the [tutorial setup and running instructions](docs/tutorials/README.md).
-
-## Repository organization
-
-Each setup owns its problem definition under `learnpdes/scenarios/`. Shared
-networks, optimization, physics residuals, evaluation, and visualization remain
-reusable across setups. See the [architecture guide](docs/architecture.md) for
-the layout, compatibility imports, and steps to add a scenario.
-
-## Run any scenario
-
-All registered cases use one scenario catalog and a Typer CLI with grouped help,
-validated parameters, and a saved configuration for each run:
-
-```bash
-uv sync --locked
-uv run learnpdes --help
-uv run learnpdes scenarios
-uv run learnpdes examples
-uv run learnpdes train --help
-uv run learnpdes train laplace --epochs 5000 --points 21 --no-gif
-```
-
-Run a quick execution check of **every case** (including both bundled airfoil
-formulations and the obstacle-free wind tunnel):
-
-```bash
-uv run learnpdes train all --epochs 1 --points 3 --resolution 5 --max-frames 2 --no-gif
-```
-
-Use `uv run learnpdes train all --dry-run` to inspect the resolved defaults before
-training. `all` runs cases sequentially and stops on the first failure; completed
-runs remain available. These short checks verify execution, not convergence.
-
-`train --help` explains defaults, sample counts, and supported overrides, including
-`--learning-rate`, `--hidden-dim`, `--hidden-layers`, `--seed`, `--threads`, and
-output controls. Scenario-specific flags include `--cosinus-order`,
-`--lbfgs-steps`, `--resample-every`, and `--mesh`. Use a single compatible case
-when setting a nondefault derivative order, L-BFGS budget, or custom mesh.
-See the [complete scenario and parameter guide](docs/tutorials/README.md#run-any-scenario).
-
-`scenarios` displays the full catalog and defaults in a table; `examples` prints
-copyable commands for every case and common parameter changes. For scripts,
-`scenarios --json` and `train ... --dry-run` emit plain JSON. Typer also provides
-shell completion through `--show-completion` and `--install-completion`.
-Use `uv run learnpdes completion zsh` (or `bash`, `fish`, `powershell`, `pwsh`)
-to print a script for an explicit shell, including from automated environments.
-
-`uv run python -m learnpdes`, `python -m learnpdes.main`, and the existing
-`examples.train_pinn` command accept the same arguments. Both batch export
-commands now support the complete catalog and the same defaults;
-`examples.generate_interactive` defaults to HTML-only output.
-The original `learnpdes laplace ...`, `--scenario NAME`, and `--list-scenarios`
-forms remain supported.
-
-The tutorials also have a static documentation site prepared for GitHub Pages.
-To preview it locally without installing the training dependencies:
-
-```bash
-UV_PROJECT_ENVIRONMENT=.venv-docs uv run --locked --only-group docs mkdocs serve -f docs/website/mkdocs.yml
-```
-
-Open <http://127.0.0.1:8000/LearnPDEs/>. See the
-[documentation guide](docs/README.md) and [website launch guide](docs/publishing.md)
-for validation, the manual publishing workflow, Search Console setup, and sharing
-drafts. The website is not deployed yet; pushes and pull requests only build and
-check it.
-
-## Training results
-
-Each training invocation creates a unique, portable run under
-`assets/runs/<scenario>/<run-id>/`. It saves `training.gif`, `training.html`,
-`run.json`, `loss.csv`, `collocation.json`, and `model.pt`; rendered PNGs stay in `frames/`.
-Repeating a scenario preserves previous runs. The manifest records settings,
-source revision, validation results when available, and export success/failure.
-Numerical results and weights are saved before rendering begins.
-
-```python
-from learnpdes.main import main
-
-path = main('laplace', epochs=1000)
-print(path)  # assets/runs/laplace/<run-id>/training.html
-```
-
-GIFs show checkpoints from the untrained model through the last completed
-optimizer update. HTML figures add hover, playback, reference/error views, and
-fixed scales across training. Copy a run directory with its `plotly.min.js` to
-share it offline. `--output-dir` changes the asset root. `--max-frames` controls
-the checkpoint count; `--resolution` controls display samples independently of
-training samples. `main(...)` uses `visualization_resolution` for this setting.
-
-The first prediction panel shows the actual training coordinates: navy PDE
-points, orange boundary points, red initial/pressure anchors, and purple flux
-quadrature points. For ODEs, marks along the bottom indicate x locations only.
-HTML has **Show points / Hide points** controls; GIFs keep the points visible.
-Recorded checkpoints follow resampling, and fixed point sets are saved once in
-`collocation.json`. Historical exports without recorded coordinates must be
-regenerated to show them.
-
-Kaleido is installed with the project. GIF export also needs Chrome and FFmpeg:
-
-```bash
-uv run plotly_get_chrome -y
-# macOS: brew install ffmpeg; Ubuntu: sudo apt-get install ffmpeg
-uv run python -m examples.train_pinn laplace --epochs 5000 --points 21
-```
-
-Use `--no-gif` or `main(..., save_gif=False)` for HTML-only output. The batch
-runners `examples.generate_animations` and `examples.generate_interactive` use
-the same run layout. `examples.compare_cosinus` groups comparisons under
-`assets/comparisons/`. All working runs are ignored by Git.
-
-The README and website use selected results from `assets/examples/`. After
-reviewing a run, publish it explicitly:
-
-```bash
-uv run python -m examples.publish_run 'assets/runs/laplace/<run-id>' --replace
-```
-
-See the [asset layout and lifecycle](assets/README.md) for metadata, failure
-recovery, checkpoints, and publication. Existing examples were preserved with
-their original provenance; they are never overwritten by ordinary training.
-
-## **Objectives**
 
 The following scenarios are implemented; their accuracy must be established
 using the [staged validation plan](docs/validation.md). Additional intermediate
-ODEs and PDEs in that plan are proposed, not yet runnable.
+ODEs and PDEs in that plan are proposed, not yet runnable. The first-order
+[A1–A3 progression](docs/tutorials/README.md#first-order-ode-progression-a1a3)
+is available as `exponential`, `forced-linear`, and `logistic`.
+The [fluid scenario log](docs/fluid-scenario-log.md) records measured verification
+results, cylinder plots, and the staged path toward airfoil flow.
 
-1. **Simple ODEs** — implemented:
+1. **Simple ODEs: exponential growth** — implemented:
+
+   Follow the [exponential growth tutorial](docs/tutorials/exponential-ode-pinn-pytorch.md)
+   to solve a first-order ODE with automatic differentiation and an initial condition.
+
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
    - ODE to approximate: $f' = f, f(0) = 1$
    - Physics Loss: $\lVert f_{\theta}' - f_{\theta}\rVert$
@@ -184,7 +54,11 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
 
    ![PINN training toward the exponential ODE solution](./assets/examples/exponential/training.gif)
 
-1. **Higher-Order ODEs** — implemented:
+1. **Higher-Order ODEs: harmonic oscillator** — implemented:
+
+   Follow the [harmonic oscillator tutorial](docs/tutorials/harmonic-oscillator-pinn-pytorch.md)
+   to solve a second-order ODE with initial value and derivative constraints.
+
    - PINN: $f_{\theta}: \mathbb{R} \rightarrow \mathbb{R}$
    - ODE to approximate: $f'' = -f, f(0) = 1, f'(0) = 0$
    - Physics Loss: $\lVert f_{\theta}'' + f_{\theta} \rVert$
@@ -194,6 +68,10 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    ![PINN training toward the cosine ODE solution](./assets/examples/cosinus/training.gif)
 
 1. **Laplace Equation** — implemented:
+
+   Follow the [Laplace equation tutorial](docs/tutorials/laplace-pinn-pytorch.md)
+   to solve a two-dimensional boundary-value problem.
+
    - PINN: $f_{\theta}: [0, 1]^2 \rightarrow \mathbb{R}$
    - PDE to approximate: $\Delta f = 0$
    - Dirichlet boundary conditions: $f(\cdot, 0) = 0, f(\cdot, 1) = \sin(\pi x), f(0, \cdot) = 0, f(1, \cdot) = 0$
@@ -254,7 +132,7 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    a separate 41 × 41 grid:
 
    ```bash
-   uv run --group export python -m examples.train_pinn poiseuille --epochs 5000 --points 21
+   uv run --group export learnpdes train poiseuille --epochs 5000 --points 21
    ```
 
    The runner saves GIF and HTML under `assets/runs/poiseuille/<run-id>/`, prints their
@@ -269,16 +147,17 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    and training loss:
 
    ```python
-   from learnpdes.main import main
+   from learnpdes.config import RunConfig
+   from learnpdes.training import train
 
-   path = main('poiseuille', epochs=5000, output_dir='assets')
-   print(path)  # assets/runs/poiseuille/<run-id>/training.html
+   trainer = train(RunConfig('poiseuille', epochs=5000, output_dir='assets'))
+   print(trainer.html_path)  # assets/runs/poiseuille/<run-id>/training.html
    ```
 
    The CLI and Python entry point both default to 21 × 21 training points and an
    independent 51 × 51 display grid. Parameters and the reference solution are in
    [learnpdes/scenarios/poiseuille.py](learnpdes/scenarios/poiseuille.py); the
-   [benchmark tests](tests/test_poiseuille.py) verify the exact solution, pressure
+   [benchmark tests](tests/scenarios/test_poiseuille.py) verify the exact solution, pressure
    forcing, no-slip walls, automatic derivatives, and training/plot integration.
 
 1. **Navier–Stokes: Kovasznay flow on a rectangle** — implemented:
@@ -316,7 +195,7 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    reports aggregate and per-component errors on 2,048 unseen uniform points:
 
    ```bash
-   uv run python -m examples.train_pinn kovasznay --epochs 1500 --lbfgs-steps 1500 --points 31
+   uv run learnpdes train kovasznay --epochs 1500 --lbfgs-steps 1500 --points 31
    ```
 
    The command saves GIF, HTML, metadata, and weights under
@@ -328,22 +207,35 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    errors, and training loss:
 
    ```python
-   from learnpdes.main import main
+   from learnpdes.config import RunConfig
+   from learnpdes.training import train
 
-   path = main('kovasznay', epochs=1000, output_dir='assets')
-   print(path)  # assets/runs/kovasznay/<run-id>/training.html; GIF beside it
+   trainer = train(RunConfig('kovasznay', epochs=1000, output_dir='assets'))
+   print(trainer.html_path)  # assets/runs/kovasznay/<run-id>/training.html; GIF beside it
    ```
 
    The CLI and Python entry point both default to 961 interior samples, 124
    samples per boundary, and an independent 51 × 51 display grid. Benchmark constants and the NumPy/Torch
    exact solution live in [learnpdes/scenarios/kovasznay.py](learnpdes/scenarios/kovasznay.py).
-   The [benchmark tests](tests/test_kovasznay.py) check exact residual cancellation,
+   The [benchmark tests](tests/scenarios/test_kovasznay.py) check exact residual cancellation,
    both momentum equations, all velocity boundaries, the pressure gauge, and
    training/evaluation integration. The equations and rectangle follow the
    [DeepXDE Kovasznay implementation](https://deepxde.readthedocs.io/en/latest/demos/pinn_forward/Kovasznay.flow.html#implementation),
    using $Re=40$ and a single pressure reference point here. The analytical
    solution originates in [Kovasznay (1948)](https://doi.org/10.1017/S0305004100023999).
    No simulation data are used; compare with the exact formula only.
+
+1. **Navier–Stokes: circular Couette flow** — implemented:
+
+   Follow the [circular Couette tutorial](docs/tutorials/circular-couette-pinn-pytorch.md)
+   to verify curved no-slip walls against an exact annular-flow solution.
+   Scenario **`circular-couette`** predicts $(u,v,p)$ between a stationary inner
+   wall at $r=1$ and a rotating outer wall at $r=2$, with tangential speed 1.
+   The analytical interior solution is used only for evaluation.
+
+   ```bash
+   uv run learnpdes train circular-couette --epochs 1500 --lbfgs-steps 2000 --points 32 --no-gif
+   ```
 
 1. **Navier–Stokes: low-Reynolds-number flow around a cylinder** — exploratory
 
@@ -352,10 +244,9 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    no-slip wall enforcement, and a do-nothing outlet that fixes pressure.
 
    ```bash
-   uv run learnpdes train circular-couette --epochs 1500 --lbfgs-steps 2000 --points 32 --no-gif
    uv run learnpdes train cylinder --epochs 1500 --lbfgs-steps 2500 --points 45 --no-gif
-   uv run python -m examples.refine_fluid path/to/cylinder-run --points 81 --lbfgs-steps 3000
-   uv run python -m examples.plot_fluid path/to/refined-run --png
+   uv run learnpdes refine path/to/cylinder-run --points 81 --lbfgs-steps 3000
+   uv run learnpdes plot path/to/refined-run --png
    ```
 
    [Cylinder setup and validation](docs/tutorials/cylinder-flow-pinn-pytorch.md)
@@ -366,6 +257,44 @@ ODEs and PDEs in that plan are proposed, not yet runnable.
    values come from numerical simulations and are excluded from comparison.
    No simulation data are allowed, even for validation. With no selected exact
    reference for this setup, cylinder solution accuracy remains unverified.
+
+   **Recorded result — Re=20, seed 0.** The refined checkpoint passes its
+   single-run physics checks. After 1,500 Adam and 2,500 L-BFGS updates on 2,025
+   interior points, it received 3,000 L-BFGS updates on 6,561 fixed points.
+   The table reports the worst value across two independent evaluation sets
+   of 4,096 and 8,192 interior points, with 256 samples per boundary.
+
+   | Diagnostic | Measured value |
+   | --- | ---: |
+   | Continuity RMS | 0.00639 |
+   | Horizontal momentum RMS | 0.00896 |
+   | Vertical momentum RMS | 0.00595 |
+   | Outlet flux error against prescribed inlet flux | 0.00232% |
+
+   ![Cylinder PINN training convergence through 7,000 optimizer updates: speed, pressure, velocity components, and loss](assets/examples/cylinder/plots/training.gif)
+
+   The GIF replays 47 saved prediction checkpoints from the initial model through
+   the final refinement, with fixed colour scales. This is optimizer progress
+   for a steady flow, not physical-time evolution. The loss changes when
+   refinement switches to a new, denser collocation set.
+
+   [Interactive fields](assets/examples/cylinder/plots/flow-fields.html) ·
+   [Equation residuals](assets/examples/cylinder/plots/equation-residuals.html) ·
+   [Full channel](assets/examples/cylinder/plots/full-channel.html) ·
+   [Verification report](assets/verification/cylinder/20260927T131815.547280Z-deeed8d6.json)
+
+   Regenerate the animation from the saved run and its parent:
+
+   ```bash
+   uv run learnpdes plot path/to/refined-run --training-gif
+   ```
+
+   **Full-field accuracy and repeatability remain unverified.** A separate run
+   from scratch missed the 0.01 momentum-RMS threshold; both results are in the
+   [fluid scenario log](docs/fluid-scenario-log.md). These reported checks use
+   equations, boundary conditions, and prescribed flux only. This historical
+   checkpoint predates collocation recording, so its training points cannot
+   be overlaid.
 
 ### **Installation**
 
@@ -399,6 +328,32 @@ Ensure you have the following installed on your system:
 
 4. **Run the tests**:
 
+   `tests/scenarios/` checks scenario physics. `tests/workflows/` runs training,
+   export, and saved-run workflows.
+
    ```bash
    uv run python -m unittest discover -s tests -p "test*.py"
    ```
+
+5. **Check code quality**:
+
+   Install the documentation dependencies so the type checker can also inspect
+   the website hooks, then run the same checks as CI:
+
+   ```bash
+   uv sync --locked --group docs
+   uv run ruff check .
+   uv run ruff format --check .
+   uv run --group docs pyright
+   uv run lizard -l python -C 12 -L 100 -a 14 -w learnpdes docs/website tests
+   ```
+
+   Ruff requires function annotations and limits branching. Pyright checks the
+   package, tests, and website code against the project virtual environment.
+   Lizard checks complexity and function length using Codacy's analyzer. The
+   local check allows up to 14 parameters to retain the public training and
+   plotting APIs and named CLI options. Codacy still applies its own parameter
+   limits.
+
+   Generated example figures and their bundled Plotly runtime are excluded from
+   Codacy; their source code, templates, website assets, and tests remain checked.

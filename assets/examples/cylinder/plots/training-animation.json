@@ -1,0 +1,477 @@
+{
+  "schema_version": 1,
+  "description": "Actual saved prediction snapshots; no temporal interpolation or retraining.",
+  "run_id": "20260927T131815.547280Z-deeed8d6",
+  "checkpoint_sha256": "3e7184ef7255ae4640d3a34dc14f85959a65589517f67aee5c0faaac4f9d0325",
+  "sources": [
+    {
+      "run_id": "20260927T131019.195230Z-feffa77b",
+      "html_sha256": "76c049e73ec5275647dd700af04fa80ef1eee289f617b289b5518b1156166aab"
+    },
+    {
+      "run_id": "20260927T131815.547280Z-deeed8d6",
+      "html_sha256": "3c3a1071433049ec3d3eede3eaa94ec99244d2b7c84a7b2b4db8263e9ef6e8b8"
+    }
+  ],
+  "frames": [
+    {
+      "step": 0,
+      "local_step": 0,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.7977111339569092,
+      "collocation_recorded": false
+    },
+    {
+      "step": 1,
+      "local_step": 1,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.5650897026062012,
+      "collocation_recorded": false
+    },
+    {
+      "step": 2,
+      "local_step": 2,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.4676947593688965,
+      "collocation_recorded": false
+    },
+    {
+      "step": 3,
+      "local_step": 3,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.4892959594726562,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4,
+      "local_step": 4,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.501938819885254,
+      "collocation_recorded": false
+    },
+    {
+      "step": 6,
+      "local_step": 6,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.4529025554656982,
+      "collocation_recorded": false
+    },
+    {
+      "step": 8,
+      "local_step": 8,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.4000316858291626,
+      "collocation_recorded": false
+    },
+    {
+      "step": 11,
+      "local_step": 11,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.4263296127319336,
+      "collocation_recorded": false
+    },
+    {
+      "step": 14,
+      "local_step": 14,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.3910833597183228,
+      "collocation_recorded": false
+    },
+    {
+      "step": 19,
+      "local_step": 19,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.3832526206970215,
+      "collocation_recorded": false
+    },
+    {
+      "step": 26,
+      "local_step": 26,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.359452247619629,
+      "collocation_recorded": false
+    },
+    {
+      "step": 35,
+      "local_step": 35,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.3245387077331543,
+      "collocation_recorded": false
+    },
+    {
+      "step": 47,
+      "local_step": 47,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.2733913660049438,
+      "collocation_recorded": false
+    },
+    {
+      "step": 63,
+      "local_step": 63,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 1.1082146167755127,
+      "collocation_recorded": false
+    },
+    {
+      "step": 85,
+      "local_step": 85,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.8356324434280396,
+      "collocation_recorded": false
+    },
+    {
+      "step": 114,
+      "local_step": 114,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.6369695067405701,
+      "collocation_recorded": false
+    },
+    {
+      "step": 154,
+      "local_step": 154,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.5108604431152344,
+      "collocation_recorded": false
+    },
+    {
+      "step": 207,
+      "local_step": 207,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.42499685287475586,
+      "collocation_recorded": false
+    },
+    {
+      "step": 278,
+      "local_step": 278,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.3824980854988098,
+      "collocation_recorded": false
+    },
+    {
+      "step": 374,
+      "local_step": 374,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.3418346643447876,
+      "collocation_recorded": false
+    },
+    {
+      "step": 503,
+      "local_step": 503,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.2959030270576477,
+      "collocation_recorded": false
+    },
+    {
+      "step": 676,
+      "local_step": 676,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.277147114276886,
+      "collocation_recorded": false
+    },
+    {
+      "step": 910,
+      "local_step": 910,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.2402496039867401,
+      "collocation_recorded": false
+    },
+    {
+      "step": 1223,
+      "local_step": 1223,
+      "stage": 0,
+      "phase": "Adam",
+      "count": 2025,
+      "loss": 0.2254955768585205,
+      "collocation_recorded": false
+    },
+    {
+      "step": 1645,
+      "local_step": 1645,
+      "stage": 0,
+      "phase": "L-BFGS",
+      "count": 2025,
+      "loss": 0.1642213761806488,
+      "collocation_recorded": false
+    },
+    {
+      "step": 2212,
+      "local_step": 2212,
+      "stage": 0,
+      "phase": "L-BFGS",
+      "count": 2025,
+      "loss": 0.009414147585630417,
+      "collocation_recorded": false
+    },
+    {
+      "step": 2975,
+      "local_step": 2975,
+      "stage": 0,
+      "phase": "L-BFGS",
+      "count": 2025,
+      "loss": 0.0018695149337872863,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4000,
+      "local_step": 4000,
+      "stage": 0,
+      "phase": "L-BFGS",
+      "count": 2025,
+      "loss": 0.0006150649860501289,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4000,
+      "local_step": 0,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.006631362251937389,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4001,
+      "local_step": 1,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.006547699216753244,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4002,
+      "local_step": 2,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0064467331394553185,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4004,
+      "local_step": 4,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.006344246678054333,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4006,
+      "local_step": 6,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0061592282727360725,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4009,
+      "local_step": 9,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.005787004251033068,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4014,
+      "local_step": 14,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.005301439203321934,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4023,
+      "local_step": 23,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0047247037291526794,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4035,
+      "local_step": 35,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.004140893928706646,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4055,
+      "local_step": 55,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0033266006503254175,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4085,
+      "local_step": 85,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0025781646836549044,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4133,
+      "local_step": 133,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.002137669362127781,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4208,
+      "local_step": 208,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0017094917129725218,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4325,
+      "local_step": 325,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0014228810323402286,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4506,
+      "local_step": 506,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0011030518217012286,
+      "collocation_recorded": false
+    },
+    {
+      "step": 4790,
+      "local_step": 790,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0008547439356334507,
+      "collocation_recorded": false
+    },
+    {
+      "step": 5232,
+      "local_step": 1232,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.0006071758107282221,
+      "collocation_recorded": false
+    },
+    {
+      "step": 5923,
+      "local_step": 1923,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.00035497135831974447,
+      "collocation_recorded": false
+    },
+    {
+      "step": 7000,
+      "local_step": 3000,
+      "stage": 1,
+      "phase": "L-BFGS refinement",
+      "count": 6561,
+      "loss": 0.00017762674542609602,
+      "collocation_recorded": false
+    }
+  ],
+  "frame_duration_ms": 250,
+  "final_hold_ms": 3000,
+  "display_bounds": {
+    "x": [
+      0,
+      8
+    ],
+    "y": [
+      0,
+      4.1
+    ]
+  },
+  "fixed_field_ranges": [
+    [
+      0.0,
+      2.1955173015594482
+    ],
+    [
+      -0.6319202780723572,
+      3.247821092605591
+    ],
+    [
+      -0.25089120864868164,
+      2.1832053661346436
+    ],
+    [
+      -1.0121464729309082,
+      1.0121464729309082
+    ]
+  ],
+  "fixed_log_loss_range": [
+    -3.900491641505303,
+    0.4047199081940872
+  ],
+  "collocation": "Recorded point sets shown when available; absent historical samples are not reconstructed.",
+  "gif_sha256": "42eddf2789b04325c51567d25d08b1f217b38dac194b8fb42f6f446041a90ccd"
+}

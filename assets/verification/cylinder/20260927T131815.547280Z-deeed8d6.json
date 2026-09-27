@@ -1,0 +1,173 @@
+{
+  "scenario": "cylinder",
+  "training_seed": 0,
+  "reference_type": "none",
+  "reference_implementation": null,
+  "reference_formula": null,
+  "reference_source": null,
+  "pressure_gauge": "Outlet normal stress u_x/Re-p=0",
+  "thresholds": {
+    "pde_rms": 0.01,
+    "boundary_rms": 0.001,
+    "hard_boundary_rms": 3.814697265625e-06,
+    "relative_l2": null,
+    "max_absolute_error": null,
+    "characteristic_output_scales": [
+      1,
+      1,
+      1
+    ]
+  },
+  "evaluations": [
+    {
+      "interior_count": 4096,
+      "boundary_count_per_edge": 256,
+      "seed": 2027,
+      "metrics": {
+        "continuity_rms": 0.005092604497372523,
+        "momentum_u_rms": 0.007166894879651806,
+        "momentum_v_rms": 0.005603960634664956,
+        "inlet_u_rms": 1.1175870895385742e-08,
+        "inlet_v_rms": 0.0,
+        "outlet_normal_rms": 0.0001438988110749051,
+        "outlet_tangent_rms": 0.00012552610132843256,
+        "bottom_u_rms": 0.0,
+        "bottom_v_rms": 0.0,
+        "top_u_rms": 0.0,
+        "top_v_rms": 0.0,
+        "cylinder_u_rms": 5.018981710236403e-07,
+        "cylinder_v_rms": 3.4141822879973915e-07,
+        "drag": 5.577709197998047,
+        "lift": 0.008111469447612762,
+        "pressure_drop": 2.9530436992645264,
+        "inlet_flow_rate": 4.09999942779541,
+        "outlet_flow_rate": 4.099905014038086,
+        "mass_balance_relative_error": 2.3027745688833843e-05,
+        "outlet_flow_relative_error": 2.3167307783831032e-05
+      },
+      "checks": {
+        "continuity_rms": true,
+        "momentum_u_rms": true,
+        "momentum_v_rms": true,
+        "inlet_u_rms": true,
+        "inlet_v_rms": true,
+        "outlet_normal_rms": true,
+        "outlet_tangent_rms": true,
+        "bottom_u_rms": true,
+        "bottom_v_rms": true,
+        "top_u_rms": true,
+        "top_v_rms": true,
+        "cylinder_u_rms": true,
+        "cylinder_v_rms": true,
+        "outlet_flow_relative_error": true
+      },
+      "passed": true
+    },
+    {
+      "interior_count": 8192,
+      "boundary_count_per_edge": 256,
+      "seed": 1729,
+      "metrics": {
+        "continuity_rms": 0.006385379415651811,
+        "momentum_u_rms": 0.008957641115381465,
+        "momentum_v_rms": 0.005953376890545235,
+        "inlet_u_rms": 1.5359765015432458e-08,
+        "inlet_v_rms": 0.0,
+        "outlet_normal_rms": 0.00014383449160959572,
+        "outlet_tangent_rms": 0.00012682120723184198,
+        "bottom_u_rms": 0.0,
+        "bottom_v_rms": 0.0,
+        "top_u_rms": 0.0,
+        "top_v_rms": 0.0,
+        "cylinder_u_rms": 3.895930547059834e-07,
+        "cylinder_v_rms": 2.796236060476076e-07,
+        "drag": 5.577709197998047,
+        "lift": 0.008111469447612762,
+        "pressure_drop": 2.9530436992645264,
+        "inlet_flow_rate": 4.09999942779541,
+        "outlet_flow_rate": 4.099905014038086,
+        "mass_balance_relative_error": 2.3027745688833843e-05,
+        "outlet_flow_relative_error": 2.3167307783831032e-05
+      },
+      "checks": {
+        "continuity_rms": true,
+        "momentum_u_rms": true,
+        "momentum_v_rms": true,
+        "inlet_u_rms": true,
+        "inlet_v_rms": true,
+        "outlet_normal_rms": true,
+        "outlet_tangent_rms": true,
+        "bottom_u_rms": true,
+        "bottom_v_rms": true,
+        "top_u_rms": true,
+        "top_v_rms": true,
+        "cylinder_u_rms": true,
+        "cylinder_v_rms": true,
+        "outlet_flow_relative_error": true
+      },
+      "passed": true
+    }
+  ],
+  "single_run_checks_passed": true,
+  "project_acceptance": false,
+  "limitations": "No admissible exact solution for this setup. Residuals and flux do not bound full-field error.",
+  "run_id": "20260927T131815.547280Z-deeed8d6",
+  "training_settings": {
+    "seed": 0,
+    "device": "cpu",
+    "dtype": "torch.float32",
+    "model": {
+      "input_dim": 2,
+      "output_dim": 3,
+      "hidden_dim": 64,
+      "num_hidden_layers": 4,
+      "activation": "Tanh"
+    },
+    "training_samples": 6561,
+    "fluid": {
+      "name": "cylinder",
+      "reynolds": 20.0,
+      "x_bounds": [
+        0.0,
+        22.0
+      ],
+      "y_bounds": [
+        0.0,
+        4.1
+      ],
+      "center": [
+        2.0,
+        2.0
+      ],
+      "radius": 0.5,
+      "interior_samples": 6561,
+      "samples_per_boundary": 324,
+      "boundary_weight": 10
+    },
+    "training_bounds": [
+      [
+        0.0006217996124178171,
+        0.00022740615531802175
+      ],
+      [
+        21.991148279979825,
+        4.098787452280521
+      ]
+    ],
+    "refined_from": "assets/runs/cylinder/20260927T131019.195230Z-feffa77b/model.pt",
+    "points_per_axis": 81
+  },
+  "training": {
+    "optimizer": "Adam + L-BFGS",
+    "learning_rate": 0.001,
+    "epochs": 0,
+    "lbfgs_steps": 3000,
+    "resample_every": 100
+  },
+  "checkpoint_sha256": "3e7184ef7255ae4640d3a34dc14f85959a65589517f67aee5c0faaac4f9d0325",
+  "evaluated_at": "2026-09-27T13:50:05.225348+00:00",
+  "evaluator_source": {
+    "commit": "c983321073a2b3fe8cad3c0dee193650b8fe7e12",
+    "dirty": true
+  }
+}

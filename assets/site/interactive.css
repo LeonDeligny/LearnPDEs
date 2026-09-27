@@ -1,0 +1,25 @@
+.training-plot {
+  display: block;
+  width: 100%;
+  height: 960px;
+  margin: 0;
+  border: 0;
+  background: var(--paper);
+}
+
+.training-plot-cosinus {
+  height: 1160px;
+}
+
+.training-plot-poiseuille {
+  height: 1280px;
+}
+
+.training-plot-comparison { height: 1500px; }
+
+@media (max-width: 700px) {
+  .training-plot { height: 1410px; }
+  .training-plot-cosinus { height: 1640px; }
+  .training-plot-poiseuille { height: 1440px; }
+  .training-plot-comparison { height: 1920px; }
+}

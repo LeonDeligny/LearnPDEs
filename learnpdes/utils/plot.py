@@ -1,7 +1,19 @@
 """Plotly plotting entry points and optional GIF encoding."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from numpy.typing import ArrayLike
+from torch import Tensor
+
+if TYPE_CHECKING:
+    from learnpdes.utils.interactive import InteractivePlot
+
 import shutil
-import subprocess
+
+# FFmpeg receives an argument list and absolute paths, with no command shell.
+import subprocess  # nosec B404
 import tempfile
 from importlib.util import find_spec
 from pathlib import Path
@@ -14,7 +26,12 @@ from learnpdes.utils.plot_style import scientific_style
 from learnpdes.utils.utility import compute_normals, detach_to_numpy
 
 
-def get_plot_func(scenario: str, *, color_limits=None, cosinus_order=2):
+def get_plot_func(
+    scenario: str,
+    *,
+    color_limits: dict[str, tuple[float, float]] | None = None,
+    cosinus_order: int = 2,
+) -> InteractivePlot:
     """Create a Plotly checkpoint collector for any supported training scenario."""
     from learnpdes.utils.interactive import InteractivePlot
 
@@ -41,11 +58,7 @@ def create_gif(
     final_hold_ms: int = 2000,
 ) -> None:
     """Write looping GIFs with explicit millisecond delays, including a final hold."""
-    for delay in (duration_ms, final_hold_ms):
-        if not isinstance(delay, int) or not 10 <= delay <= 655350 or delay % 10:
-            raise ValueError(
-                'GIF delays must be multiples of 10 ms between 10 and 655350.'
-            )
+    _validate_gif_delays(duration_ms, final_hold_ms)
     files = sorted(
         Path(input_folder).glob('epoch_*.png'),
         key=lambda path: int(path.stem.split('_')[1]),
@@ -57,6 +70,7 @@ def create_gif(
         raise RuntimeError(
             'Install FFmpeg to encode animations. Rendered PNG frames have been retained.'
         )
+    ffmpeg = str(Path(ffmpeg).resolve())
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     # A numbered symlink sequence handles irregular checkpoint numbers without
@@ -64,58 +78,76 @@ def create_gif(
     with tempfile.TemporaryDirectory(
         prefix='.gif-', dir=output_path.parent
     ) as temporary:
-        folder = Path(temporary)
+        # Absolute paths cannot be interpreted as options or FFmpeg URL protocols.
+        folder = Path(temporary).resolve()
         for index, frame in enumerate(files):
             (folder / f'frame_{index:06d}.png').symlink_to(frame.resolve())
-        sequence = str(folder / 'frame_%06d.png')
-        palette = str(folder / 'palette.png')
         encoded = folder / 'animation.gif'
-        common = [
-            ffmpeg,
-            '-hide_banner',
-            '-loglevel',
-            'error',
-            '-y',
-            '-filter_threads',
-            '1',
-        ]
-        source = ['-framerate', f'1000/{duration_ms}', '-i', sequence]
-        commands = [
-            common
-            + source
-            + [
-                '-vf',
-                'palettegen=stats_mode=full',
-                '-frames:v',
-                '1',
-                '-update',
-                '1',
-                palette,
-            ],
-            common
-            + source
-            + [
-                '-i',
-                palette,
-                '-lavfi',
-                'paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
-                '-loop',
-                '0',
-                '-final_delay',
-                str(final_hold_ms // 10),
-                '-fps_mode',
-                'passthrough',
-                str(encoded),
-            ],
-        ]
+        commands = _gif_commands(ffmpeg, folder, duration_ms, final_hold_ms)
         for command in commands:
             try:
-                subprocess.run(command, check=True, capture_output=True, text=True)
+                # Fixed options, validated delays and generated local file paths only.
+                subprocess.run(  # nosec B603
+                    command, shell=False, check=True, capture_output=True, text=True
+                )
             except subprocess.CalledProcessError as error:
                 raise RuntimeError(
                     f'FFmpeg GIF encoding failed; PNG frames retained: {error.stderr.strip()}'
                 ) from error
         encoded.replace(output_path)
+
+
+def _validate_gif_delays(duration_ms: int, final_hold_ms: int) -> None:
+    for delay in (duration_ms, final_hold_ms):
+        if not isinstance(delay, int) or not 10 <= delay <= 655350 or delay % 10:
+            raise ValueError(
+                'GIF delays must be multiples of 10 ms between 10 and 655350.'
+            )
+
+
+def _gif_commands(
+    ffmpeg: str, folder: Path, duration_ms: int, final_hold_ms: int
+) -> list[list[str]]:
+    sequence = str(folder / 'frame_%06d.png')
+    palette = str(folder / 'palette.png')
+    common = [
+        ffmpeg,
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-y',
+        '-filter_threads',
+        '1',
+    ]
+    source = ['-framerate', f'1000/{duration_ms}', '-i', sequence]
+    return [
+        common
+        + source
+        + [
+            '-vf',
+            'palettegen=stats_mode=full',
+            '-frames:v',
+            '1',
+            '-update',
+            '1',
+            palette,
+        ],
+        common
+        + source
+        + [
+            '-i',
+            palette,
+            '-lavfi',
+            'paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
+            '-loop',
+            '0',
+            '-final_delay',
+            str(final_hold_ms // 10),
+            '-fps_mode',
+            'passthrough',
+            str(folder / 'animation.gif'),
+        ],
+    ]
 
 
 def error_metrics(prediction: ndarray, reference: ndarray) -> dict[str, float]:
@@ -135,10 +167,10 @@ def error_metrics(prediction: ndarray, reference: ndarray) -> dict[str, float]:
     }
 
 
-def value_range(*fields, symmetric=False):
+def value_range(*fields: ArrayLike, symmetric: bool = False) -> tuple[float, float]:
     """Return finite, nondegenerate colour limits without a rendering dependency."""
-    lo = min(float(np.min(field)) for field in fields)
-    hi = max(float(np.max(field)) for field in fields)
+    lo = min(float(np.min(np.asarray(field))) for field in fields)
+    hi = max(float(np.max(np.asarray(field))) for field in fields)
     if not np.isfinite([lo, hi]).all():
         raise ValueError('Colour limits require finite field values.')
     if symmetric:
@@ -150,9 +182,12 @@ def value_range(*fields, symmetric=False):
     return lo, hi
 
 
-def plot_xy(xy, *, show=True) -> go.Figure:
+def plot_xy(xy: Tensor | ArrayLike, *, show: bool = True) -> go.Figure:
     """Inspect mesh nodes interactively; return the figure for notebooks/export."""
-    xy = detach_to_numpy(xy) if hasattr(xy, 'detach') else np.asarray(xy)
+    values = detach_to_numpy(xy) if isinstance(xy, Tensor) else np.asarray(xy)
+    if isinstance(values, tuple):
+        raise TypeError('Plot coordinates must be a single array or tensor.')
+    xy = np.asarray(values)
     fig = go.Figure(
         go.Scattergl(
             x=xy[:, 0],
@@ -177,11 +212,18 @@ def plot_xy(xy, *, show=True) -> go.Figure:
     return fig
 
 
-def plot_mesh(xy, mesh_masks, *, show=True) -> go.Figure:
+def plot_mesh(
+    xy: Tensor, mesh_masks: dict[str, Tensor], *, show: bool = True
+) -> go.Figure:
     """Inspect boundary groups and normal directions with Plotly."""
     n_x, n_y = compute_normals(xy, mesh_masks['airfoil'])
-    coordinates = detach_to_numpy(xy)
-    masks = {name: detach_to_numpy(mask) for name, mask in mesh_masks.items()}
+    values = detach_to_numpy(xy)
+    if isinstance(values, tuple):
+        raise TypeError('Plot coordinates must be a single tensor.')
+    coordinates = np.asarray(values)
+    masks = {
+        name: np.asarray(detach_to_numpy(mask)) for name, mask in mesh_masks.items()
+    }
     fig = go.Figure()
     for name, mask in masks.items():
         fig.add_trace(

@@ -1,0 +1,36 @@
+{
+  "scenarios": [
+    {
+      "scenario": "kovasznay",
+      "run_id": "20260927T124950.024802Z-cb8877fb",
+      "report": "assets/verification/kovasznay/20260927T124950.024802Z-cb8877fb.json",
+      "single_run_checks_passed": true,
+      "reference_type": "analytical",
+      "project_acceptance": false
+    },
+    {
+      "scenario": "circular-couette",
+      "run_id": "20260927T134119.749576Z-013c30d9",
+      "report": "assets/verification/circular-couette/20260927T134119.749576Z-013c30d9.json",
+      "single_run_checks_passed": true,
+      "reference_type": "analytical",
+      "project_acceptance": false
+    },
+    {
+      "scenario": "cylinder",
+      "run_id": "20260927T131815.547280Z-deeed8d6",
+      "report": "assets/verification/cylinder/20260927T131815.547280Z-deeed8d6.json",
+      "single_run_checks_passed": true,
+      "reference_type": "none",
+      "project_acceptance": false
+    },
+    {
+      "scenario": "cylinder",
+      "run_id": "20260927T131816.937651Z-71199bef",
+      "report": "assets/verification/cylinder/20260927T131816.937651Z-71199bef.json",
+      "single_run_checks_passed": false,
+      "reference_type": "none",
+      "project_acceptance": false
+    }
+  ]
+}

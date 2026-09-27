@@ -1,13 +1,28 @@
 """Training and visualization checkpoints for PINN models."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 import numpy as np
-from torch.optim import Adam, LBFGS
+from torch import Tensor
+from torch.nn import Module
+from torch.optim import LBFGS, Adam, Optimizer
 
-from learnpdes.utils.utility import detach_to_numpy
+from learnpdes.model.fluid import FluidObjective
+from learnpdes.types import (
+    Analytical,
+    FieldEvaluation,
+    LossFunction,
+    LossHistory,
+    LossResult,
+    PlotOptions,
+    PointGroups,
+    TrainingParams,
+)
+from learnpdes.utils.artifacts import TrainingRun
+from learnpdes.utils.collocation import CollocationRecorder
 from learnpdes.utils.plot import create_gif, require_gif_export
+from learnpdes.utils.utility import detach_to_numpy
 
 
 def checkpoint_steps(epochs: int, max_frames: int = 80) -> set[int]:
@@ -27,23 +42,29 @@ def checkpoint_steps(epochs: int, max_frames: int = 80) -> set[int]:
 class Trainer:
     def __init__(
         self,
-        model_params: Callable,
-        loss: Callable,
-        training_params: dict,
-        plot: dict,
-        analytical: Callable | None = None,
+        model_params: Callable[[], Iterable[Tensor]],
+        loss: LossFunction,
+        training_params: TrainingParams,
+        plot: PlotOptions,
+        analytical: Analytical | None = None,
         *,
-        run=None,
-        model=None,
-        validation: Callable | None = None,
-        objective=None,
+        run: TrainingRun | None = None,
+        model: Module | None = None,
+        validation: Callable[[], dict[str, float]] | None = None,
+        objective: FluidObjective | None = None,
+        collocation: Callable[[], PointGroups] | None = None,
     ) -> None:
+        """Bind training callbacks, optimizer settings, and checkpoint exports."""
         self.loss = loss
         self.run = run
         self.model = model
         self.validation = validation
-        self.validation_result = None
+        self.validation_result: dict[str, float] | None = None
         self.objective = objective
+        self.collocation = collocation or getattr(
+            objective or getattr(loss, '__self__', None), 'collocation_points', None
+        )
+        self.collocation_history = CollocationRecorder()
         self.resample_every = training_params.get('resample_every', 100)
         self.lbfgs_steps = training_params.get('lbfgs_steps', 0)
         if self.resample_every < 1 or self.lbfgs_steps < 0:
@@ -52,7 +73,7 @@ class Trainer:
             raise ValueError(
                 'L-BFGS requires a fluid objective with fresh coordinate graphs.'
             )
-        self.component_history = []
+        self.component_history: list[dict[str, object]] = []
         self.model_params = list(model_params())
         self.completed_steps = 0
         self.learning_rate = training_params['learning_rate']
@@ -78,9 +99,9 @@ class Trainer:
         self.gif_path = Path(gif_path) if gif_path is not None else None
         self.duration_ms = plot.get('duration_ms', 100)
         self.final_hold_ms = plot.get('final_hold_ms', 2000)
-        self.loss_history = []
+        self.loss_history: LossHistory = []
         self.analytical = analytical
-        self.optimizer = Adam(self.model_params, lr=self.learning_rate)
+        self.optimizer: Optimizer = Adam(self.model_params, lr=self.learning_rate)
 
     def train(self) -> None:
         if self.run is not None:
@@ -109,6 +130,9 @@ class Trainer:
         except BaseException as error:
             if self.run is not None:
                 try:
+                    self.collocation_history.save(
+                        self.run.directory / 'collocation.json'
+                    )
                     self.run.save_training(
                         self.loss_history,
                         self.model,
@@ -133,96 +157,120 @@ class Trainer:
         output_dir = self.output_dir
         output_dir.mkdir(parents=True, exist_ok=True)
         if hasattr(self.plot_func, 'reset'):
-            self.plot_func.reset()
+            getattr(self.plot_func, 'reset')()
         self.loss_history.clear()
         self.component_history.clear()
+        self.collocation_history = CollocationRecorder()
         # Step N refers to exactly N completed optimizer updates. Evaluating at
         # the beginning of the next iteration keeps fields and loss in sync.
         for step in range(self.total_steps + 1):
-            if self.objective is not None and (
-                step == 0
-                or (step < self.nb_epochs and step % self.resample_every == 0)
-                or (step == self.nb_epochs and self.lbfgs_steps)
-            ):
-                self.objective.resample()
-            if step == self.nb_epochs and self.lbfgs_steps:
-                # One outer update per recorded step. Every line-search closure
-                # uses the same coordinates throughout the entire L-BFGS phase.
-                self.optimizer = LBFGS(
-                    self.model_params,
-                    lr=1.0,
-                    max_iter=1,
-                    max_eval=25,
-                    history_size=100,
-                    tolerance_grad=1e-9,
-                    tolerance_change=1e-12,
-                    line_search_fn='strong_wolfe',
-                )
+            self._prepare_step(step)
             self.optimizer.zero_grad()
-            loss, inputs, values, geometry_mask = self.loss()
-            loss_value = loss.item()
+            result = self.loss()
+            loss = result[0]
+            loss_value = float(loss.item())
             if not np.isfinite(loss_value):
                 raise RuntimeError(f'Non-finite loss at step {step}')
             self.loss_history.append((step, loss_value))
-            if self.objective is not None:
-                self.component_history.append(
-                    {
-                        'step': step,
-                        'phase': 'adam'
-                        if step < self.nb_epochs or not self.lbfgs_steps
-                        else 'lbfgs',
-                        **self.objective.components,
-                    }
-                )
+            self._record_components(step)
             if step in self.checkpoints:
-                print(f'Step {step}, Loss: {loss.item():.6e}', flush=True)
-                if self.objective is not None:
-                    print(
-                        ', '.join(
-                            f'{name}={value:.3e}'
-                            for name, value in self.objective.components.items()
-                        )
-                    )
-                evaluation = (
-                    self.evaluate()
-                    if self.evaluate is not None
-                    else {
-                        'inputs': detach_to_numpy(inputs),
-                        'f': detach_to_numpy(values),
-                        'geometry_mask': (
-                            detach_to_numpy(geometry_mask)
-                            if geometry_mask is not None
-                            else None
-                        ),
-                    }
-                )
-                self.plot_func(
-                    output_dir,
-                    epoch=step,
-                    loss=loss.item(),
-                    analytical=self.analytical,
-                    loss_history=self.loss_history,
-                    total_epochs=self.total_steps,
-                    **evaluation,
-                )
-            if step < self.total_steps:
-                if step >= self.nb_epochs:
-                    del loss
+                self._capture_checkpoint(step, result)
+            if step == self.total_steps:
+                break
+            if isinstance(self.optimizer, LBFGS):
+                # Release the evaluated graph before the fresh line-search closures.
+                del loss, result
+                self.optimizer.step(self._lbfgs_closure)
+            else:
+                loss.backward(retain_graph=self.objective is None)
+                self.optimizer.step()
+            self.completed_steps = step + 1
+        self._export()
 
-                    def closure():
-                        self.optimizer.zero_grad(set_to_none=True)
-                        value, *_ = self.loss()
-                        if not np.isfinite(value.item()):
-                            raise RuntimeError('Non-finite loss in L-BFGS closure')
-                        value.backward()
-                        return value
+    def _prepare_step(self, step: int) -> None:
+        if self.objective is not None and (
+            step == 0
+            or (step < self.nb_epochs and step % self.resample_every == 0)
+            or (step == self.nb_epochs and self.lbfgs_steps)
+        ):
+            self.objective.resample()
+        if step == self.nb_epochs and self.lbfgs_steps:
+            # One outer update per recorded step. Every line-search closure
+            # uses the same coordinates throughout the entire L-BFGS phase.
+            self.optimizer = LBFGS(
+                self.model_params,
+                lr=1.0,
+                max_iter=1,
+                max_eval=25,
+                history_size=100,
+                tolerance_grad=1e-9,
+                tolerance_change=1e-12,
+                line_search_fn='strong_wolfe',
+            )
 
-                    self.optimizer.step(closure)
-                else:
-                    loss.backward(retain_graph=self.objective is None)
-                    self.optimizer.step()
-                self.completed_steps = step + 1
+    def _record_components(self, step: int) -> None:
+        if self.objective is not None:
+            self.component_history.append(
+                {
+                    'step': step,
+                    'phase': 'adam'
+                    if step < self.nb_epochs or not self.lbfgs_steps
+                    else 'lbfgs',
+                    **self.objective.components,
+                }
+            )
+
+    def _capture_checkpoint(self, step: int, result: LossResult) -> None:
+        loss, inputs, values, geometry_mask = result
+        samples = self.collocation_history.capture(
+            step,
+            self.collocation()
+            if self.collocation
+            else {'equation': {'kind': 'pde', 'coordinates': inputs}},
+        )
+        print(f'Step {step}, Loss: {loss.item():.6e}', flush=True)
+        if self.objective is not None:
+            print(
+                ', '.join(
+                    f'{name}={value:.3e}'
+                    for name, value in self.objective.components.items()
+                )
+            )
+        evaluation: FieldEvaluation = (
+            self.evaluate()
+            if self.evaluate is not None
+            else {
+                'inputs': detach_to_numpy(inputs),
+                'f': detach_to_numpy(values),
+                'geometry_mask': (
+                    detach_to_numpy(geometry_mask)
+                    if geometry_mask is not None
+                    else None
+                ),
+            }
+        )
+        self.plot_func(
+            self.output_dir,
+            epoch=step,
+            loss=float(loss.item()),
+            analytical=self.analytical,
+            loss_history=self.loss_history,
+            total_epochs=self.total_steps,
+            collocation=samples,
+            **evaluation,
+        )
+
+    def _lbfgs_closure(self) -> float:
+        self.optimizer.zero_grad(set_to_none=True)
+        value, *_ = self.loss()
+        if not np.isfinite(value.item()):
+            raise RuntimeError('Non-finite loss in L-BFGS closure')
+        value.backward()
+        return float(value.item())
+
+    def _export(self) -> None:
         if self.run is not None:
+            self.collocation_history.save(self.run.directory / 'collocation.json')
             self.run.save_training(
                 self.loss_history,
                 self.model,
@@ -236,13 +284,13 @@ class Trainer:
             if self.run is not None:
                 self.run.update(validation=self.validation_result)
         if self.html_path is not None:
-            self.plot_func.write_html(self.html_path)
+            getattr(self.plot_func, 'write_html')(self.html_path)
             print(f'Saved interactive training figure: {self.html_path}')
         # Render after the last update, with fixed ranges across the entire run.
         if self.gif_path is not None:
             print(f'Rendering {len(self.checkpoints)} training checkpoints for GIF...')
             if hasattr(self.plot_func, 'write_frames'):
-                self.plot_func.write_frames(self.frame_dir)
+                getattr(self.plot_func, 'write_frames')(self.frame_dir)
             create_gif(
                 self.gif_path,
                 self.frame_dir,

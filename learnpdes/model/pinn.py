@@ -1,52 +1,44 @@
-"""
-Physics Informed Neural Network's loss will be an ODE,
-
-Examples:
-    1. Exponential ODE, f = exp
-
-        f' = f, f(0) = 1.
-
-    2. Cosinus ODE, f = cos
-
-        f'' = -f, f(0) = 1, f'(0) = 0.
-
-Unique analytical solution is f = exp.
-"""
+"""Physics-informed neural networks with configurable coordinate transformations."""
 
 # ======= Imports =======
 
-from torch.nn.init import (
-    zeros_,
-    xavier_uniform_,
-)
+from functools import partial
+
+# from complexPyTorch.complexLayers import ComplexLinear
+from typing import Callable, TypedDict
 
 from torch import Tensor
-from learnpdes.model.derivatives import tanh_derivatives
-from learnpdes.model.encodings import identity
-from functools import partial
-# from complexPyTorch.complexLayers import ComplexLinear
-
-from typing import (
-    Union,
-    Callable,
-)
 from torch.nn import (
     Linear,
     Module,
     Sequential,
+)
+from torch.nn.init import (
+    xavier_uniform_,
+    zeros_,
 )
 
 from learnpdes import (
     device,
     device_type,
 )
+from learnpdes.model.derivatives import tanh_derivatives
+from learnpdes.model.encodings import identity
 
 # ======= Class =======
 
 
+class NNParams(TypedDict):
+    input_dim: int
+    hidden_dim: int
+    output_dim: int
+    num_hidden_layers: int
+    activation: type[Module]
+
+
 class PINN(Module):
-    """
-    Physics Informed Neural Network (PINN) class.
+    """Physics Informed Neural Network (PINN) class.
+
     This class implements a PINN for solving ODEs using a neural network.
     """
 
@@ -56,21 +48,22 @@ class PINN(Module):
 
     def __init__(
         self: 'PINN',
-        nn_params: dict,
+        nn_params: NNParams,
         input_homeo: Callable[[Tensor], Tensor],
         output_homeo: Callable[[Tensor], Tensor],
-        encoding: Union[partial, Callable[[Tensor], Tensor]],
+        encoding: partial | Callable[[Tensor], Tensor],
         *,
         output_transform: Callable[[Tensor, Tensor], Tensor] | None = None,
     ) -> None:
+        """Construct the network with its input and output transformations."""
         super(PINN, self).__init__()
 
         # NN parameters
-        self.input_dim: int = nn_params.get('input_dim')
-        self.hidden_dim: int = nn_params.get('hidden_dim')
-        self.output_dim: int = nn_params.get('output_dim')
-        self.num_hidden_layers: int = nn_params.get('num_hidden_layers')
-        self.activation: Module = nn_params.get('activation')
+        self.input_dim = nn_params['input_dim']
+        self.hidden_dim = nn_params['hidden_dim']
+        self.output_dim = nn_params['output_dim']
+        self.num_hidden_layers = nn_params['num_hidden_layers']
+        self.activation = nn_params['activation']
 
         # Homeomorphisms and encodings
         self.input_homeo = input_homeo
@@ -84,18 +77,18 @@ class PINN(Module):
 
     def get_encoding_dim(self) -> int:
         if isinstance(self.encoding, partial):
-            return self.encoding.keywords.get('dim')
+            return int((self.encoding.keywords or {}).get('dim', self.input_dim))
         else:
             print('Using no encoding')
             return self.input_dim
 
     def forward(self, x: Tensor) -> Tensor:
-        """
-        forward = homeo o NN o fourier o homeo
-            - input_homeo: [n, .] -> [n, .]
-            - encoding: [n, .] -> [n, . * m]
-            - NN: [n, . * m] -> [n, .]
-            - output_homeo: [n, .] -> [n, .]
+        """Forward = homeo o NN o fourier o homeo.
+
+        - input_homeo: [n, .] -> [n, .]
+        - encoding: [n, .] -> [n, . * m]
+        - NN: [n, . * m] -> [n, .]
+        - output_homeo: [n, .] -> [n, .]
         """
         input_homeo = self.input_homeo(x)
         encoding = self.encoding(input_homeo)
@@ -122,8 +115,8 @@ class PINN(Module):
         return tanh_derivatives(self.network, x, order)
 
     def construct_nn(self) -> Sequential:
-        """
-        Using standard neural network definition.
+        """Using standard neural network definition.
+
         By default add a biais.
         """
         # Construct NN
@@ -146,9 +139,9 @@ class PINN(Module):
 
         return network
 
-    def _initialize_weights(self):
-        """
-        Fill the input Tensor with values
+    def _initialize_weights(self) -> None:
+        """Fill the input Tensor with values.
+
         using a Xavier uniform distribution.
         Biais initialized to 0.
         """

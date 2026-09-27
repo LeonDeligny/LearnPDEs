@@ -13,6 +13,22 @@ from torch.nn import Linear, Sequential, Tanh
 from torch.nn.functional import linear
 
 
+def _tanh_coefficients(
+    coefficients: torch.Tensor, degrees: torch.Tensor, order: int
+) -> torch.Tensor:
+    values = [coefficients[0].tanh()]
+    complement = [1 - values[0].square()]
+    derivative = coefficients[1:] * degrees
+    for degree in range(1, order + 1):
+        values.append(
+            (derivative[:degree] * torch.stack(complement).flip(0)).sum(0) / degree
+        )
+        if degree < order:
+            series = torch.stack(values)
+            complement.append(-(series * series.flip(0)).sum(0))
+    return torch.stack(values)
+
+
 def tanh_derivatives(
     network: Sequential, x: torch.Tensor, order: int
 ) -> list[torch.Tensor]:
@@ -40,18 +56,7 @@ def tanh_derivatives(
                     (coefficients[:1] + layer.bias, coefficients[1:])
                 )
         elif isinstance(layer, Tanh):
-            values = [coefficients[0].tanh()]
-            complement = [1 - values[0].square()]
-            derivative = coefficients[1:] * degrees
-            for degree in range(1, order + 1):
-                values.append(
-                    (derivative[:degree] * torch.stack(complement).flip(0)).sum(0)
-                    / degree
-                )
-                if degree < order:
-                    series = torch.stack(values)
-                    complement.append(-(series * series.flip(0)).sum(0))
-            coefficients = torch.stack(values)
+            coefficients = _tanh_coefficients(coefficients, degrees, order)
         else:
             raise ValueError('Taylor derivatives support only Linear and Tanh layers.')
     return [value * factorial(degree) for degree, value in enumerate(coefficients)]

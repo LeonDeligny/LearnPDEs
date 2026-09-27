@@ -89,6 +89,7 @@
     <section class="panel"><h2>Learned solutions</h2><p class="muted">Green shading marks training; amber marks the far band beyond ±2π. The dashed curve is cos(x).</p><div id="solution" class="chart"></div></section>
     <section class="panel"><h2>Absolute error across the domain</h2><p class="muted">Logarithmic scale: each decade is a factor of ten.</p><div id="error" class="chart"></div></section>
   </div>
+  <section><h2>Collocation locations</h2><p id="collocation-note" class="muted">Coordinates where each model evaluates its training constraints. Rows identify models; the vertical position is not a solution value.</p><div id="collocation"></div></section>
   <section>
     <div class="convergence-header"><div><h2>Convergence for every order</h2><p class="muted">MSE against cos(x), excluded from training. Dots mark the selected step.</p></div>
       <label for="region">Evaluation region <select id="region"></select></label>
@@ -198,7 +199,11 @@
     const prediction = [{x: data.coordinates, y: data.reference, type: 'scatter', mode: 'lines',
       name: 'cos(x)', line: {color: '#222', width: 1.8, dash: 'dash'},
       hovertemplate: 'x %{x:.4f}<br>cos(x) %{y:.5g}<extra></extra>'}];
-    const errors = [], convergence = [];
+    const errors = [], convergence = [], collocation = [];
+    const pointStyles = {pde: ['PDE points', '#172554', 'line-ns'], boundary: ['Boundary', '#c2410c', 'diamond'],
+      anchor: ['Initial / pressure anchors', '#be123c', 'star'], integral: ['Flux quadrature', '#7e22ce', 'cross']};
+    const seenKinds = new Set();
+    let missingPoints = 0;
     get('metrics').replaceChildren();
     for (const run of selected) {
       const frame = run.frames[index], name = `Order ${run.order}`, line = {color: color(run.order), width: 2.2};
@@ -221,10 +226,26 @@
         const cell = document.createElement('td'); cell.dataset.region = key; cell.textContent = fmt(frame.mse[key]); tr.append(cell);
       }
       get('metrics').append(tr);
+      if (run.collocation === null) missingPoints++;
+      for (const [group, points] of Object.entries(run.collocation || {})) {
+        const [label, shade, symbol] = pointStyles[points.kind];
+        collocation.push({x: points.coordinates.map(xy => xy[0]), y: points.coordinates.map(() => selected.indexOf(run)),
+          type: 'scatter', mode: 'markers', name: label, legendgroup: points.kind, showlegend: !seenKinds.has(points.kind),
+          marker: {color: shade, symbol, size: points.kind === 'pde' ? 9 : 12, line: {width: 1, color: shade}},
+          hovertemplate: `x %{x:.6g}<br>${name} · ${group} (${points.coordinates.length} points)<extra></extra>`});
+        seenKinds.add(points.kind);
+      }
     }
+    get('collocation-note').textContent = missingPoints ?
+      `Training coordinates were not recorded for ${missingPoints} selected model(s); no locations are inferred from the evaluation grid.` :
+      'Actual training coordinates. Rows identify models; the vertical position is not a solution value. Anchors can overlap equation points.';
     const pad = .08 * (high - low);
     const [mseLow, mseHigh] = mseBounds[region];
     return Promise.all([
+      Plotly.react('collocation', collocation, {...base, height: Math.max(230, 55 * selected.length + 130),
+        xaxis: {...axis, ...ticks}, yaxis: {...axis, tickvals: selected.map((_, i) => i),
+          ticktext: selected.map(run => `Order ${run.order}`), range: [-.5, Math.max(.5, selected.length-.5)]},
+        showlegend: true, legend: {orientation: 'h', y: 1.3}, shapes: domainShapes}, config),
       Plotly.react('solution', prediction, {...base, xaxis: {...axis, ...ticks},
         yaxis: {...axis, title: {text: 'f(x)'}, range: [low - pad, high + pad]}, shapes: domainShapes}, config),
       Plotly.react('error', errors, {...base, xaxis: {...axis, ...ticks},
