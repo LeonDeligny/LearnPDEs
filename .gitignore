@@ -1,5 +1,5 @@
 gifs/
-plots/
+/plots/
 assets/*_frames/
 assets/runs/
 assets/comparisons/
@@ -9,6 +9,8 @@ __pycache__/
 .pytest_cache/
 *.pyc
 .venv/
+.venv-docs/
+/site/
 
 .coverage
 .coverage.*

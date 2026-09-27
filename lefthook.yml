@@ -7,3 +7,6 @@ pre-commit:
     ruff-format:
       glob: "*.py"
       run: uv run ruff format --check {staged_files}
+    pyright:
+      glob: "*.py"
+      run: uv run --group docs pyright
