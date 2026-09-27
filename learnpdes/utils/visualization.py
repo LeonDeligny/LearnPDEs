@@ -139,6 +139,8 @@ class ModelEvaluator:
             'f': tuple(values[:, i] for i in range(3)) if flow else values,
             'geometry_mask': None,
         }
+        if self.scenario == SOLENOIDAL_FLOW_SCENARIO:
+            result['pressure_label'] = 'Pressure p (not modeled)'
         if self.grid.triangulation is not None:
             result.update(
                 triangulation=self.grid.triangulation,

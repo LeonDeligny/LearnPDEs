@@ -55,6 +55,7 @@ class Trainer:
         self.dim_plot = plot.get('input_dim')
         self.plot_func = plot.get('plot_func')
         self.evaluate = plot.get('evaluate')
+        self.loss_history = []
 
         # Analytical solution if any
         self.analytical = analytical
@@ -79,6 +80,7 @@ class Trainer:
                 self.optimizer.zero_grad()
 
                 loss, inputs, f, geometry_mask = self.loss()
+                self.loss_history.append((epoch, loss.item()))
 
                 loss.backward(retain_graph=True)
                 self.optimizer.step()
@@ -103,6 +105,8 @@ class Trainer:
                         epoch=epoch,
                         loss=loss,
                         analytical=self.analytical,
+                        loss_history=self.loss_history,
+                        total_epochs=self.nb_epochs,
                         **evaluation,
                     )
 

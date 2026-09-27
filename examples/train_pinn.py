@@ -71,6 +71,9 @@ def evaluate(model: PINN, scenario: str, analytical: Callable) -> dict[str, floa
         return {
             'rmse': error.square().mean().sqrt().item(),
             'max_error': error.abs().max().item(),
+            'relative_l2': (
+                torch.linalg.vector_norm(error) / torch.linalg.vector_norm(exact)
+            ).item(),
         }
 
 
@@ -125,6 +128,7 @@ def main() -> None:
     print(f'Final loss: {final_loss.item():.6e}')
     print(f'Final RMSE: {final["rmse"]:.6e}')
     print(f'Maximum absolute error: {final["max_error"]:.6e}')
+    print(f'Relative L2 error: {final["relative_l2"]:.6e}')
 
 
 if __name__ == '__main__':

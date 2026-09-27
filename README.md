@@ -22,6 +22,18 @@ differentiation, and loss functions, with runnable code and training animations.
 
 Start with the [tutorial setup and running instructions](docs/tutorials/README.md).
 
+The tutorials also have a static documentation site prepared for GitHub Pages.
+To preview it locally without installing the training dependencies:
+
+```bash
+UV_PROJECT_ENVIRONMENT=.venv-docs uv run --locked --only-group docs mkdocs serve
+```
+
+Open <http://127.0.0.1:8000/LearnPDEs/>. See the
+[website launch guide](maintenance/website-launch.md) for validation, the manual
+publishing workflow, Search Console setup, and sharing drafts. The website is
+not deployed yet; pushes and pull requests only build and check it.
+
 Training plots evaluate a separate visualization grid (300 × 300 for Laplace,
 300 points for ODEs); `main(..., visualization_resolution=300)` controls it
 without changing the collocation points. Laplace fields use
@@ -30,6 +42,13 @@ Airfoil plots evaluate a refined copy of the SU2 fluid mesh, preserving its
 boundary edges, solid interior, and concentration of points near the surface.
 More visualization samples reveal the learned solution; they do not improve
 the trained model or replace independent numerical validation.
+
+Frames are 1600 × 900 pixels with fixed panel and colorbar positions. Scalar
+problems show prediction, analytical reference, signed error, and objective
+convergence. Titles report scientific-notation loss, discrete relative L₂ error,
+and maximum absolute error on the visualization samples. Flow plots label all
+three fields and omit error metrics when no reference is available. The tutorial
+runner also reports relative L₂ error on its separate validation grid.
 
 ## **Objectives**
 
