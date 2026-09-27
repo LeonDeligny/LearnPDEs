@@ -54,6 +54,7 @@ class Trainer:
         # Plotting parameters
         self.dim_plot = plot.get('input_dim')
         self.plot_func = plot.get('plot_func')
+        self.evaluate = plot.get('evaluate')
 
         # Analytical solution if any
         self.analytical = analytical
@@ -86,18 +87,23 @@ class Trainer:
                     print(f'Epoch {epoch}, Loss: {loss}')
 
                     # Back to CPU for plotting
-                    x_ = detach_to_numpy(inputs)
-                    f_ = detach_to_numpy(f)
+                    evaluation = (
+                        self.evaluate()
+                        if self.evaluate is not None
+                        else {
+                            'inputs': detach_to_numpy(inputs),
+                            'f': detach_to_numpy(f),
+                            'geometry_mask': geometry_mask,
+                        }
+                    )
                     # res_ = detach_to_numpy(res)
 
                     self.plot_func(
                         output_dir,
                         epoch=epoch,
-                        inputs=x_,
-                        f=f_,
                         loss=loss,
-                        geometry_mask=geometry_mask,
                         analytical=self.analytical,
+                        **evaluation,
                     )
 
                     # self.plot_func(

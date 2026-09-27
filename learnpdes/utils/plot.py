@@ -16,6 +16,7 @@ from pathlib import Path
 from numpy import ndarray
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from matplotlib.collections import LineCollection
 from matplotlib.tri import Triangulation
 from matplotlib.colors import (
     Normalize,
@@ -95,8 +96,9 @@ def save_plot(
     analytical: Callable,
 ) -> None:
 
-    inputs = inputs[geometry_mask]
-    f = f[geometry_mask]
+    if geometry_mask is not None:
+        inputs = inputs[geometry_mask]
+        f = f[geometry_mask]
 
     plt.figure()
     plt.plot(inputs, f, label='NN Prediction')
@@ -125,11 +127,12 @@ def create_plot(
             f"but 'x1' and 'x2' have {x1.size} elements."
         )
 
-    mesh = ax.scatter(
+    mesh = ax.pcolormesh(
         x1,
         x2,
-        c=data,
+        data,
         cmap='viridis',
+        shading='nearest',
     )
     ax.set_title(title)
     ax.set_xlabel('x')
@@ -146,6 +149,8 @@ def save_airfoil_plot(
     loss: float,
     geometry_mask: Union[ndarray, None],
     analytical: None = None,
+    triangulation: Triangulation | None = None,
+    boundary_edges: ndarray | None = None,
 ) -> None:
     """
     Save a 2D plot of the model output (u, v, p) using triangulation.
@@ -158,7 +163,7 @@ def save_airfoil_plot(
     u, v, p = (np.asarray(component).flatten() for component in f)
 
     # Create a triangulation
-    triang = Triangulation(x1, x2)
+    triang = triangulation if triangulation is not None else Triangulation(x1, x2)
     triangles = triang.triangles
     if geometry_mask is not None:
         if hasattr(geometry_mask, 'cpu'):
@@ -182,6 +187,8 @@ def save_airfoil_plot(
     fig, axes = plt.subplots(3, 1, figsize=(10, 10))
     for ax in axes:
         ax.set_aspect('equal', adjustable='box')
+        if boundary_edges is not None:
+            ax.add_collection(LineCollection(boundary_edges, colors='black', lw=0.8))
 
     # Plot u
     contour_u = axes[0].tricontourf(triang, u, cmap=cmap, levels=100, norm=norm_u)

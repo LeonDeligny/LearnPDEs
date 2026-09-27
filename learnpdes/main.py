@@ -8,6 +8,7 @@ Physics-Informed Neural Network (PINN) model.
 from learnpdes.utils.decorators import time
 from learnpdes.utils.plot import get_plot_func
 from learnpdes.utils.loadscenarios import load_scenario
+from learnpdes.utils.visualization import ModelEvaluator, visualization_grid
 
 from torch.nn import Tanh
 from learnpdes.model.pinn import PINN
@@ -31,6 +32,7 @@ def main(
     scenario: str,
     epochs: int = 100_000,
     pre_epochs: int = 1_000,
+    visualization_resolution: int = 300,
 ) -> None:
     """
     Description of workflow.
@@ -109,6 +111,12 @@ def main(
         plot={
             'dim_plot': input_dim,
             'plot_func': get_plot_func(scenario),
+            'evaluate': ModelEvaluator(
+                pinn,
+                scenario,
+                visualization_grid(scenario, input_space, visualization_resolution),
+                density=loss.rho.item(),
+            ),
         },
         analytical=analytical,
     )

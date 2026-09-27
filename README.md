@@ -22,6 +22,15 @@ differentiation, and loss functions, with runnable code and training animations.
 
 Start with the [tutorial setup and running instructions](docs/tutorials/README.md).
 
+Training plots evaluate a separate visualization grid (300 × 300 for Laplace,
+300 points for ODEs); `main(..., visualization_resolution=300)` controls it
+without changing the collocation points. Laplace fields use
+[`pcolormesh`](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.pcolormesh.html).
+Airfoil plots evaluate a refined copy of the SU2 fluid mesh, preserving its
+boundary edges, solid interior, and concentration of points near the surface.
+More visualization samples reveal the learned solution; they do not improve
+the trained model or replace independent numerical validation.
+
 ## **Objectives**
 
 The project progresses through increasingly complex problems:
