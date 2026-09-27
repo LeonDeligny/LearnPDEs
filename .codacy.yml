@@ -1,0 +1,10 @@
+---
+# Published numerical outputs and their bundled Plotly runtime are generated.
+# Their Python/JavaScript generators, templates, site assets and tests are analyzed.
+exclude_paths:
+  - "assets/examples/**"
+  - "assets/runs/**"
+  - "assets/comparisons/**"
+  - "site/**"
+  - ".venv/**"
+  - ".venv-docs/**"
