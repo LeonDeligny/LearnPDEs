@@ -26,11 +26,11 @@ The tutorials also have a static documentation site prepared for GitHub Pages.
 To preview it locally without installing the training dependencies:
 
 ```bash
-UV_PROJECT_ENVIRONMENT=.venv-docs uv run --locked --only-group docs mkdocs serve
+UV_PROJECT_ENVIRONMENT=.venv-docs uv run --locked --only-group docs mkdocs serve -f docs/website/mkdocs.yml
 ```
 
 Open <http://127.0.0.1:8000/LearnPDEs/>. See the
-[website launch guide](maintenance/website-launch.md) for validation, the manual
+[documentation guide](docs/README.md) and [website launch guide](docs/publishing.md) for validation, the manual
 publishing workflow, Search Console setup, and sharing drafts. The website is
 not deployed yet; pushes and pull requests only build and check it.
 
@@ -43,7 +43,8 @@ boundary edges, solid interior, and concentration of points near the surface.
 More visualization samples reveal the learned solution; they do not improve
 the trained model or replace independent numerical validation.
 
-Frames are 1600 × 900 pixels with fixed panel and colorbar positions. Scalar
+Frames are 1600 pixels wide (900 pixels tall for scalar problems, 1200 for flow)
+with fixed panel and colorbar positions. Scalar
 problems show prediction, analytical reference, signed error, and objective
 convergence. Titles report scientific-notation loss, discrete relative L₂ error,
 and maximum absolute error on the visualization samples. Flow plots label all
@@ -57,6 +58,21 @@ The `Trainer` plot options `max_frames`, `duration_ms`, `final_hold_ms`,
 `output_dir`, and `gif_path` customize capture and playback. Durations use
 [Pillow's millisecond convention](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif)
 and must be positive multiples of 10 ms, the GIF format's timing precision.
+
+GIF generation requires **FFmpeg** (`brew install ffmpeg` on macOS or
+`sudo apt-get install ffmpeg` on Ubuntu). After training, one encoding job makes
+a shared palette across all frames using
+[`palettegen` and `paletteuse`](https://ffmpeg.org/ffmpeg-filters.html#palettegen),
+with restrained Bayer dithering. PNG frames remain available if encoding fails.
+The training loop never rebuilds an animation.
+
+Reproduce the four embedded animations with
+`uv run python -m examples.generate_animations` (or use `--scenario laplace`).
+Training settings and validation results are recorded in
+[`assets/animation_runs.json`](assets/animation_runs.json). Scalar validation
+uses a further separate grid: 201 ODE points or 41 × 41 Laplace points. The
+wind-tunnel animation has no reference-error claim. Use `--epochs 10` and a
+different `--output-dir` for a quick rendering check.
 
 ## **Objectives**
 

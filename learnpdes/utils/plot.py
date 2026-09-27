@@ -6,7 +6,9 @@ Plot functions.
 import os
 import itertools
 import numpy as np
-from PIL import Image
+import shutil
+import subprocess
+import tempfile
 import matplotlib.pyplot as plt
 
 from learnpdes.utils.utility import compute_normals
@@ -18,6 +20,7 @@ from numpy import ndarray
 from matplotlib.collections import LineCollection
 from matplotlib.tri import Triangulation
 from matplotlib.colors import Normalize
+from matplotlib.ticker import LogLocator, NullFormatter
 from typing import Callable
 
 from learnpdes import (
@@ -57,23 +60,70 @@ def create_gif(
     )
     if not files:
         raise ValueError(f'No epoch frames found in {input_folder}.')
-    images = []
-    try:
-        for file in files:
-            with Image.open(file) as frame:
-                images.append(frame.convert('RGB'))
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        images[0].save(
-            output_path,
-            save_all=True,
-            append_images=images[1:],
-            duration=[duration_ms] * (len(images) - 1) + [final_hold_ms],
-            loop=0,
-            disposal=2,
+    ffmpeg = shutil.which('ffmpeg')
+    if ffmpeg is None:
+        raise RuntimeError(
+            'Install FFmpeg to encode animations. Rendered PNG frames have been retained.'
         )
-    finally:
-        for image in images:
-            image.close()
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    # A numbered symlink sequence handles irregular checkpoint numbers without
+    # loading all RGB frames into Python memory or quoting a concat manifest.
+    with tempfile.TemporaryDirectory(
+        prefix='.gif-', dir=output_path.parent
+    ) as temporary:
+        folder = Path(temporary)
+        for index, frame in enumerate(files):
+            (folder / f'frame_{index:06d}.png').symlink_to(frame.resolve())
+        sequence = str(folder / 'frame_%06d.png')
+        palette = str(folder / 'palette.png')
+        encoded = folder / 'animation.gif'
+        common = [
+            ffmpeg,
+            '-hide_banner',
+            '-loglevel',
+            'error',
+            '-y',
+            '-filter_threads',
+            '1',
+        ]
+        source = ['-framerate', f'1000/{duration_ms}', '-i', sequence]
+        commands = [
+            common
+            + source
+            + [
+                '-vf',
+                'palettegen=stats_mode=full',
+                '-frames:v',
+                '1',
+                '-update',
+                '1',
+                palette,
+            ],
+            common
+            + source
+            + [
+                '-i',
+                palette,
+                '-lavfi',
+                'paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
+                '-loop',
+                '0',
+                '-final_delay',
+                str(final_hold_ms // 10),
+                '-fps_mode',
+                'passthrough',
+                str(encoded),
+            ],
+        ]
+        for command in commands:
+            try:
+                subprocess.run(command, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as error:
+                raise RuntimeError(
+                    f'FFmpeg GIF encoding failed; PNG frames retained: {error.stderr.strip()}'
+                ) from error
+        encoded.replace(output_path)
 
 
 def ensure_directory_exists(
@@ -123,10 +173,17 @@ def error_metrics(prediction: ndarray, reference: ndarray) -> dict[str, float]:
     }
 
 
-def publication_figure(epoch, loss, loss_history, total_epochs, metrics=None):
+def publication_figure(
+    epoch, loss, loss_history, total_epochs, metrics=None, *, stacked=False
+):
     """Use fixed axes rectangles so panel and colorbar positions never jump."""
-    fig = plt.figure(figsize=(16, 9), dpi=100)
-    axes = [fig.add_axes([0.06 + i * 0.32, 0.40, 0.215, 0.43]) for i in range(3)]
+    fig = plt.figure(figsize=(16, 12 if stacked else 9), dpi=100)
+    positions = (
+        [[0.10, y, 0.72, 0.155] for y in (0.665, 0.45, 0.235)]
+        if stacked
+        else [[0.06 + i * 0.32, 0.40, 0.215, 0.43] for i in range(3)]
+    )
+    axes = [fig.add_axes(position) for position in positions]
     fig.suptitle(
         f'Training step {epoch:,}  |  Loss {float(loss):.2e}', y=0.965, fontsize=20
     )
@@ -140,12 +197,20 @@ def publication_figure(epoch, loss, loss_history, total_epochs, metrics=None):
             'No reference solution available; prediction errors are not reported.'
         )
     fig.text(0.5, 0.905, subtitle, ha='center', fontsize=13)
-    convergence = fig.add_axes([0.075, 0.12, 0.86, 0.145])
+    convergence = fig.add_axes(
+        [0.09, 0.08, 0.845, 0.075] if stacked else [0.09, 0.12, 0.845, 0.145]
+    )
     history = loss_history if loss_history is not None else [(epoch, float(loss))]
     steps, losses = np.asarray(history).T
     convergence.semilogy(
         steps, np.maximum(losses, np.finfo(float).tiny), color='#315b87', lw=1.5
     )
+    positive = np.maximum(losses, np.finfo(float).tiny)
+    lower = np.floor(np.log10(positive.min()))
+    upper = max(np.ceil(np.log10(positive.max())), lower + 1)
+    convergence.set_ylim(10.0**lower, 10.0**upper)
+    convergence.yaxis.set_major_locator(LogLocator(numticks=4))
+    convergence.yaxis.set_minor_formatter(NullFormatter())
     convergence.set_xlim(0, max(total_epochs or epoch, 1))
     convergence.set_xlabel('Training step')
     convergence.set_ylabel('Objective')
@@ -153,7 +218,7 @@ def publication_figure(epoch, loss, loss_history, total_epochs, metrics=None):
     convergence.grid(alpha=0.2)
     fig.text(
         0.5,
-        0.025,
+        0.015 if stacked else 0.025,
         'Visualization samples are separate from training samples; finer rendering does not establish accuracy.',
         ha='center',
         fontsize=11,
@@ -296,7 +361,9 @@ def save_airfoil_plot(
     # The unit inlet speed prevents tiny initial velocities setting tiny limits.
     velocity_range = np.array([-1.0, 1.0])
     with plt.rc_context(PLOT_STYLE):
-        fig, axes = publication_figure(epoch, loss, loss_history, total_epochs)
+        fig, axes = publication_figure(
+            epoch, loss, loss_history, total_epochs, stacked=True
+        )
         titles = ['Horizontal velocity', 'Vertical velocity', 'Pressure']
         labels = [
             'Velocity u (model units)',

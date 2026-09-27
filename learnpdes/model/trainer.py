@@ -18,6 +18,8 @@ def checkpoint_steps(epochs: int, max_frames: int = 80) -> set[int]:
         raise ValueError('At least two checkpoint frames are required.')
     if epochs == 0:
         return {0}
+    if max_frames == 2:
+        return {0, epochs}
     samples = np.geomspace(1, epochs, num=min(epochs, max_frames - 1))
     return {0, epochs, *(int(round(step)) for step in samples)}
 
@@ -83,9 +85,10 @@ class Trainer:
             if step < self.nb_epochs:
                 loss.backward(retain_graph=True)
                 self.optimizer.step()
-            create_gif(
-                self.gif_path,
-                output_dir,
-                duration_ms=self.duration_ms,
-                final_hold_ms=self.final_hold_ms,
-            )
+        # Assemble only once, after all optimizer steps and checkpoint renders.
+        create_gif(
+            self.gif_path,
+            output_dir,
+            duration_ms=self.duration_ms,
+            final_hold_ms=self.final_hold_ms,
+        )

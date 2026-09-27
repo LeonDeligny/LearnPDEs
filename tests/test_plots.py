@@ -59,7 +59,7 @@ class TestPlots(unittest.TestCase):
             save_airfoil_plot(folder, 2, xy, (np.zeros(4),) * 3, 0, None)
             for step in (1, 2):
                 with Image.open(Path(folder) / f'epoch_{step}.png') as frame:
-                    self.assertEqual(frame.size, (1600, 900))
+                    self.assertEqual(frame.size, (1600, 900 if step == 1 else 1200))
 
 
 if __name__ == '__main__':

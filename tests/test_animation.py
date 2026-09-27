@@ -51,6 +51,7 @@ class TestAnimation(unittest.TestCase):
         )
         self.assertEqual(checkpoint_steps(1), {0, 1})
         self.assertEqual(checkpoint_steps(0), {0})
+        self.assertEqual(checkpoint_steps(100, max_frames=2), {0, 100})
 
     def test_final_frame_and_loss_match_completed_updates(self):
         parameter = torch.nn.Parameter(torch.tensor([1.0]))
@@ -65,7 +66,7 @@ class TestAnimation(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as folder,
-            patch('learnpdes.model.trainer.create_gif', Mock()),
+            patch('learnpdes.model.trainer.create_gif', Mock()) as encode,
         ):
             trainer = Trainer(
                 lambda: iter([parameter]),
@@ -74,9 +75,22 @@ class TestAnimation(unittest.TestCase):
                 {'plot_func': plot, 'output_dir': folder},
             )
             trainer.train()
+            encode.assert_called_once()
         self.assertEqual([frame['epoch'] for frame in frames], [0, 1, 2, 3])
         np.testing.assert_allclose(frames[-1]['f'], parameter.detach().numpy())
         self.assertAlmostEqual(frames[-1]['loss'], parameter.item() ** 2)
+
+    def test_missing_encoder_preserves_frames_and_existing_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            frame = Path(folder) / 'epoch_1.png'
+            output = Path(folder) / 'animation.gif'
+            Image.new('RGB', (20, 20), 'red').save(frame)
+            output.write_bytes(b'previous animation')
+            with patch('learnpdes.utils.plot.shutil.which', return_value=None):
+                with self.assertRaisesRegex(RuntimeError, 'Install FFmpeg'):
+                    create_gif(output, folder)
+            self.assertTrue(frame.exists())
+            self.assertEqual(output.read_bytes(), b'previous animation')
 
 
 if __name__ == '__main__':
