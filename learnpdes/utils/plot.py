@@ -229,26 +229,21 @@ def save_2d_plot(
     if geometry_mask is not None:
         raise ValueError('geometry_mask is not None for grid plot')
 
-    # Extract x1 and x2 from inputs
-    x1, x2 = inputs[:, 0], inputs[:, 1]
-
-    # Keep coordinates and values aligned: rows along y, columns along x.
-    n = int(len(x1) ** 0.5)
-    x1_grid = x1.reshape(n, n).T
-    x2_grid = x2.reshape(n, n).T
-    f_grid = f.reshape(n, n).T
+    # Scatter values at their original (x, y) points, without grid transposes.
+    x, y = inputs[:, 0], inputs[:, 1]
+    values = np.asarray(f).ravel()
 
     ncols = 1 if analytical is None else 3
     fig, axes = plt.subplots(1, ncols, figsize=(18, 6))
     if ncols == 1:
         axes = [axes]
-    create_plot(x1_grid, x2_grid, fig, axes[0], f_grid, 'Model Output')
+    create_plot(x, y, fig, axes[0], values, 'Model Output')
 
     if analytical is not None:
-        ana_f: ndarray = analytical(x1_grid, x2_grid)
-        difference = f_grid - ana_f
-        create_plot(x1_grid, x2_grid, fig, axes[1], ana_f, 'Analytical')
-        create_plot(x1_grid, x2_grid, fig, axes[2], difference, 'Difference')
+        ana_f = np.asarray(analytical(x, y)).ravel()
+        difference = values - ana_f
+        create_plot(x, y, fig, axes[1], ana_f, 'Analytical')
+        create_plot(x, y, fig, axes[2], difference, 'Difference')
 
     plt.suptitle(f'Epoch: {epoch}, Loss: {loss:.4f}')
     plt.tight_layout()
